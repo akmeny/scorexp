@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Genel Yükseklik & Davranış ===== */
+html, body, #root {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+/* Görünür alanın %90'ı */
+.page-90vh { height: 90vh; }
+
+/* ===== Maç Satırı Efektleri ===== */
+.match-row:hover { box-shadow: 0 0 0 1px rgba(120, 120, 120, 0.25) inset; }
+.match-row:active { transform: scale(0.995); }
+
+/* Gol sonrası 15sn hafif kırmızılık */
+@keyframes goalFlash {
+  0%   { background-color: rgba(255, 0, 0, 0.08); }
+  100% { background-color: transparent; }
+}
+.animate-goalFlash { animation: goalFlash 15s ease-out 1; }
+
+/* TEHLİKE yazısı yanıp sönsün */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.animate-blink { animation: blink .8s linear infinite; }
+
+/* ===== İnce ve Hafif Scrollbar ===== */
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: rgba(120,120,120,0.35) transparent; }
+/* WebKit (Chrome, Edge, Safari) */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb  { background: rgba(120,120,120,0.35); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(120,120,120,0.55); }
+::-webkit-scrollbar-track  { background: transparent; }
+
+/* ===== Topbar Buton Tasarım Sınıfları ===== */
+/* Nötr pill */
+.btn-fancy {
+  @apply px-3 py-1 rounded-full flex items-center gap-1 text-sm font-medium
+         transition transform active:scale-95
+         bg-gradient-to-br from-gray-100 to-gray-200
+         dark:from-gray-800 dark:to-gray-700
+         border border-gray-300 dark:border-gray-600
+         hover:shadow-lg hover:shadow-blue-400/20 dark:hover:shadow-blue-500/20;
+}
+
+/* --- Varyantlar: Light & Dark’ta aynı canlı renkler --- */
+.btn-blue {
+  /* mavi: bugün */
+  background-image: linear-gradient(to bottom right, #3b82f6, #2563eb); /* from-blue-500 to-blue-600 */
+  color: #fff;
+  border: 1px solid transparent;
+}
+.btn-blue:hover { box-shadow: 0 0 18px rgba(59,130,246,.4); }
+.dark .btn-blue { background-image: linear-gradient(to bottom right, #3b82f6, #2563eb); color:#fff; }
+
+.btn-red {
+  /* kırmızı: canlı */
+  background-image: linear-gradient(to bottom right, #ef4444, #dc2626); /* from-red-500 to-red-600 */
+  color: #fff;
+  border: 1px solid transparent;
+}
+.btn-red:hover { box-shadow: 0 0 18px rgba(239,68,68,.4); }
+.dark .btn-red { background-image: linear-gradient(to bottom right, #ef4444, #dc2626); color:#fff; }
+
+.btn-yellow {
+  /* sarı: favoriler */
+  background-image: linear-gradient(to bottom right, #facc15, #f59e0b); /* from-yellow-400 to-yellow-500 */
+  color: #111;
+  border: 1px solid rgba(0,0,0,.06);
+}
+.btn-yellow:hover { box-shadow: 0 0 18px rgba(245,158,11,.4); }
+.dark .btn-yellow { background-image: linear-gradient(to bottom right, #facc15, #f59e0b); color:#111; }
+
+/* Click sırasında ekstra parıltı (opsiyonel) */
+.shadow-glow { box-shadow: 0 0 12px rgba(0, 200, 255, 0.55); }
+
+/* ===== Küçük Yardımcılar ===== */
+.input-plain {
+  @apply px-2 py-1 rounded bg-gray-100 dark:bg-gray-800
+         border border-gray-300 dark:border-gray-700 text-sm;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.6s linear infinite;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Sadece 0.6s boyunca 3 kez titre */
+.animate-shake {
+  animation: shake 0.6s ease-in-out 3;
+}
+
+/* Renk efekti için glow */
+.special-msg {
+  background: linear-gradient(to right, #f87171, #facc15, #34d399);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 12px rgba(248,113,113,0.7);
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.6s ease-in-out 3;
+}
+
+.special-msg {
+  background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 12px rgba(239,68,68,0.7);
+}
+/* === Gol verildiğinde satırın üstünden soldan sağa açık kırmızı bir şerit geçsin (10sn) === */
+.goal-sweep-pointer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.08) 0%,
+    rgba(255, 0, 0, 0.12) 30%,
+    rgba(255, 0, 0, 0.06) 60%,
+    rgba(255, 0, 0, 0.00) 100%
+  );
+  animation: goalSweep 10s ease-out forwards;
+  mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+@keyframes goalSweep {
+  0%   { transform: translateX(-100%); opacity: 1; }
+  8%   { transform: translateX(-20%); }
+  40%  { transform: translateX(0%); }
+  100% { transform: translateX(0%); opacity: 0; }
+}
+
+/* Zaten var: .animate-blink; burada kullandık (Tehlike yanıp sönsün) */
+/* Zaten var: match-row hover/active efektleri */
