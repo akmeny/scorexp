@@ -1,0 +1,17 @@
+{
+  "name": "scorexp-backend",
+  "private": true,
+  "type": "module",
+  "version": "1.1.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.8.1"
+  }
+}
