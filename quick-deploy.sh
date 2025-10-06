@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-# Commit mesajı argüman olarak alınır, yoksa "quick deploy"
+# Commit mesajı argüman olarak alınır, yoksa "quick deploy" olur
 COMMIT_MSG=${1:-"quick deploy"}
 
 echo "💾 Commit & Push..."
 git add .
-git commit -m "$COMMIT_MSG"
+git commit -m "$COMMIT_MSG" || true
 git push origin main
 
 echo "🌐 Remote Deploy başlıyor..."
