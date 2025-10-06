@@ -233,6 +233,22 @@ async function pollLoop() {
 if (API.key) pollLoop();
 
 // -------------------------
+// REST: Leagues
+// -------------------------
+app.get("/api/leagues", async (req, res) => {
+  if (!ensureApiKey(res)) return;
+  try {
+    // API-Football leagues endpoint
+    const leagues = await fetchFromApi("/leagues", {}, { withTZ: false });
+    res.json({ ok: true, response: leagues });
+  } catch (err) {
+    res
+      .status(err?.response?.status || 500)
+      .json(err?.response?.data || { ok: false, error: err?.message });
+  }
+});
+
+// -------------------------
 // REST: Fixtures
 // -------------------------
 app.get("/api/fixtures", async (req, res) => {
@@ -341,6 +357,99 @@ app.get("/api/standings", async (req, res) => {
     const resp = await fetchFromApi("/standings", { league, season }, { withTZ: false });
     console.log("DEBUG /api/standings:", Array.isArray(resp) ? resp.length : 0);
     res.json({ ok: true, response: resp });
+  } catch (err) {
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
+  }
+});
+
+// -------------------------
+// REST: Leagues (proxy)
+// -------------------------
+app.get("/api/leagues", async (req, res) => {
+  if (!ensureApiKey(res)) return;
+  const { country, season, name, id } = req.query;
+  const params = {};
+  if (country) params.country = country;
+  if (season) params.season = season;
+  if (name) params.name = name;
+  if (id) params.id = id;
+
+  try {
+    const resp = await fetchFromApi("/leagues", params, { withTZ: false });
+    res.json({ ok: true, response: resp });
+  } catch (err) {
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
+  }
+});
+
+// -------------------------
+// REST: Leagues (proxy to API-Sports /leagues)
+// -------------------------
+app.get("/api/leagues", async (req, res) => {
+  if (!ensureApiKey(res)) return;
+  // İsteğe bağlı filtreler:
+  // ?country=Turkey&name=Super%20Lig&type=League (type: League|Cup)
+  const params = {};
+  if (req.query.country) params.country = req.query.country;
+  if (req.query.name) params.search = req.query.name;
+  if (req.query.type) params.type = req.query.type; // API-Sports supports "League" or "Cup"
+
+  try {
+    const resp = await fetchFromApi("/leagues", params, { withTZ: false });
+    // resp => dizi: [{ league: {...}, country: {...}, seasons: [...] }, ...]
+    res.json({ ok: true, response: resp });
+  } catch (err) {
+    res
+      .status(err?.response?.status || 500)
+      .json(err?.response?.data || { ok: false, error: err?.message });
+  }
+});
+
+// -------------------------
+// REST: League IDs from fixtures range
+//   /api/league-ids-from-range?start=YYYY-MM-DD&end=YYYY-MM-DD
+// -------------------------
+app.get("/api/league-ids-from-range", async (req, res) => {
+  if (!ensureApiKey(res)) return;
+  const start = req.query.start;
+  const end = req.query.end;
+  if (!start || !end) {
+    return res.status(400).json({ ok: false, error: "start & end (YYYY-MM-DD) required" });
+  }
+
+  // dayjs aralığını gün gün dolaş
+  const s = dayjs(start, "YYYY-MM-DD", true);
+  const e = dayjs(end, "YYYY-MM-DD", true);
+  if (!s.isValid() || !e.isValid() || e.isBefore(s)) {
+    return res.status(400).json({ ok: false, error: "invalid date range" });
+  }
+
+  try {
+    const leaguesMap = new Map(); // id -> name
+    let cur = s.clone();
+    // API limitine dikkat: günde 1 istek → her gün için /fixtures
+    while (!cur.isAfter(e)) {
+      const dateISO = cur.format("YYYY-MM-DD");
+      try {
+        const fixtures = await fetchFixtures({ dateISO, liveOnly: false });
+        for (const m of fixtures || []) {
+          const lg = m?.league;
+          if (lg?.id && lg?.name) leaguesMap.set(lg.id, lg.name);
+        }
+      } catch (err) {
+        // gün atlanır, loglamak yeterli
+        console.warn("skip day", dateISO, err?.response?.status || err?.message);
+      }
+      // rate-limit için küçük gecikme
+      await new Promise(r => setTimeout(r, 250));
+      cur = cur.add(1, "day");
+    }
+
+    const out = [...leaguesMap.entries()]
+      .map(([id, name]) => ({ id: Number(id), name }))
+      .sort((a, b) => a.id - b.id);
+
+    res.json({ ok: true, count: out.length, leagues: out });
   } catch (err) {
     res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
   }

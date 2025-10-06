@@ -1,0 +1,1582 @@
+[
+  {
+    "id": 2,
+    "name": "UEFA Champions League"
+  },
+  {
+    "id": 3,
+    "name": "UEFA Europa League"
+  },
+  {
+    "id": 5,
+    "name": "UEFA Nations League"
+  },
+  {
+    "id": 10,
+    "name": "Friendlies"
+  },
+  {
+    "id": 12,
+    "name": "CAF Champions League"
+  },
+  {
+    "id": 15,
+    "name": "FIFA Club World Cup"
+  },
+  {
+    "id": 16,
+    "name": "CONCACAF Champions League"
+  },
+  {
+    "id": 22,
+    "name": "CONCACAF Gold Cup"
+  },
+  {
+    "id": 23,
+    "name": "EAFF E-1 Football Championship"
+  },
+  {
+    "id": 30,
+    "name": "World Cup - Qualification Asia"
+  },
+  {
+    "id": 31,
+    "name": "World Cup - Qualification CONCACAF"
+  },
+  {
+    "id": 32,
+    "name": "World Cup - Qualification Europe"
+  },
+  {
+    "id": 34,
+    "name": "World Cup - Qualification South America"
+  },
+  {
+    "id": 35,
+    "name": "Asian Cup - Qualification"
+  },
+  {
+    "id": 38,
+    "name": "UEFA U21 Championship"
+  },
+  {
+    "id": 43,
+    "name": "National League"
+  },
+  {
+    "id": 71,
+    "name": "Serie A"
+  },
+  {
+    "id": 72,
+    "name": "Serie B"
+  },
+  {
+    "id": 74,
+    "name": "Brasileiro Women"
+  },
+  {
+    "id": 75,
+    "name": "Serie C"
+  },
+  {
+    "id": 76,
+    "name": "Serie D"
+  },
+  {
+    "id": 88,
+    "name": "Eredivisie"
+  },
+  {
+    "id": 94,
+    "name": "Primeira Liga"
+  },
+  {
+    "id": 95,
+    "name": "Segunda Liga"
+  },
+  {
+    "id": 98,
+    "name": "J1 League"
+  },
+  {
+    "id": 99,
+    "name": "J2 League"
+  },
+  {
+    "id": 100,
+    "name": "J3 League"
+  },
+  {
+    "id": 101,
+    "name": "J-League Cup"
+  },
+  {
+    "id": 102,
+    "name": "Emperor Cup"
+  },
+  {
+    "id": 103,
+    "name": "Eliteserien"
+  },
+  {
+    "id": 104,
+    "name": "1. Division"
+  },
+  {
+    "id": 105,
+    "name": "NM Cupen"
+  },
+  {
+    "id": 107,
+    "name": "I Liga"
+  },
+  {
+    "id": 109,
+    "name": "II Liga - East"
+  },
+  {
+    "id": 113,
+    "name": "Allsvenskan"
+  },
+  {
+    "id": 114,
+    "name": "Superettan"
+  },
+  {
+    "id": 115,
+    "name": "Svenska Cupen"
+  },
+  {
+    "id": 116,
+    "name": "Premier League"
+  },
+  {
+    "id": 117,
+    "name": "1. Division"
+  },
+  {
+    "id": 119,
+    "name": "Superliga"
+  },
+  {
+    "id": 122,
+    "name": "2. Division"
+  },
+  {
+    "id": 128,
+    "name": "Liga Profesional Argentina"
+  },
+  {
+    "id": 129,
+    "name": "Primera Nacional"
+  },
+  {
+    "id": 130,
+    "name": "Copa Argentina"
+  },
+  {
+    "id": 131,
+    "name": "Primera B Metropolitana"
+  },
+  {
+    "id": 132,
+    "name": "Primera C"
+  },
+  {
+    "id": 134,
+    "name": "Torneo Federal A"
+  },
+  {
+    "id": 136,
+    "name": "Serie B"
+  },
+  {
+    "id": 141,
+    "name": "Segunda División"
+  },
+  {
+    "id": 163,
+    "name": "Liga de Ascenso"
+  },
+  {
+    "id": 164,
+    "name": "Úrvalsdeild"
+  },
+  {
+    "id": 165,
+    "name": "1. Deild"
+  },
+  {
+    "id": 166,
+    "name": "2. Deild"
+  },
+  {
+    "id": 167,
+    "name": "Cup"
+  },
+  {
+    "id": 169,
+    "name": "Super League"
+  },
+  {
+    "id": 170,
+    "name": "League One"
+  },
+  {
+    "id": 171,
+    "name": "FA Cup"
+  },
+  {
+    "id": 175,
+    "name": "Third League - Northeast"
+  },
+  {
+    "id": 177,
+    "name": "Third League - Southeast"
+  },
+  {
+    "id": 178,
+    "name": "Third League - Southwest"
+  },
+  {
+    "id": 185,
+    "name": "League Cup"
+  },
+  {
+    "id": 186,
+    "name": "Ligue 1"
+  },
+  {
+    "id": 189,
+    "name": "Capital Territory NPL"
+  },
+  {
+    "id": 191,
+    "name": "Brisbane Premier League"
+  },
+  {
+    "id": 192,
+    "name": "New South Wales NPL"
+  },
+  {
+    "id": 193,
+    "name": "Northern Territory Premier League"
+  },
+  {
+    "id": 194,
+    "name": "South Australia NPL"
+  },
+  {
+    "id": 195,
+    "name": "Victoria NPL"
+  },
+  {
+    "id": 196,
+    "name": "Western Australia NPL"
+  },
+  {
+    "id": 203,
+    "name": "Süper Lig"
+  },
+  {
+    "id": 205,
+    "name": "2. Lig"
+  },
+  {
+    "id": 209,
+    "name": "Schweizer Cup"
+  },
+  {
+    "id": 211,
+    "name": "First NL"
+  },
+  {
+    "id": 218,
+    "name": "Bundesliga"
+  },
+  {
+    "id": 221,
+    "name": "Regionalliga - Ost"
+  },
+  {
+    "id": 222,
+    "name": "Regionalliga - Mitte"
+  },
+  {
+    "id": 223,
+    "name": "Regionalliga - West"
+  },
+  {
+    "id": 224,
+    "name": "Landesliga - Burgenland"
+  },
+  {
+    "id": 225,
+    "name": "Landesliga - Karnten"
+  },
+  {
+    "id": 226,
+    "name": "Landesliga - Niederosterreich"
+  },
+  {
+    "id": 227,
+    "name": "Landesliga - Oberosterreich"
+  },
+  {
+    "id": 228,
+    "name": "Landesliga - Salzburg"
+  },
+  {
+    "id": 229,
+    "name": "Landesliga - Steiermark"
+  },
+  {
+    "id": 230,
+    "name": "Landesliga - Tirol"
+  },
+  {
+    "id": 231,
+    "name": "Landesliga - Vorarlbergliga"
+  },
+  {
+    "id": 232,
+    "name": "Landesliga - Wien"
+  },
+  {
+    "id": 237,
+    "name": "Cup"
+  },
+  {
+    "id": 238,
+    "name": "Youth Championship"
+  },
+  {
+    "id": 239,
+    "name": "Primera A"
+  },
+  {
+    "id": 240,
+    "name": "Primera B"
+  },
+  {
+    "id": 241,
+    "name": "Copa Colombia"
+  },
+  {
+    "id": 242,
+    "name": "Liga Pro"
+  },
+  {
+    "id": 243,
+    "name": "Liga Pro Serie B"
+  },
+  {
+    "id": 244,
+    "name": "Veikkausliiga"
+  },
+  {
+    "id": 245,
+    "name": "Ykkönen"
+  },
+  {
+    "id": 246,
+    "name": "Suomen Cup"
+  },
+  {
+    "id": 247,
+    "name": "Kakkonen - Lohko A"
+  },
+  {
+    "id": 248,
+    "name": "Kakkonen - Lohko B"
+  },
+  {
+    "id": 249,
+    "name": "Kakkonen - Lohko C"
+  },
+  {
+    "id": 250,
+    "name": "Division Profesional - Apertura"
+  },
+  {
+    "id": 251,
+    "name": "Division Intermedia"
+  },
+  {
+    "id": 252,
+    "name": "Division Profesional - Clausura"
+  },
+  {
+    "id": 253,
+    "name": "Major League Soccer"
+  },
+  {
+    "id": 254,
+    "name": "NWSL Women"
+  },
+  {
+    "id": 255,
+    "name": "USL Championship"
+  },
+  {
+    "id": 256,
+    "name": "USL League Two"
+  },
+  {
+    "id": 257,
+    "name": "US Open Cup"
+  },
+  {
+    "id": 258,
+    "name": "Canadian Soccer League"
+  },
+  {
+    "id": 259,
+    "name": "Canadian Championship"
+  },
+  {
+    "id": 260,
+    "name": "Pacific Coast Soccer League"
+  },
+  {
+    "id": 261,
+    "name": "National Division"
+  },
+  {
+    "id": 262,
+    "name": "Liga MX"
+  },
+  {
+    "id": 263,
+    "name": "Liga de Expansión MX"
+  },
+  {
+    "id": 265,
+    "name": "Primera División"
+  },
+  {
+    "id": 266,
+    "name": "Primera B"
+  },
+  {
+    "id": 267,
+    "name": "Copa Chile"
+  },
+  {
+    "id": 268,
+    "name": "Primera División - Apertura"
+  },
+  {
+    "id": 269,
+    "name": "Segunda División"
+  },
+  {
+    "id": 276,
+    "name": "FKF Premier League"
+  },
+  {
+    "id": 277,
+    "name": "Super League"
+  },
+  {
+    "id": 281,
+    "name": "Primera División"
+  },
+  {
+    "id": 282,
+    "name": "Segunda División"
+  },
+  {
+    "id": 283,
+    "name": "Liga I"
+  },
+  {
+    "id": 286,
+    "name": "Super Liga"
+  },
+  {
+    "id": 288,
+    "name": "Premier Soccer League"
+  },
+  {
+    "id": 292,
+    "name": "K League 1"
+  },
+  {
+    "id": 293,
+    "name": "K League 2"
+  },
+  {
+    "id": 294,
+    "name": "FA Cup"
+  },
+  {
+    "id": 295,
+    "name": "K3 League"
+  },
+  {
+    "id": 299,
+    "name": "Primera División"
+  },
+  {
+    "id": 300,
+    "name": "Segunda División"
+  },
+  {
+    "id": 304,
+    "name": "Liga Panameña de Fútbol"
+  },
+  {
+    "id": 316,
+    "name": "1st League - FBiH"
+  },
+  {
+    "id": 326,
+    "name": "Erovnuli Liga 2"
+  },
+  {
+    "id": 328,
+    "name": "Esiliiga A"
+  },
+  {
+    "id": 329,
+    "name": "Meistriliiga"
+  },
+  {
+    "id": 333,
+    "name": "Premier League"
+  },
+  {
+    "id": 334,
+    "name": "Persha Liga"
+  },
+  {
+    "id": 336,
+    "name": "Druha Liga"
+  },
+  {
+    "id": 338,
+    "name": "Primera Division"
+  },
+  {
+    "id": 340,
+    "name": "V.League 1"
+  },
+  {
+    "id": 341,
+    "name": "Cup"
+  },
+  {
+    "id": 344,
+    "name": "Primera División"
+  },
+  {
+    "id": 345,
+    "name": "Czech Liga"
+  },
+  {
+    "id": 348,
+    "name": "3. liga - CFL A"
+  },
+  {
+    "id": 349,
+    "name": "3. liga - MSFL"
+  },
+  {
+    "id": 350,
+    "name": "4. liga - Divizie A"
+  },
+  {
+    "id": 351,
+    "name": "4. liga - Divizie B"
+  },
+  {
+    "id": 352,
+    "name": "4. liga - Divizie C"
+  },
+  {
+    "id": 353,
+    "name": "4. liga - Divizie D"
+  },
+  {
+    "id": 354,
+    "name": "4. liga - Divizie E"
+  },
+  {
+    "id": 355,
+    "name": "First League"
+  },
+  {
+    "id": 357,
+    "name": "Premier Division"
+  },
+  {
+    "id": 358,
+    "name": "First Division"
+  },
+  {
+    "id": 361,
+    "name": "1 Lyga"
+  },
+  {
+    "id": 362,
+    "name": "A Lyga"
+  },
+  {
+    "id": 363,
+    "name": "Premier League"
+  },
+  {
+    "id": 364,
+    "name": "1. Liga"
+  },
+  {
+    "id": 365,
+    "name": "Virsliga"
+  },
+  {
+    "id": 366,
+    "name": "1. Deild"
+  },
+  {
+    "id": 367,
+    "name": "Meistaradeildin"
+  },
+  {
+    "id": 369,
+    "name": "Super League"
+  },
+  {
+    "id": 373,
+    "name": "1. SNL"
+  },
+  {
+    "id": 376,
+    "name": "National Football League"
+  },
+  {
+    "id": 378,
+    "name": "Ligue 1"
+  },
+  {
+    "id": 379,
+    "name": "Ligue Haïtienne"
+  },
+  {
+    "id": 388,
+    "name": "1. Division"
+  },
+  {
+    "id": 389,
+    "name": "Premier League"
+  },
+  {
+    "id": 390,
+    "name": "Premier League"
+  },
+  {
+    "id": 391,
+    "name": "Super League"
+  },
+  {
+    "id": 394,
+    "name": "Super Liga"
+  },
+  {
+    "id": 396,
+    "name": "Primera Division"
+  },
+  {
+    "id": 401,
+    "name": "Premier Soccer League"
+  },
+  {
+    "id": 402,
+    "name": "Sudani Premier League"
+  },
+  {
+    "id": 403,
+    "name": "Ligue 1"
+  },
+  {
+    "id": 411,
+    "name": "Elite One"
+  },
+  {
+    "id": 415,
+    "name": "Championnat National"
+  },
+  {
+    "id": 417,
+    "name": "Premier League"
+  },
+  {
+    "id": 421,
+    "name": "Division di Honor"
+  },
+  {
+    "id": 423,
+    "name": "Ligue 1"
+  },
+  {
+    "id": 424,
+    "name": "Ligue 1"
+  },
+  {
+    "id": 425,
+    "name": "Premier League"
+  },
+  {
+    "id": 473,
+    "name": "2. Division - Group 1"
+  },
+  {
+    "id": 474,
+    "name": "2. Division - Group 2"
+  },
+  {
+    "id": 478,
+    "name": "Gaúcho - 2"
+  },
+  {
+    "id": 479,
+    "name": "Canadian Premier League"
+  },
+  {
+    "id": 481,
+    "name": "Northern NSW NPL"
+  },
+  {
+    "id": 482,
+    "name": "Queensland NPL"
+  },
+  {
+    "id": 486,
+    "name": "Coppa"
+  },
+  {
+    "id": 489,
+    "name": "USL League One"
+  },
+  {
+    "id": 491,
+    "name": "Løgmanssteypid"
+  },
+  {
+    "id": 492,
+    "name": "Tweede Divisie"
+  },
+  {
+    "id": 493,
+    "name": "UEFA U19 Championship"
+  },
+  {
+    "id": 497,
+    "name": "Japan Football League"
+  },
+  {
+    "id": 498,
+    "name": "Cup"
+  },
+  {
+    "id": 501,
+    "name": "Copa Paraguay"
+  },
+  {
+    "id": 511,
+    "name": "Cup"
+  },
+  {
+    "id": 514,
+    "name": "Coupe Nationale"
+  },
+  {
+    "id": 515,
+    "name": "U21 League 1"
+  },
+  {
+    "id": 530,
+    "name": "Super Cup"
+  },
+  {
+    "id": 542,
+    "name": "Iraqi League"
+  },
+  {
+    "id": 549,
+    "name": "Damallsvenskan"
+  },
+  {
+    "id": 555,
+    "name": "Supercupa"
+  },
+  {
+    "id": 563,
+    "name": "Ettan - Norra"
+  },
+  {
+    "id": 564,
+    "name": "Ettan - Södra"
+  },
+  {
+    "id": 567,
+    "name": "Ligi kuu Bara"
+  },
+  {
+    "id": 568,
+    "name": "Eerste Divisie"
+  },
+  {
+    "id": 569,
+    "name": "Premier League"
+  },
+  {
+    "id": 570,
+    "name": "Premier League"
+  },
+  {
+    "id": 571,
+    "name": "Vysshaya Liga"
+  },
+  {
+    "id": 573,
+    "name": "Srpska Liga - Vojvodina"
+  },
+  {
+    "id": 574,
+    "name": "Srpska Liga - East"
+  },
+  {
+    "id": 575,
+    "name": "Srpska Liga - West"
+  },
+  {
+    "id": 584,
+    "name": "Premier League"
+  },
+  {
+    "id": 591,
+    "name": "Pro League"
+  },
+  {
+    "id": 592,
+    "name": "Division 2 - Norra Götaland"
+  },
+  {
+    "id": 593,
+    "name": "Division 2 - Norra Svealand"
+  },
+  {
+    "id": 594,
+    "name": "Division 2 - Norrland"
+  },
+  {
+    "id": 595,
+    "name": "Division 2 - Södra Svealand"
+  },
+  {
+    "id": 596,
+    "name": "Division 2 - Västra Götaland"
+  },
+  {
+    "id": 597,
+    "name": "Division 2 - Östra Götaland"
+  },
+  {
+    "id": 598,
+    "name": "Première Division"
+  },
+  {
+    "id": 612,
+    "name": "Copa do Nordeste"
+  },
+  {
+    "id": 613,
+    "name": "Baiano - 2"
+  },
+  {
+    "id": 614,
+    "name": "Paranaense - 2"
+  },
+  {
+    "id": 619,
+    "name": "Mineiro - 2"
+  },
+  {
+    "id": 636,
+    "name": "Ýokary Liga"
+  },
+  {
+    "id": 637,
+    "name": "V.League 2"
+  },
+  {
+    "id": 638,
+    "name": "Kvindeliga"
+  },
+  {
+    "id": 640,
+    "name": "Kansallinen Liiga"
+  },
+  {
+    "id": 648,
+    "name": "Tasmania NPL"
+  },
+  {
+    "id": 649,
+    "name": "Supreme Division Women"
+  },
+  {
+    "id": 650,
+    "name": "Second League - Group 3"
+  },
+  {
+    "id": 651,
+    "name": "Second League - Group 1"
+  },
+  {
+    "id": 652,
+    "name": "Second League - Group 2"
+  },
+  {
+    "id": 653,
+    "name": "Second League - Group 4"
+  },
+  {
+    "id": 657,
+    "name": "Cup"
+  },
+  {
+    "id": 658,
+    "name": "Cup"
+  },
+  {
+    "id": 659,
+    "name": "Super Cup"
+  },
+  {
+    "id": 660,
+    "name": "WK-League"
+  },
+  {
+    "id": 663,
+    "name": "Super Cup"
+  },
+  {
+    "id": 666,
+    "name": "Friendlies Women"
+  },
+  {
+    "id": 667,
+    "name": "Friendlies Clubs"
+  },
+  {
+    "id": 668,
+    "name": "1. Liga U19"
+  },
+  {
+    "id": 671,
+    "name": "Úrvalsdeild Women"
+  },
+  {
+    "id": 672,
+    "name": "David Kipiani Cup"
+  },
+  {
+    "id": 673,
+    "name": "Liga MX Femenil"
+  },
+  {
+    "id": 685,
+    "name": "3. liga - CFL B"
+  },
+  {
+    "id": 686,
+    "name": "4. liga - Divizie F"
+  },
+  {
+    "id": 711,
+    "name": "Segunda División"
+  },
+  {
+    "id": 712,
+    "name": "Liga Femenina"
+  },
+  {
+    "id": 714,
+    "name": "Cup"
+  },
+  {
+    "id": 720,
+    "name": "Emir Cup"
+  },
+  {
+    "id": 725,
+    "name": "Toppserien"
+  },
+  {
+    "id": 727,
+    "name": "Super Cup"
+  },
+  {
+    "id": 736,
+    "name": "Elitettan"
+  },
+  {
+    "id": 740,
+    "name": "Brasileiro U20 A"
+  },
+  {
+    "id": 742,
+    "name": "Copa Paulista"
+  },
+  {
+    "id": 743,
+    "name": "UEFA Championship - Women"
+  },
+  {
+    "id": 746,
+    "name": "Oberliga - Mittelrhein"
+  },
+  {
+    "id": 747,
+    "name": "Oberliga - Westfalen"
+  },
+  {
+    "id": 751,
+    "name": "Oberliga - Niederrhein"
+  },
+  {
+    "id": 752,
+    "name": "Oberliga - Rheinland-Pfalz / Saar"
+  },
+  {
+    "id": 764,
+    "name": "Premier League"
+  },
+  {
+    "id": 771,
+    "name": "COSAFA U20 Championship"
+  },
+  {
+    "id": 774,
+    "name": "3. Division - Girone 1"
+  },
+  {
+    "id": 775,
+    "name": "3. Division - Girone 2"
+  },
+  {
+    "id": 776,
+    "name": "3. Division - Girone 3"
+  },
+  {
+    "id": 777,
+    "name": "3. Division - Girone 4"
+  },
+  {
+    "id": 778,
+    "name": "3. Division - Girone 5"
+  },
+  {
+    "id": 779,
+    "name": "3. Division - Girone 6"
+  },
+  {
+    "id": 780,
+    "name": "III Liga - Group 1"
+  },
+  {
+    "id": 781,
+    "name": "III Liga - Group 2"
+  },
+  {
+    "id": 782,
+    "name": "III Liga - Group 3"
+  },
+  {
+    "id": 783,
+    "name": "III Liga - Group 4"
+  },
+  {
+    "id": 796,
+    "name": "2. Liga Interregional - Group 1"
+  },
+  {
+    "id": 797,
+    "name": "2. Liga Interregional - Group 2"
+  },
+  {
+    "id": 798,
+    "name": "2. Liga Interregional - Group 3"
+  },
+  {
+    "id": 799,
+    "name": "2. Liga Interregional - Group 4"
+  },
+  {
+    "id": 802,
+    "name": "Cup"
+  },
+  {
+    "id": 813,
+    "name": "Elite Two"
+  },
+  {
+    "id": 815,
+    "name": "Fotbolti.net Cup A"
+  },
+  {
+    "id": 822,
+    "name": "Cup"
+  },
+  {
+    "id": 823,
+    "name": "Nasjonal U19 Champions League"
+  },
+  {
+    "id": 828,
+    "name": "Ligue 2"
+  },
+  {
+    "id": 833,
+    "name": "Queensland Premier League"
+  },
+  {
+    "id": 834,
+    "name": "South Australia State League 1"
+  },
+  {
+    "id": 835,
+    "name": "New South Wales NPL 2"
+  },
+  {
+    "id": 836,
+    "name": "Victoria NPL 2"
+  },
+  {
+    "id": 845,
+    "name": "GFA League"
+  },
+  {
+    "id": 848,
+    "name": "UEFA Europa Conference League"
+  },
+  {
+    "id": 850,
+    "name": "UEFA U21 Championship - Qualification"
+  },
+  {
+    "id": 851,
+    "name": "Carioca A2"
+  },
+  {
+    "id": 859,
+    "name": "COSAFA Cup"
+  },
+  {
+    "id": 862,
+    "name": "3. Division"
+  },
+  {
+    "id": 886,
+    "name": "UEFA U17 Championship - Qualification"
+  },
+  {
+    "id": 894,
+    "name": "Asian Cup Women - Qualification"
+  },
+  {
+    "id": 895,
+    "name": "League Cup"
+  },
+  {
+    "id": 906,
+    "name": "Reserve League"
+  },
+  {
+    "id": 907,
+    "name": "Primera Division"
+  },
+  {
+    "id": 908,
+    "name": "AFF U23 Championship"
+  },
+  {
+    "id": 909,
+    "name": "MLS Next Pro"
+  },
+  {
+    "id": 914,
+    "name": "Tournoi Maurice Revello"
+  },
+  {
+    "id": 915,
+    "name": "1. Division Women"
+  },
+  {
+    "id": 917,
+    "name": "Copa Ecuador"
+  },
+  {
+    "id": 918,
+    "name": "UEFA U19 Championship - Women"
+  },
+  {
+    "id": 921,
+    "name": "UEFA U17 Championship"
+  },
+  {
+    "id": 922,
+    "name": "Africa Cup of Nations - Women"
+  },
+  {
+    "id": 923,
+    "name": "League 1 Ontario"
+  },
+  {
+    "id": 924,
+    "name": "Piala Presiden"
+  },
+  {
+    "id": 926,
+    "name": "Copa America Femenina"
+  },
+  {
+    "id": 929,
+    "name": "League Two"
+  },
+  {
+    "id": 936,
+    "name": "Catarinense - 2"
+  },
+  {
+    "id": 954,
+    "name": "National League - Central"
+  },
+  {
+    "id": 956,
+    "name": "National League - Northern"
+  },
+  {
+    "id": 957,
+    "name": "National League - Southern"
+  },
+  {
+    "id": 964,
+    "name": "Copa de la División Profesional"
+  },
+  {
+    "id": 966,
+    "name": "Cup"
+  },
+  {
+    "id": 969,
+    "name": "Primeira Divisão"
+  },
+  {
+    "id": 971,
+    "name": "Shield Cup"
+  },
+  {
+    "id": 976,
+    "name": "Serie C - Promotion - Play-offs"
+  },
+  {
+    "id": 977,
+    "name": "Tercera División RFEF - Promotion - Play-offs"
+  },
+  {
+    "id": 980,
+    "name": "Provincial - Play-offs ACFF"
+  },
+  {
+    "id": 982,
+    "name": "Denmark Series - Promotion Round"
+  },
+  {
+    "id": 983,
+    "name": "Denmark Series - Relegation Round"
+  },
+  {
+    "id": 988,
+    "name": "Oberliga - Promotion Round"
+  },
+  {
+    "id": 989,
+    "name": "Oberliga - Relegation Round"
+  },
+  {
+    "id": 991,
+    "name": "Campeonato de Portugal Prio - Promotion Round"
+  },
+  {
+    "id": 999,
+    "name": "Serie D - Championship Round"
+  },
+  {
+    "id": 1000,
+    "name": "Segunda División RFEF - Play-offs"
+  },
+  {
+    "id": 1001,
+    "name": "CONCACAF Women U20"
+  },
+  {
+    "id": 1002,
+    "name": "Regionalliga - Promotion Play-offs"
+  },
+  {
+    "id": 1004,
+    "name": "Derde Divisie - Relegation Round"
+  },
+  {
+    "id": 1005,
+    "name": "1. Liga Classic - Play-offs"
+  },
+  {
+    "id": 1006,
+    "name": "Primera División RFEF - Play Offs"
+  },
+  {
+    "id": 1009,
+    "name": "Liga III - Play-offs"
+  },
+  {
+    "id": 1010,
+    "name": "3. liga - Promotion Play-off"
+  },
+  {
+    "id": 1013,
+    "name": "All-Island Cup - Women"
+  },
+  {
+    "id": 1019,
+    "name": "Charity Shield"
+  },
+  {
+    "id": 1020,
+    "name": "Calcutta Premier Division"
+  },
+  {
+    "id": 1030,
+    "name": "Goiano - 2"
+  },
+  {
+    "id": 1031,
+    "name": "Premier League"
+  },
+  {
+    "id": 1035,
+    "name": "Copa Rio"
+  },
+  {
+    "id": 1040,
+    "name": "UEFA Nations League - Women"
+  },
+  {
+    "id": 1061,
+    "name": "Second League A - Spring Season Gold"
+  },
+  {
+    "id": 1064,
+    "name": "Second League A - Spring Season Silver"
+  },
+  {
+    "id": 1069,
+    "name": "Goiano U20"
+  },
+  {
+    "id": 1071,
+    "name": "Paranaense U20"
+  },
+  {
+    "id": 1073,
+    "name": "Baiano U20"
+  },
+  {
+    "id": 1075,
+    "name": "Pro League A"
+  },
+  {
+    "id": 1076,
+    "name": "Catarinense U20"
+  },
+  {
+    "id": 1080,
+    "name": "Premier Division"
+  },
+  {
+    "id": 1082,
+    "name": "Copa Rio U20"
+  },
+  {
+    "id": 1084,
+    "name": "Championnat National"
+  },
+  {
+    "id": 1086,
+    "name": "Paulista - U20"
+  },
+  {
+    "id": 1087,
+    "name": "Ykkösliiga"
+  },
+  {
+    "id": 1090,
+    "name": "NNSW League 1"
+  },
+  {
+    "id": 1091,
+    "name": "Tasmania Northern Championship"
+  },
+  {
+    "id": 1092,
+    "name": "Capital Territory NPL 2"
+  },
+  {
+    "id": 1093,
+    "name": "Tasmania Southern Championship"
+  },
+  {
+    "id": 1094,
+    "name": "Western Australia State League 1"
+  },
+  {
+    "id": 1095,
+    "name": "USL League One Cup"
+  },
+  {
+    "id": 1096,
+    "name": "Matogrossense 2"
+  },
+  {
+    "id": 1097,
+    "name": "Copa Espírito Santo"
+  },
+  {
+    "id": 1098,
+    "name": "Paulista Série B"
+  },
+  {
+    "id": 1100,
+    "name": "Brasiliense U20"
+  },
+  {
+    "id": 1103,
+    "name": "Premiership Women"
+  },
+  {
+    "id": 1104,
+    "name": "Liga 3"
+  },
+  {
+    "id": 1106,
+    "name": "Carioca C"
+  },
+  {
+    "id": 1107,
+    "name": "Mineiro U20"
+  },
+  {
+    "id": 1108,
+    "name": "Sergipano U20"
+  },
+  {
+    "id": 1110,
+    "name": "Alagoano U20"
+  },
+  {
+    "id": 1111,
+    "name": "NB III - Promotion Play-offs"
+  },
+  {
+    "id": 1112,
+    "name": "Cearense U20"
+  },
+  {
+    "id": 1113,
+    "name": "Copa Venezuela"
+  },
+  {
+    "id": 1116,
+    "name": "WPSL"
+  },
+  {
+    "id": 1117,
+    "name": "USL W League"
+  },
+  {
+    "id": 1118,
+    "name": "NPSL"
+  },
+  {
+    "id": 1120,
+    "name": "Paraibano U20"
+  },
+  {
+    "id": 1124,
+    "name": "Cearense - 3"
+  },
+  {
+    "id": 1126,
+    "name": "Esiliiga B"
+  },
+  {
+    "id": 1127,
+    "name": "Chatham Cup"
+  },
+  {
+    "id": 1128,
+    "name": "Brasileiro U17"
+  },
+  {
+    "id": 1130,
+    "name": "USL Super League"
+  },
+  {
+    "id": 1134,
+    "name": "Amazonense - 2"
+  },
+  {
+    "id": 1143,
+    "name": "Estadual Junior U20"
+  },
+  {
+    "id": 1145,
+    "name": "Paraense B1"
+  },
+  {
+    "id": 1178,
+    "name": "Super Copa International"
+  },
+  {
+    "id": 1182,
+    "name": "Northern Super League"
+  },
+  {
+    "id": 1183,
+    "name": "Brasileiro U20 B"
+  },
+  {
+    "id": 1185,
+    "name": "3. liga - Play-offs"
+  },
+  {
+    "id": 1186,
+    "name": "FIFA Club World Cup - Play-In"
+  },
+  {
+    "id": 1187,
+    "name": "Copa Nicaragua"
+  },
+  {
+    "id": 1188,
+    "name": "EAFF E-1 Football Championship - Women"
+  },
+  {
+    "id": 1200,
+    "name": "Liga MX U21"
+  }
+]

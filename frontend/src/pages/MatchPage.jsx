@@ -1,6 +1,5 @@
-// frontend/src/pages/MatchPage.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import MatchCard from "../components/MatchCard";
 import ChatRoomSticky from "../components/ChatRoomSticky";
 
@@ -16,6 +15,7 @@ const ALL_TABS = ["Özet", "İstatistik", "Sohbet", "Kadro", "H2H", "Form", "Pua
 
 export default function MatchPage() {
   const { id } = useParams();
+  const location = useLocation();
   const [tab, setTab] = useState(ALL_TABS[0]);
   const [data, setData] = useState({
     match: null,
@@ -29,7 +29,6 @@ export default function MatchPage() {
   const [apiError, setApiError] = useState(null);
   const [highlighted, setHighlighted] = useState({});
 
-  // Masaüstü/mobil kontrolü
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : false
   );
@@ -147,7 +146,6 @@ export default function MatchPage() {
   const homeId = match?.teams?.home?.id;
   const awayId = match?.teams?.away?.id;
 
-  // Gol/penaltı highlight
   useEffect(() => {
     if (!match?.events) return;
     match.events.forEach((ev, idx) => {
@@ -161,7 +159,6 @@ export default function MatchPage() {
     });
   }, [match]); // eslint-disable-line
 
-  // ------ Sticky ofseti: MatchCard yüksekliğini ölç ------
   const cardWrapRef = useRef(null);
   const [cardH, setCardH] = useState(0);
   useEffect(() => {
@@ -178,10 +175,11 @@ export default function MatchPage() {
     };
   }, [match]);
 
-  // Scroll alanının max yüksekliği: ekran - (mobil alt bar)
   const scrollMaxH = "calc(100svh - var(--mbb, 0px) - 8px)";
   const contentPadBottom = "calc(var(--mbb, 0px) + 8px)";
   const tabsTop = `${Math.max(0, cardH + 8)}px`; 
+
+  const from = location.state?.from || "/";
 
   return (
     <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -196,10 +194,10 @@ export default function MatchPage() {
             ref={cardWrapRef}
             className="sticky top-0 z-20 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pt-1 pb-2"
           >
-            <MatchCard match={match} />
+            <MatchCard match={match} from={from} />
           </div>
 
-          {/* Tabs – MatchCard yüksekliği kadar aşağıya sticky */}
+          {/* Tabs */}
           <div
             className="sticky z-20 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur px-3 sm:px-4 pb-2"
             style={{ top: tabsTop }}
@@ -215,7 +213,6 @@ export default function MatchPage() {
             {tab === "Özet" && !loading && !apiError && match && (
               <MatchSummary match={match} homeId={homeId} highlighted={highlighted} />
             )}
-
             {tab === "İstatistik" && !loading && !apiError && (
               <StatCompare
                 stats={stats}
@@ -223,20 +220,16 @@ export default function MatchPage() {
                 awayTeam={match?.teams?.away}
               />
             )}
-
             {!isDesktop && tab === "Sohbet" && !loading && !apiError && (
               <ChatRoomSticky
                 room={`match:${id}`}
                 matchTitle={`${match?.teams?.home?.name || ""} - ${match?.teams?.away?.name || ""}`}
               />
             )}
-
             {tab === "Kadro" && !loading && !apiError && <Lineups lineups={lineups} />}
-
             {tab === "H2H" && !loading && !apiError && (
               <H2HList items={h2h} homeId={homeId} awayId={awayId} />
             )}
-
             {tab === "Form" && !loading && !apiError && (
               <FormStrips
                 homeFixtures={form.home}
@@ -247,7 +240,6 @@ export default function MatchPage() {
                 awayTeam={match?.teams?.away}
               />
             )}
-
             {tab === "Puan" && !loading && !apiError && (
               Array.isArray(standings) && standings.length > 0 ? (
                 <StandingsTable standings={standings} highlightIds={[homeId, awayId]} />
@@ -259,7 +251,7 @@ export default function MatchPage() {
         </div>
       </div>
 
-      {/* Sağ blok (masaüstü sohbet) */}
+      {/* Sağ blok */}
       <div className="hidden lg:flex flex-col min-h-0 h-[calc(100svh-100px)]">
         <ChatRoomSticky
           room={`match:${id}`}

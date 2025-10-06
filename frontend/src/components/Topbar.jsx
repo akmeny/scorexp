@@ -20,12 +20,10 @@ export default function Topbar() {
   const [activeFilter, setActiveFilter] = useState("today");
   const [allOpen, setAllOpen] = useState(true);
 
-  // Alt bar yüksekliğini ölçüp --mbb değişkenine yaz
   useEffect(() => {
     const el = document.getElementById("mobile-bottom-bar");
     const setVar = () => {
       const h = el ? el.getBoundingClientRect().height : 0;
-      // Biraz nefes payı ekleyelim (8px marj gibi)
       document.documentElement.style.setProperty("--mbb", `${h + 8}px`);
     };
     setVar();
@@ -39,7 +37,6 @@ export default function Topbar() {
     };
   }, []);
 
-  // Tarih değiştir (masaüstü)
   const shiftDay = (n) => {
     const d = new Date(date);
     d.setDate(d.getDate() + n);
@@ -61,13 +58,19 @@ export default function Topbar() {
   };
 
   const setLive = () => {
+    const today = new Date().toISOString().split("T")[0];
+    setDate(today);
     setActiveFilter("live");
+    window.dispatchEvent(new CustomEvent("scorexp:setDate", { detail: today }));
     window.dispatchEvent(new CustomEvent("scorexp:setOnlyLive", { detail: true }));
     window.dispatchEvent(new CustomEvent("scorexp:setOnlyFav", { detail: false }));
   };
 
   const setFav = () => {
+    const today = new Date().toISOString().split("T")[0];
+    setDate(today);
     setActiveFilter("fav");
+    window.dispatchEvent(new CustomEvent("scorexp:setDate", { detail: today }));
     window.dispatchEvent(new CustomEvent("scorexp:setOnlyFav", { detail: true }));
     window.dispatchEvent(new CustomEvent("scorexp:setOnlyLive", { detail: false }));
   };
@@ -168,7 +171,7 @@ export default function Topbar() {
         </div>
       </div>
 
-      {/* Mobil Alt Bar — animasyonlu */}
+      {/* Mobil Alt Bar */}
       <div
         id="mobile-bottom-bar"
         className="sm:hidden fixed bottom-0 left-0 right-0 z-50 mx-2 mb-2"

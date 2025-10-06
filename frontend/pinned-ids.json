@@ -1,0 +1,120 @@
+{
+  "resolved": [
+    {
+      "key": "TR_SUPER_LIG",
+      "id": 203,
+      "name": "Süper Lig"
+    },
+    {
+      "key": "TR_1_LIG",
+      "id": 204,
+      "name": "1. Lig"
+    },
+    {
+      "key": "TR_CUP",
+      "id": 335,
+      "name": "Cup"
+    },
+    {
+      "key": "TR_SUPER_CUP",
+      "id": 529,
+      "name": "Super Cup"
+    },
+    {
+      "key": "UEFA_CL",
+      "id": 2,
+      "name": "UEFA Champions League"
+    },
+    {
+      "key": "UEFA_EL",
+      "id": 3,
+      "name": "UEFA Europa League"
+    },
+    {
+      "key": "UEFA_ECL",
+      "id": 848,
+      "name": "UEFA Europa Conference League"
+    },
+    {
+      "key": "WC",
+      "id": 1,
+      "name": "World Cup"
+    },
+    {
+      "key": "WC_QUAL_EUROPE",
+      "id": 32,
+      "name": "World Cup - Qualification Europe"
+    },
+    {
+      "key": "UEFA_EURO",
+      "id": 3,
+      "name": "UEFA Europa League"
+    },
+    {
+      "key": "UEFA_NATIONS_LEAGUE",
+      "id": 5,
+      "name": "UEFA Nations League"
+    },
+    {
+      "key": "ENG_PREMIER_LEAGUE",
+      "id": 39,
+      "name": "Premier League"
+    },
+    {
+      "key": "DE_BUNDESLIGA",
+      "id": 78,
+      "name": "Bundesliga"
+    },
+    {
+      "key": "ES_LA_LIGA",
+      "id": 370,
+      "name": "Primera Division"
+    },
+    {
+      "key": "FR_LIGUE_1",
+      "id": 61,
+      "name": "Ligue 1"
+    },
+    {
+      "key": "IT_SERIE_A",
+      "id": 71,
+      "name": "Serie A"
+    },
+    {
+      "key": "NL_EREDIVISIE",
+      "id": 88,
+      "name": "Eredivisie"
+    },
+    {
+      "key": "PT_PRIMEIRA",
+      "id": 94,
+      "name": "Primeira Liga"
+    },
+    {
+      "key": "AT_BUNDESLIGA",
+      "id": 78,
+      "name": "Bundesliga"
+    }
+  ],
+  "DEFAULT_PINNED": [
+    203,
+    204,
+    335,
+    529,
+    2,
+    3,
+    848,
+    1,
+    32,
+    3,
+    5,
+    39,
+    78,
+    370,
+    61,
+    71,
+    88,
+    94,
+    78
+  ]
+}
