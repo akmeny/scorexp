@@ -11,10 +11,8 @@ export default function MatchCard({ match }) {
   const fixture = match.fixture || {};
   const league = match.league || {};
 
-  // Durum label (FT, NS, 1H, 2H vs)
   const status = fixture?.status?.short || "";
   const statusLong = fixture?.status?.long || "";
-
   const statusColor =
     status === "FT"
       ? "bg-gray-500"
@@ -24,7 +22,6 @@ export default function MatchCard({ match }) {
       ? "bg-blue-600"
       : "bg-gray-400";
 
-  // Güvenli görüntü bileşeni
   const SafeImg = ({ src, alt, className }) => (
     <img
       src={src || ""}
@@ -42,17 +39,15 @@ export default function MatchCard({ match }) {
   return (
     <div
       className="
-        sticky top-0 z-10
         p-4 rounded-2xl
         bg-white/70 dark:bg-gray-900/60
         backdrop-blur-md shadow-md
         border border-gray-200 dark:border-gray-700
       "
     >
-      {/* Üst şerit: Geri butonu + Lig + Ülke bayrağı + tarih */}
+      {/* Üst şerit */}
       <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          {/* Geri butonu */}
           <button
             onClick={() => navigate(-1)}
             className="px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
@@ -60,19 +55,8 @@ export default function MatchCard({ match }) {
           >
             ←
           </button>
-
-          {/* Lig logosu */}
-          <SafeImg
-            src={league.logo}
-            alt={league.name}
-            className="w-5 h-5 rounded-sm"
-          />
-          {/* Ülke bayrağı */}
-          <SafeImg
-            src={league.flag}
-            alt={league.country}
-            className="w-5 h-5 rounded-sm"
-          />
+          <SafeImg src={league.logo} alt={league.name} className="w-5 h-5 rounded-sm" />
+          <SafeImg src={league.flag} alt={league.country} className="w-5 h-5 rounded-sm" />
           <span className="truncate">
             {league.name}
             {league.season ? ` · ${league.season}` : ""}
@@ -91,15 +75,10 @@ export default function MatchCard({ match }) {
 
       {/* Takımlar ve skor */}
       <div className="flex items-center justify-between gap-2">
-        {/* Home */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <SafeImg src={home?.logo} alt={home?.name} className="w-10 h-10" />
-          <span className="text-base font-semibold truncate">
-            {home?.name}
-          </span>
+          <span className="text-base font-semibold truncate">{home?.name}</span>
         </div>
-
-        {/* Skor + durum */}
         <div className="flex flex-col items-center justify-center px-2 flex-none w-[80px]">
           <div className="text-2xl font-bold tabular-nums">
             {goals.home ?? 0} : {goals.away ?? 0}
@@ -111,25 +90,18 @@ export default function MatchCard({ match }) {
             {status || "—"}
           </span>
         </div>
-
-        {/* Away */}
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className="text-base font-semibold truncate text-right">
-            {away?.name}
-          </span>
+          <span className="text-base font-semibold truncate text-right">{away?.name}</span>
           <SafeImg src={away?.logo} alt={away?.name} className="w-10 h-10" />
         </div>
       </div>
 
-      {/* Alt bilgi satırı (ince gris yazı) */}
+      {/* Alt bilgi */}
       <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
         <span className="truncate">
-          {fixture?.venue?.name || ""}{" "}
-          {fixture?.venue?.city ? `· ${fixture.venue.city}` : ""}
+          {fixture?.venue?.name || ""} {fixture?.venue?.city ? `· ${fixture.venue.city}` : ""}
         </span>
-        <span className="truncate">
-          {fixture?.referee ? `Ref: ${fixture.referee}` : ""}
-        </span>
+        <span className="truncate">{fixture?.referee ? `Ref: ${fixture.referee}` : ""}</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -7,13 +7,9 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Star,
-  Activity,
-  ChevronUp,
-  ChevronDown,
-  CalendarDays,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import SegmentBar from "./SegmentBar";
 
 const sports = ["⚽", "🏀", "🎾", "🏐"];
 
@@ -21,8 +17,27 @@ export default function Topbar() {
   const { isDark, toggle: toggleTheme } = useTheme();
   const [sportIdx, setSportIdx] = useState(0);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [activeFilter, setActiveFilter] = useState("today"); // "today" | "live" | "fav" | "date"
-  const [allOpen, setAllOpen] = useState(true); // tüm ligleri aç/kapat state
+  const [activeFilter, setActiveFilter] = useState("today");
+  const [allOpen, setAllOpen] = useState(true);
+
+  // Alt bar yüksekliğini ölçüp --mbb değişkenine yaz
+  useEffect(() => {
+    const el = document.getElementById("mobile-bottom-bar");
+    const setVar = () => {
+      const h = el ? el.getBoundingClientRect().height : 0;
+      // Biraz nefes payı ekleyelim (8px marj gibi)
+      document.documentElement.style.setProperty("--mbb", `${h + 8}px`);
+    };
+    setVar();
+    if (!el) return () => {};
+    const ro = new ResizeObserver(setVar);
+    ro.observe(el);
+    window.addEventListener("resize", setVar);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", setVar);
+    };
+  }, []);
 
   // Tarih değiştir (masaüstü)
   const shiftDay = (n) => {
@@ -57,7 +72,6 @@ export default function Topbar() {
     window.dispatchEvent(new CustomEvent("scorexp:setOnlyLive", { detail: false }));
   };
 
-  // Tüm ligleri aç/kapat
   const toggleAllLeagues = () => {
     const next = !allOpen;
     setAllOpen(next);
@@ -90,7 +104,7 @@ export default function Topbar() {
             {sports[sportIdx]}
           </button>
 
-          {/* Gün kontrolleri (masaüstü) */}
+          {/* Gün kontrolleri */}
           <button onClick={() => shiftDay(-1)} className="btn-fancy">
             <ChevronLeft size={16} />
           </button>
@@ -123,7 +137,7 @@ export default function Topbar() {
             className={`btn-fancy ${activeFilter === "live" ? "btn-red" : ""}`}
             onClick={setLive}
           >
-            <Activity size={16} /> Canlı
+            Canlı
           </button>
 
           {/* Favoriler */}
@@ -131,79 +145,44 @@ export default function Topbar() {
             className={`btn-fancy ${activeFilter === "fav" ? "btn-yellow" : ""}`}
             onClick={setFav}
           >
-            <Star size={16} /> Favoriler
+            Favoriler
           </button>
 
           {/* Tüm ligleri aç/kapat */}
-          <button className="btn-fancy" onClick={toggleAllLeagues} title="Tüm Ligleri Aç/Kapat">
-            {allOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          <button className="btn-fancy" onClick={toggleAllLeagues}>
+            {allOpen ? "▲" : "▼"}
           </button>
 
           <div className="flex-1" />
 
           {/* Sağ ikonlar */}
-          <button className="btn-fancy" title="Ara">
+          <button className="btn-fancy">
             <Search size={16} />
           </button>
-          <button onClick={toggleTheme} className="btn-fancy" title="Tema">
+          <button onClick={toggleTheme} className="btn-fancy">
             {isDark ? <Moon size={16} /> : <Sun size={16} />}
           </button>
-          <button className="btn-fancy" title="Profil">
+          <button className="btn-fancy">
             <User size={16} />
           </button>
         </div>
       </div>
 
-      {/* Mobil Alt Bar — daima sabit oval kutu */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50
-        mx-2 mb-2 rounded-2xl shadow-lg
-        bg-white/90 dark:bg-gray-900/90 backdrop-blur
-        border border-gray-200 dark:border-gray-800
-        flex justify-around py-2 gap-2 px-2">
-        
-        <button
-          onClick={toToday}
-          className={`btn-fancy flex-1 text-sm ${activeFilter === "today" ? "btn-blue" : ""}`}
-          title="Bugün"
-        >
-          <span className="flex items-center justify-center gap-1 w-full">
-            <CalendarDays size={16} />
-            <span>Bugün</span>
-          </span>
-        </button>
-
-        <button
-          onClick={setLive}
-          className={`btn-fancy flex-1 text-sm ${activeFilter === "live" ? "btn-red" : ""}`}
-          title="Canlı"
-        >
-          <span className="flex items-center justify-center gap-1 w-full">
-            <Activity size={16} />
-            <span>Canlı</span>
-          </span>
-        </button>
-
-        <button
-          onClick={setFav}
-          className={`btn-fancy flex-1 text-sm ${activeFilter === "fav" ? "btn-yellow" : ""}`}
-          title="Favoriler"
-        >
-          <span className="flex items-center justify-center gap-1 w-full">
-            <Star size={16} />
-            <span>Favoriler</span>
-          </span>
-        </button>
-
-        <button
-          onClick={toggleAllLeagues}
-          className="btn-fancy flex-1 text-sm"
-          title="Tüm Ligleri Aç/Kapat"
-        >
-          <span className="flex items-center justify-center gap-1 w-full">
-            {allOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span>Tümü</span>
-          </span>
-        </button>
+      {/* Mobil Alt Bar — animasyonlu */}
+      <div
+        id="mobile-bottom-bar"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-50 mx-2 mb-2"
+      >
+        <SegmentBar
+          active={activeFilter}
+          onChange={(key) => {
+            if (key === "today") toToday();
+            if (key === "live") setLive();
+            if (key === "fav") setFav();
+          }}
+          allOpen={allOpen}
+          toggleAll={toggleAllLeagues}
+        />
       </div>
     </>
   );

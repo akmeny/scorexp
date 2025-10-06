@@ -27,7 +27,6 @@ const API = {
   headers() {
     return { "x-apisports-key": this.key };
   },
-  // ⚠️ ÖNEMLİ: timezone artık isteğe bağlı (statistics/standings'e asla eklemiyoruz)
   params(extra = {}, withTZ = true) {
     return withTZ ? { timezone: "Europe/Istanbul", ...extra } : { ...extra };
   },
@@ -74,12 +73,10 @@ async function fetchFromApi(endpoint, params = {}, { withTZ = true } = {}) {
 
 async function fetchFixtures({ dateISO, liveOnly = false }) {
   const params = liveOnly ? { live: "all" } : { date: dateISO };
-  // Fixtures'ta timezone kullanıyoruz
   return await fetchFromApi("/fixtures", params, { withTZ: true });
 }
 
 async function fetchEvents(fixtureId) {
-  // Events'te timezone YOK
   return await fetchFromApi("/fixtures/events", { fixture: fixtureId }, { withTZ: false });
 }
 
@@ -210,16 +207,22 @@ async function pollLoop() {
       const id = f?.fixture?.id;
       const st = fixtureState.get(id);
       if (!st) return f;
-      return {
+      const fx = {
         ...f,
         _effects: {
           ...st.effects,
           reds: { ...st.reds },
         },
       };
+      // 🔎 Debug log
+      console.log("EMIT FIXTURE", fx.fixture.id, fx._effects);
+      return fx;
     });
 
-    io.emit("matchList", enriched);
+    // 🔥 Burayı değiştirdik
+    io.emit("matchListFull", { date: todayISO, fixtures: enriched });
+    io.emit("livePatch", { date: todayISO, fixtures: enriched });
+
   } catch (e) {
     console.error("pollLoop error:", e?.response?.status || e?.message || e);
   } finally {
@@ -270,7 +273,7 @@ app.get("/api/fixtures", async (req, res) => {
 });
 
 // -------------------------
-// REST: Statistics (timezone YOK + half fallback)
+// REST: Statistics
 // -------------------------
 app.get("/api/statistics", async (req, res) => {
   if (!ensureApiKey(res)) return;
@@ -280,28 +283,15 @@ app.get("/api/statistics", async (req, res) => {
 
   try {
     let stats = await fetchFromApi("/fixtures/statistics", { fixture }, { withTZ: false });
-
-    // Boşsa iki devre dene
     if (!stats || stats.length === 0) {
-      const firstHalf = await fetchFromApi(
-        "/fixtures/statistics",
-        { fixture, half: 1 },
-        { withTZ: false }
-      );
-      const secondHalf = await fetchFromApi(
-        "/fixtures/statistics",
-        { fixture, half: 2 },
-        { withTZ: false }
-      );
+      const firstHalf = await fetchFromApi("/fixtures/statistics", { fixture, half: 1 }, { withTZ: false });
+      const secondHalf = await fetchFromApi("/fixtures/statistics", { fixture, half: 2 }, { withTZ: false });
       stats = [...(firstHalf || []), ...(secondHalf || [])];
     }
-
     console.log("DEBUG /api/statistics:", Array.isArray(stats) ? stats.length : 0);
     res.json({ ok: true, response: stats });
   } catch (err) {
-    res
-      .status(err?.response?.status || 500)
-      .json({ ok: false, error: err?.message });
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
   }
 });
 
@@ -316,9 +306,7 @@ app.get("/api/h2h", async (req, res) => {
     const resp = await fetchFromApi("/fixtures/headtohead", { h2h }, { withTZ: false });
     res.json({ ok: true, response: resp });
   } catch (err) {
-    res
-      .status(err?.response?.status || 500)
-      .json({ ok: false, error: err?.message });
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
   }
 });
 
@@ -332,36 +320,29 @@ app.get("/api/form", async (req, res) => {
   if (!team)
     return res.status(400).json({ ok: false, error: "team required" });
   try {
-    // fixtures (form) için timezone serbest
     const resp = await fetchFromApi("/fixtures", { team, last }, { withTZ: true });
     res.json({ ok: true, response: resp });
   } catch (err) {
-    res
-      .status(err?.response?.status || 500)
-      .json({ ok: false, error: err?.message });
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
   }
 });
 
 // -------------------------
-// REST: Standings  (timezone YOK, hasStandings KISIT KALDIRILDI)
+// REST: Standings
 // -------------------------
 app.get("/api/standings", async (req, res) => {
   if (!ensureApiKey(res)) return;
   const league = parseInt(req.query.league, 10);
   const season = parseInt(req.query.season, 10);
   if (!league || !season)
-    return res
-      .status(400)
-      .json({ ok: false, error: "league & season required" });
+    return res.status(400).json({ ok: false, error: "league & season required" });
 
   try {
     const resp = await fetchFromApi("/standings", { league, season }, { withTZ: false });
     console.log("DEBUG /api/standings:", Array.isArray(resp) ? resp.length : 0);
     res.json({ ok: true, response: resp });
   } catch (err) {
-    res
-      .status(err?.response?.status || 500)
-      .json({ ok: false, error: err?.message });
+    res.status(err?.response?.status || 500).json({ ok: false, error: err?.message });
   }
 });
 

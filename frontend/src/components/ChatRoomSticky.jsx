@@ -1,47 +1,37 @@
 // frontend/src/components/ChatRoomSticky.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import { Smile } from "lucide-react";
-
-// Vite proxy sayesinde "/" -> backend'e gider (ws dahil)
-const socket = io("/", { path: "/socket.io", transports: ["websocket", "polling"] });
+import useChatRoom from "../hooks/useChatRoom";
+import useBottomInset from "../hooks/useBottomInset"; // ⬅️ yeni
 
 export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
+  const { online, messages, sendMessage, sendSpecial } = useChatRoom(room);
   const [open, setOpen] = useState(true);
-  const [online, setOnline] = useState(0);
-  const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [lastSpecialSent, setLastSpecialSent] = useState(0);
 
   const listRef = useRef(null);
+  const inputWrapRef = useRef(null);
 
-  // Socket eventleri
+  // Alt bar yüksekliği (mobilde varsa)
+  const bottomInset = useBottomInset();
+
+  // Input yüksekliğini ölç (dinamik)
+  const [inputH, setInputH] = useState(0);
   useEffect(() => {
-    const onOnline = (n) => setOnline(n);
-    socket.on("onlineCount", onOnline);
-
-    const onMsg = (msg) => setMessages((p) => [...p, msg]);
-
-    if (room === "global") {
-      socket.on("globalChatHistory", (hist) => setMessages(hist));
-      socket.on("newGlobalMessage", onMsg);
-    } else if (room.startsWith("match:")) {
-      const matchId = room.split(":")[1];
-      socket.emit("joinMatch", matchId);
-      socket.on("matchChatHistory", (hist) => setMessages(hist));
-      socket.on("newMatchMessage", onMsg);
-    }
-
+    const el = inputWrapRef.current;
+    if (!el) return;
+    const measure = () => setInputH(el.getBoundingClientRect().height || 0);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
     return () => {
-      socket.off("onlineCount", onOnline);
-      socket.off("newGlobalMessage");
-      socket.off("newMatchMessage");
-      socket.off("globalChatHistory");
-      socket.off("matchChatHistory");
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
     };
-  }, [room]);
+  }, []);
 
-  // Her yeni mesajda alta kaydır
+  // Yeni mesajda en alta kay
   useEffect(() => {
     if (!open) return;
     const el = listRef.current;
@@ -49,35 +39,21 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, open]);
 
-  // Normal mesaj
-  const send = () => {
-    const clean = text.trim().slice(0, 140);
+  const onSend = () => {
+    const clean = text.trim();
     if (!clean) return;
-
-    const msg = { text: clean, userId: "guest", ts: Date.now() };
-    if (room === "global") socket.emit("sendGlobalMessage", msg);
-    else if (room.startsWith("match:")) {
-      const matchId = room.split(":")[1];
-      socket.emit("sendMatchMessage", { ...msg, matchId });
-    }
+    sendMessage(clean);
     setText("");
   };
 
-  // Özel mesaj (cooldown: 60sn)
-  const sendSpecial = () => {
-    const now = Date.now();
-    if (now - lastSpecialSent < 60000) return;
-    setLastSpecialSent(now);
+  // Mesaj listesinin alt boşluğunu dinamik ver (input + alt bar + ufak buffer)
+  const listPadBottom = inputH + bottomInset + 12;
 
-    const specialMsg = "🥅⚽🔥  Penaltıcılar Geldi!  🔥⚽🥅";
-    const msg = { text: specialMsg, userId: "guest", ts: now, special: true };
+  // Mobil alt bar yüksekliği (SegmentBar ≈ 56px)
+  const mobileBarHeight = 56;
 
-    if (room === "global") socket.emit("sendGlobalMessage", msg);
-    else if (room.startsWith("match:")) {
-      const matchId = room.split(":")[1];
-      socket.emit("sendMatchMessage", { ...msg, matchId });
-    }
-  };
+  // Input’u alt barın hemen üstüne sabitle
+  const stickyBottom = bottomInset + mobileBarHeight;
 
   return (
     <div className="w-full h-full flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -93,24 +69,16 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
             {online}
           </span>
         </div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          title={open ? "Yukarı kapat" : "Aşağı aç"}
-        >
-          {open ? "▲" : "▼"}
-        </button>
+        <button onClick={() => setOpen((v) => !v)}>{open ? "▲" : "▼"}</button>
       </div>
 
       {/* İçerik (mesajlar + input) */}
-      <div
-        className={`transition-all duration-500 overflow-hidden flex flex-col ${
-          open ? "flex-1 max-h-[1000px]" : "max-h-0"
-        }`}
-      >
-        {/* Mesaj listesi — altta sticky input için yastık */}
+      <div className={`transition-all duration-500 overflow-hidden flex flex-col ${open ? "flex-1 max-h-[1000px]" : "max-h-0"}`}>
+        {/* Mesaj listesi */}
         <div
           ref={listRef}
-          className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 pb-28"
+          className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2"
+          style={{ paddingBottom: listPadBottom }}
         >
           {messages.map((m, i) => {
             const isMe = m.userId === "guest";
@@ -132,11 +100,7 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
                       : "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
                   }`}
                 >
-                  {!isMe && (
-                    <span className="text-xs opacity-60 block mb-1">
-                      {m.userId || "guest"}
-                    </span>
-                  )}
+                  {!isMe && <span className="text-xs opacity-60 block mb-1">{m.userId || "guest"}</span>}
                   {m.text}
                 </div>
               </div>
@@ -144,8 +108,12 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
           })}
         </div>
 
-        {/* Input alanı — mobilde alt barın HEMEN üstünde sabit */}
-        <div className="sticky bottom-0 left-0 right-0 z-10 mb-[84px] sm:mb-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2">
+        {/* Input — alt barın hemen üstünde sticky */}
+        <div
+          ref={inputWrapRef}
+          className="sticky left-0 right-0 z-10 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2"
+          style={{ bottom: stickyBottom }}
+        >
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm">
             <button
               onClick={() => setText((t) => (t + "😀").slice(0, 140))}
@@ -155,7 +123,7 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
               <Smile size={18} />
             </button>
             <button
-              onClick={sendSpecial}
+              onClick={() => sendSpecial()}
               className="px-3 py-2 rounded bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold shadow hover:scale-105 transition text-xs"
               title="Penaltıcılar Geldi!"
             >
@@ -164,13 +132,13 @@ export default function ChatRoomSticky({ room = "global", matchTitle = "" }) {
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
+              onKeyDown={(e) => e.key === "Enter" && onSend()}
               maxLength={140}
               placeholder="Mesaj yaz..."
               className="flex-1 px-3 py-2 rounded bg-gray-50 dark:bg-gray-900 outline-none"
             />
             <button
-              onClick={send}
+              onClick={onSend}
               className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
             >
               Gönder
