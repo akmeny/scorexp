@@ -350,6 +350,35 @@ img {
   background: rgba(255, 255, 255, 0.76);
 }
 
+.league-toggle {
+  width: 100%;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.league-toggle:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.league-toggle:focus-visible {
+  outline: 3px solid rgba(15, 139, 95, 0.18);
+  outline-offset: -3px;
+}
+
+.league-stream-section.is-collapsed .league-flat-header {
+  border-bottom-color: transparent;
+}
+
+.league-toggle-trailing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .league-section {
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -385,6 +414,19 @@ img {
   background: rgba(20, 35, 27, 0.06);
   font-size: 0.86rem;
   font-weight: 700;
+}
+
+.league-chevron {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(20, 35, 27, 0.44);
+  border-bottom: 2px solid rgba(20, 35, 27, 0.44);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.league-chevron.is-open {
+  transform: rotate(225deg);
 }
 
 .match-list {

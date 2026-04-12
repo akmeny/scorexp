@@ -62,6 +62,10 @@ const delayedDataThresholdMs = 90_000;
 const freshnessTickMs = 30_000;
 const loadMoreRootMargin = "1200px 0px 1600px";
 
+function createLeaguePanelId(groupKey: string): string {
+  return `league-panel-${groupKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
 function countVisibleMatches(groups: readonly LeagueGroup[]): number {
   return groups.reduce((total, group) => total + group.matchIds.length, 0);
 }
@@ -127,32 +131,54 @@ const FilterBar = memo(function FilterBar({
 const LeagueStreamSection = memo(function LeagueStreamSection({
   store,
   group,
+  isOpen,
   selectedMatchId,
+  onToggle,
 }: {
   store: LiveMatchStore;
   group: LeagueGroup;
+  isOpen: boolean;
   selectedMatchId: number | null;
+  onToggle: (groupKey: string) => void;
 }) {
+  const panelId = createLeaguePanelId(group.key);
+
   return (
-    <section className="league-stream-section">
-      <header className="league-flat-header">
+    <section
+      className={`league-stream-section ${isOpen ? "is-open" : "is-collapsed"}`}
+    >
+      <button
+        type="button"
+        className="league-flat-header league-toggle"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={() => onToggle(group.key)}
+      >
         <div>
           <h2 className="league-title">{group.leagueName}</h2>
           <p className="league-country">{group.country}</p>
         </div>
-        <span className="league-count">{group.matchIds.length}</span>
-      </header>
-
-      <div className="league-stream-matches">
-        {group.matchIds.map((matchId) => (
-          <MatchRowById
-            key={matchId}
-            store={store}
-            matchId={matchId}
-            isSelected={selectedMatchId === matchId}
+        <div className="league-toggle-trailing">
+          <span className="league-count">{group.matchIds.length}</span>
+          <span
+            aria-hidden="true"
+            className={`league-chevron ${isOpen ? "is-open" : ""}`}
           />
-        ))}
-      </div>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div id={panelId} className="league-stream-matches">
+          {group.matchIds.map((matchId) => (
+            <MatchRowById
+              key={matchId}
+              store={store}
+              matchId={matchId}
+              isSelected={selectedMatchId === matchId}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 });
@@ -160,19 +186,23 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
 const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
   store,
   groups,
+  expandedLeagueKeys,
   selectedMatchId,
   loadedMatches,
   totalMatches,
   pagination,
   loadMoreRef,
+  onToggleLeague,
 }: {
   store: LiveMatchStore;
   groups: readonly LeagueGroup[];
+  expandedLeagueKeys: ReadonlySet<string>;
   selectedMatchId: number | null;
   loadedMatches: number;
   totalMatches: number;
   pagination: PaginationState;
   loadMoreRef: RefObject<HTMLDivElement | null>;
+  onToggleLeague: (groupKey: string) => void;
 }) {
   return (
     <section className="scoreboard-stream" aria-label="Today scores">
@@ -181,7 +211,9 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
           key={group.key}
           store={store}
           group={group}
+          isOpen={expandedLeagueKeys.has(group.key)}
           selectedMatchId={selectedMatchId}
+          onToggle={onToggleLeague}
         />
       ))}
 
@@ -238,6 +270,9 @@ export function LiveScoresClient({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [query, setQuery] = useState("");
   const [liveOnly, setLiveOnly] = useState(false);
+  const [expandedLeagueKeys, setExpandedLeagueKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const paginationRef = useRef<PaginationState>({
     hasMore: true,
     loading: false,
@@ -287,6 +322,20 @@ export function LiveScoresClient({
   const handleLiveOnlyChange = useCallback((value: boolean) => {
     startTransition(() => {
       setLiveOnly(value);
+    });
+  }, []);
+
+  const handleToggleLeague = useCallback((groupKey: string) => {
+    setExpandedLeagueKeys((current) => {
+      const next = new Set(current);
+
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+
+      return next;
     });
   }, []);
 
@@ -445,6 +494,30 @@ export function LiveScoresClient({
     });
     void loadMatchesPage(true);
   }, [deferredQuery, liveOnly, store]);
+
+  useEffect(() => {
+    if (activeMatchId === null) {
+      return;
+    }
+
+    const selectedGroup = visibleGroups.find((group) =>
+      group.matchIds.includes(activeMatchId),
+    );
+
+    if (!selectedGroup) {
+      return;
+    }
+
+    setExpandedLeagueKeys((current) => {
+      if (current.has(selectedGroup.key)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add(selectedGroup.key);
+      return next;
+    });
+  }, [activeMatchId, visibleGroups]);
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
@@ -655,11 +728,13 @@ export function LiveScoresClient({
           <ProgressiveScoreboardList
             store={store}
             groups={visibleGroups}
+            expandedLeagueKeys={expandedLeagueKeys}
             selectedMatchId={activeMatchId}
             loadedMatches={loadedMatchCount}
             totalMatches={meta.total}
             pagination={pagination}
             loadMoreRef={loadMoreRef}
+            onToggleLeague={handleToggleLeague}
           />
           <MatchDrawer store={store} selectedMatchId={activeMatchId} />
         </section>
