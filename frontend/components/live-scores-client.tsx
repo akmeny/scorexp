@@ -40,7 +40,6 @@ import {
   buildFavoriteGroups,
   buildVisibleGroups,
   getDefaultLeagueFavoriteKeys,
-  isLiveStatus,
   sortGroupsByFavoritePriority,
   type LeagueGroup,
   type MatchFilters,
@@ -89,28 +88,12 @@ function countVisibleMatches(groups: readonly LeagueGroup[]): number {
 
 function buildAutoOpenLeagueKeys(
   groups: readonly LeagueGroup[],
-  store: LiveMatchStore,
   activeFavoriteLeagueKeys: ReadonlySet<string>,
-  favoriteMatchIds: ReadonlySet<number>,
-  activeMatchId: number | null,
 ): Set<string> {
   const keys = new Set<string>();
 
   for (const group of groups) {
-    const hasLiveMatch = group.matchIds.some((matchId) => {
-      const match = store.getMatch(matchId);
-      return match ? isLiveStatus(match.statusShort) : false;
-    });
-    const hasFavoriteMatch = group.matchIds.some((matchId) => favoriteMatchIds.has(matchId));
-    const hasSelectedMatch =
-      activeMatchId !== null && group.matchIds.includes(activeMatchId);
-
-    if (
-      activeFavoriteLeagueKeys.has(group.key) ||
-      hasLiveMatch ||
-      hasFavoriteMatch ||
-      hasSelectedMatch
-    ) {
+    if (activeFavoriteLeagueKeys.has(group.key)) {
       keys.add(group.key);
     }
   }
@@ -550,21 +533,8 @@ export function LiveScoresClient({
   const hasMatchesInStore = loadedMatchCount > 0;
   const favoritesCount = favoriteMatchIds.size;
   const autoOpenLeagueKeys = useMemo(
-    () =>
-      buildAutoOpenLeagueKeys(
-        visibleGroups,
-        store,
-        activeFavoriteLeagueKeys,
-        favoriteMatchIds,
-        activeMatchId,
-      ),
-    [
-      activeFavoriteLeagueKeys,
-      activeMatchId,
-      favoriteMatchIds,
-      store,
-      visibleGroups,
-    ],
+    () => buildAutoOpenLeagueKeys(visibleGroups, activeFavoriteLeagueKeys),
+    [activeFavoriteLeagueKeys, visibleGroups],
   );
   const effectiveExpandedLeagueKeys = useMemo(() => {
     const next = new Set(expandedLeagueKeys);
