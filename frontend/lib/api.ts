@@ -38,14 +38,14 @@ async function fetchJson<T>(path: string): Promise<T> {
     throw new BackendRequestError(
       error instanceof Error
         ? error.message
-        : "Sunucuya ula\u015F\u0131lam\u0131yor",
+        : "Sunucuya ulaşılamıyor",
       null,
     );
   }
 
   if (!response.ok) {
     throw new BackendRequestError(
-      `\u0130stek ${response.status} durum koduyla ba\u015Far\u0131s\u0131z oldu`,
+      `İstek ${response.status} durum koduyla başarısız oldu`,
       response.status,
     );
   }
@@ -68,14 +68,14 @@ export function isLikelyBackendWakeup(error: unknown): boolean {
 
 export function describeBackendError(error: unknown): string {
   if (isLikelyBackendWakeup(error)) {
-    return "Sunucu uyan\u0131yor. Render servisi ba\u015Flad\u0131ktan sonra canl\u0131 veriler otomatik olarak g\u00F6r\u00FCnecek.";
+    return "Sunucu uyanıyor. Render servisi başladıktan sonra canlı veriler otomatik olarak görünecek.";
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "Sunucu \u015Fu anda kullan\u0131lam\u0131yor.";
+  return "Sunucu şu anda kullanılamıyor.";
 }
 
 export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotResponse> {

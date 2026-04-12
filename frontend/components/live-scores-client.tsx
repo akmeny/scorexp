@@ -130,7 +130,7 @@ const ScoreboardNavigation = memo(function ScoreboardNavigation({
           aria-pressed={mode === "all" && isToday}
           onClick={onShowToday}
         >
-          {"Bug\u00FCn"}
+          {"Bugün"}
         </button>
         <button
           type="button"
@@ -138,7 +138,7 @@ const ScoreboardNavigation = memo(function ScoreboardNavigation({
           aria-pressed={mode === "live"}
           onClick={onShowLive}
         >
-          {"Canl\u0131"}
+          {"Canlı"}
         </button>
         <button
           type="button"
@@ -335,7 +335,7 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
     Boolean(emptyState);
 
   return (
-    <section className="scoreboard-stream" aria-label="Futbol skorlar\u0131">
+    <section className="scoreboard-stream" aria-label="Futbol skorları">
       {showInlineEmpty ? (
         <section className="empty-card scoreboard-inline-empty">
           <p>{emptyState}</p>
@@ -361,7 +361,7 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
         {pagination.loading ? (
           <div className="progressive-loader">
             <span className="loader-shimmer" />
-            <span>Daha fazla ma\u00E7 y\u00FCkleniyor...</span>
+            <span>Daha fazla maç yükleniyor...</span>
           </div>
         ) : pagination.error ? (
           <div className="progressive-loader is-error">
@@ -371,19 +371,19 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
           <div className="progressive-loader">
             <span>
               {mode === "favorites"
-                ? `${visibleMatchCount} favori ma\u00E7 g\u00F6r\u00FCn\u00FCyor`
-                : `${loadedMatches} ma\u00E7 y\u00FCklendi`}
+                ? `${visibleMatchCount} favori maç görünüyor`
+                : `${loadedMatches} maç yüklendi`}
             </span>
-            <span>Daha fazlas\u0131 i\u00E7in kayd\u0131r\u0131n</span>
+            <span>Daha fazlası için kaydırın</span>
           </div>
         ) : (
           <div className="progressive-loader is-complete">
             <span>
               {mode === "favorites"
                 ? visibleMatchCount === 0
-                  ? "Bu tarihte favori ma\u00E7 yok."
-                  : `Bu tarihte ${visibleMatchCount} favori ma\u00E7 g\u00F6steriliyor.`
-                : `Bu g\u00F6r\u00FCn\u00FCmdeki ${totalMatches} ma\u00E7\u0131n tamam\u0131 y\u00FCklendi.`}
+                  ? "Bu tarihte favori maç yok."
+                  : `Bu tarihte ${visibleMatchCount} favori maç gösteriliyor.`
+                : `Bu görünümdeki ${totalMatches} maçın tamamı yüklendi.`}
             </span>
           </div>
         )}
@@ -494,17 +494,17 @@ export function LiveScoresClient({
   const emptyState = useMemo(() => {
     if (mode === "favorites") {
       if (favoritesCount === 0) {
-        return "Hen\u00FCz favori lig veya ma\u00E7 yok. Bu g\u00F6r\u00FCn\u00FCm\u00FC doldurmak i\u00E7in favori ekleyin.";
+        return "Henüz favori lig veya maç yok. Bu görünümü doldurmak için favori ekleyin.";
       }
 
       return `${selectedDateLabel} tarihinde favori bulunmuyor.`;
     }
 
     if (mode === "live") {
-      return `${selectedDateLabel} tarihinde canl\u0131 ma\u00E7 bulunamad\u0131.`;
+      return `${selectedDateLabel} tarihinde canlı maç bulunamadı.`;
     }
 
-    return `${selectedDateLabel} tarihinde ma\u00E7 bulunamad\u0131.`;
+    return `${selectedDateLabel} tarihinde maç bulunamadı.`;
   }, [favoritesCount, mode, selectedDateLabel]);
 
   const handleToggleLeague = useCallback((groupKey: string) => {
@@ -877,7 +877,7 @@ export function LiveScoresClient({
       setConnectionStatus(storeEmpty ? "waking" : "reconnecting");
       setTransportError(
         storeEmpty
-          ? "Sunucu uyan\u0131yor olabilir. Yeniden ba\u011Flanma denemeleri kontroll\u00FC \u015Fekilde s\u00FCr\u00FCyor."
+          ? "Sunucu uyanıyor olabilir. Yeniden bağlanma denemeleri kontrollü şekilde sürüyor."
           : error.message,
       );
       clientLogger.warn("Socket connection failed", {
@@ -930,19 +930,19 @@ export function LiveScoresClient({
     !hasMatchesInStore && pagination.loading ? (
       <section className="empty-card wake-card">
         <span className="wake-pulse" />
-        <p>{selectedDateLabel} tarihindeki ma\u00E7lar y\u00FCkleniyor.</p>
+        <p>{selectedDateLabel} tarihindeki maçlar yükleniyor.</p>
         <p className="empty-subtext">
-          \u015Eimdilik yaln\u0131zca ilk ekran y\u00FCkleniyor. A\u015Fa\u011F\u0131 indik\u00E7e daha fazla ma\u00E7
-          ve logo y\u00FCklenecek.
+          Şimdilik yalnızca ilk ekran yükleniyor. Aşağı indikçe daha fazla maç
+          ve logo yüklenecek.
         </p>
       </section>
     ) : !hasMatchesInStore && wakeRetry.active ? (
       <section className="empty-card wake-card">
         <span className="wake-pulse" />
-        <p>Sunucu uyan\u0131yor.</p>
+        <p>Sunucu uyanıyor.</p>
         <p className="empty-subtext">
-          ScoreXP g\u00FCvenli aral\u0131klarla yeniden deniyor ve {selectedDateLabel}{" "}
-          tarihindeki ma\u00E7lar\u0131 otomatik olarak y\u00FCkleyecek.
+          ScoreXP güvenli aralıklarla yeniden deniyor ve {selectedDateLabel}{" "}
+          tarihindeki maçları otomatik olarak yükleyecek.
         </p>
         {wakeRetry.lastError ? (
           <p className="empty-subtext">{wakeRetry.lastError}</p>
@@ -985,11 +985,11 @@ export function LiveScoresClient({
       {dataDelayed ? (
         <section className="banner banner-info">
           <p>
-            Canl\u0131 veri ge\u00E7ici olarak gecikti. Sunucu yeniden ba\u011Flan\u0131rken
+            Canlı veri geçici olarak gecikti. Sunucu yeniden bağlanırken
             eldeki son skorlar ekranda tutuluyor.
           </p>
           <p className="banner-subtext">
-            Son ba\u015Far\u0131l\u0131 g\u00FCncelleme yakla\u015F\u0131k {formatSeconds(dataAgeMs)} \u00F6nceydi.
+            Son başarılı güncelleme yaklaşık {formatSeconds(dataAgeMs)} önceydi.
           </p>
         </section>
       ) : null}

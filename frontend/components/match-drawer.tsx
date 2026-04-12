@@ -30,11 +30,11 @@ export const MatchDrawer = memo(function MatchDrawer({
   return (
     <aside className="match-drawer">
       <header className="drawer-header">
-        <span className="drawer-title">Ma\u00E7 Detay\u0131</span>
+        <span className="drawer-title">Maç Detayı</span>
         <div className="drawer-actions">
           {match ? (
             <Link href={`/match/${match.matchId}`} className="secondary-link">
-              Sayfay\u0131 A\u00E7
+              Sayfayı Aç
             </Link>
           ) : null}
           <Link href="/" scroll={false} className="secondary-link">

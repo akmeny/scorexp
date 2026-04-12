@@ -36,7 +36,7 @@ export function formatMinute(match: LiveMatch): string {
   }
 
   if (match.statusShort === "P") {
-    return "Penalt\u0131 At\u0131\u015Flar\u0131";
+    return "Penaltı Atışları";
   }
 
   if (match.statusShort === "HT") {
@@ -56,7 +56,7 @@ export function formatMinute(match: LiveMatch): string {
   }
 
   if (["PST", "CANC", "ABD", "AWD", "WO"].includes(match.statusShort)) {
-    return "\u0130ptal";
+    return "İptal";
   }
 
   if (match.statusShort === "NS" || match.statusShort === "TBD") {

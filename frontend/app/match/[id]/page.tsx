@@ -18,9 +18,9 @@ export default async function MatchPage({ params }: MatchPageProps) {
     return (
       <main className="page-shell">
         <section className="empty-card">
-          <p>Bu ma\u00E7 kimli\u011Fi ge\u00E7erli de\u011Fil.</p>
+          <p>Bu maç kimliği geçerli değil.</p>
           <Link href="/" className="secondary-link">
-            Canl\u0131 skorlara d\u00F6n
+            Canlı skorlara dön
           </Link>
         </section>
       </main>
@@ -33,9 +33,9 @@ export default async function MatchPage({ params }: MatchPageProps) {
     return (
       <main className="page-shell">
         <section className="empty-card">
-          <p>Bu canl\u0131 ma\u00E7 \u015Fu anda kullan\u0131lam\u0131yor.</p>
+          <p>Bu canlı maç şu anda kullanılamıyor.</p>
           <Link href="/" className="secondary-link">
-            Canl\u0131 skorlara d\u00F6n
+            Canlı skorlara dön
           </Link>
         </section>
       </main>

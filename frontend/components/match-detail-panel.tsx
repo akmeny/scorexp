@@ -29,14 +29,14 @@ export function MatchDetailPanel({
         <div className="detail-empty">
           <p className="detail-empty-title">
             {removed
-              ? "Bu ma\u00E7 art\u0131k bug\u00FCn\u00FCn ekran\u0131nda yer alm\u0131yor."
-              : "\u0130ncelemek i\u00E7in bir ma\u00E7 se\u00E7in."}
+              ? "Bu maç artık bugünün ekranında yer almıyor."
+              : "İncelemek için bir maç seçin."}
           </p>
           {matchId ? (
             <p className="detail-empty-subtext">
-              Ma\u00E7 kimli\u011Fi {matchId}, mevcut filtrelerin d\u0131\u015F\u0131na
-              \u00E7\u0131km\u0131\u015F olabilir veya art\u0131k bug\u00FCn ekran\u0131nda
-              yer alm\u0131yor.
+              Maç kimliği {matchId}, mevcut filtrelerin dışına
+              çıkmış olabilir veya artık bugünün ekranında
+              yer almıyor.
             </p>
           ) : null}
         </div>
@@ -48,7 +48,7 @@ export function MatchDetailPanel({
     <section className="detail-panel">
       <header className="detail-header">
         <div>
-          <p className="eyebrow">Ma\u00E7 Detay\u0131</p>
+          <p className="eyebrow">Maç Detayı</p>
           <h2 className="detail-title">{match.leagueName}</h2>
           <p className="league-country">
             {translateCountryName(match.country, match.countryFlag)}
@@ -59,7 +59,7 @@ export function MatchDetailPanel({
             {formatMinute(match)}
           </span>
           <span className="timestamp-label">
-            G\u00FCncellendi {formatLastUpdated(match.lastUpdatedAt)}
+            Güncellendi {formatLastUpdated(match.lastUpdatedAt)}
           </span>
         </div>
       </header>
@@ -106,7 +106,7 @@ export function MatchDetailPanel({
 
       <dl className="detail-facts">
         <div>
-          <dt>Ba\u015Flang\u0131\u00E7</dt>
+          <dt>Başlangıç</dt>
           <dd>{formatKickoff(match.startTime)}</dd>
         </div>
         <div>
@@ -114,18 +114,18 @@ export function MatchDetailPanel({
           <dd>{translateMatchStatus(match)}</dd>
         </div>
         <div>
-          <dt>Lig Kimli\u011Fi</dt>
+          <dt>Lig Kimliği</dt>
           <dd>{match.leagueId}</dd>
         </div>
         <div>
-          <dt>Ma\u00E7 Kimli\u011Fi</dt>
+          <dt>Maç Kimliği</dt>
           <dd>{match.matchId}</dd>
         </div>
       </dl>
 
       <section className="detail-events">
         <header className="detail-events-header">
-          <h3>Olay \u00D6zeti</h3>
+          <h3>Olay Özeti</h3>
           {match.eventsSummary ? (
             <div className="event-totals">
               <span>{match.eventsSummary.total} olay</span>
@@ -145,8 +145,8 @@ export function MatchDetailPanel({
           </ul>
         ) : (
           <p className="detail-empty-subtext">
-            Bu kar\u015F\u0131la\u015Fma i\u00E7in hen\u00FCz olay \u00F6zeti
-            \u00F6nbelle\u011Fe al\u0131nmad\u0131.
+            Bu karşılaşma için henüz olay özeti
+            önbelleğe alınmadı.
           </p>
         )}
       </section>

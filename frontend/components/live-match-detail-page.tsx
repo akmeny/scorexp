@@ -103,9 +103,9 @@ export function LiveMatchDetailPage({
       <section className="hero-card compact">
         <div>
           <Link href="/" className="secondary-link">
-            Canl\u0131 Skorlara D\u00F6n
+            Canlı Skorlara Dön
           </Link>
-          <h1 className="page-title small">Canl\u0131 Ma\u00E7 Sayfas\u0131</h1>
+          <h1 className="page-title small">Canlı Maç Sayfası</h1>
         </div>
         <span
           className={`status-pill ${
@@ -113,8 +113,8 @@ export function LiveMatchDetailPage({
           }`}
         >
           {connectionStatus === "live"
-            ? "Canl\u0131 G\u00FCncellemeler A\u00E7\u0131k"
-            : "Yeniden Ba\u011Flan\u0131yor"}
+            ? "Canlı Güncellemeler Açık"
+            : "Yeniden Bağlanıyor"}
         </span>
       </section>
 

@@ -28,7 +28,7 @@ export const ChatDrawer = memo(function ChatDrawer({
             <h2 className="drawer-title">
               {match
                 ? `${match.homeTeam.name} - ${match.awayTeam.name}`
-                : "Ma\u00E7 Sohbeti"}
+                : "Maç Sohbeti"}
             </h2>
             {match ? (
               <p className="league-country">
@@ -46,13 +46,13 @@ export const ChatDrawer = memo(function ChatDrawer({
         <div className="chat-panel-body">
           <p className="detail-empty-title">
             {match
-              ? "Sohbet odas\u0131 haz\u0131r."
-              : "Sohbeti a\u00E7mak i\u00E7in bir ma\u00E7 se\u00E7in."}
+              ? "Sohbet odası hazır."
+              : "Sohbeti açmak için bir maç seçin."}
           </p>
           <p className="detail-empty-subtext">
             {match
-              ? "Bu sabit panel art\u0131k se\u00E7ilen kar\u015F\u0131la\u015Fman\u0131n sohbet ak\u0131\u015F\u0131 i\u00E7in ayr\u0131ld\u0131."
-              : "Sa\u011F s\u00FCtun, sabit bir sohbet penceresi olarak haz\u0131rland\u0131 ve inceleme paneliyle ayn\u0131 d\u00FCzen ritmini koruyor."}
+              ? "Bu sabit panel artık seçilen karşılaşmanın sohbet akışı için ayrıldı."
+              : "Sağ sütun, sabit bir sohbet penceresi olarak hazırlandı ve inceleme paneliyle aynı düzen ritmini koruyor."}
           </p>
         </div>
       </section>
