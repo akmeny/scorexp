@@ -77,6 +77,7 @@ const freshnessTickMs = 30_000;
 const loadMoreRootMargin = "1200px 0px 1600px";
 const realtimeSyncIntervalMs = 12_000;
 const realtimeSyncPageSize = 200;
+const scrollTopRevealOffsetPx = 24;
 
 function createLeaguePanelId(groupKey: string): string {
   return `league-panel-${groupKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
@@ -462,6 +463,7 @@ export function LiveScoresClient({
   const [favoriteMatchIds, setFavoriteMatchIds] = useState<Set<number>>(
     () => new Set(),
   );
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const paginationRef = useRef<PaginationState>({
     hasMore: true,
     loading: false,
@@ -737,6 +739,13 @@ export function LiveScoresClient({
     [handleSetSelectedDate],
   );
 
+  const handleScrollToTop = useCallback(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, []);
+
   const loadMatchesPage = useEffectEvent(async (reset: boolean) => {
     const current = paginationRef.current;
 
@@ -940,6 +949,25 @@ export function LiveScoresClient({
 
     return () => {
       window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      const nextVisible = window.scrollY > scrollTopRevealOffsetPx;
+
+      setShowScrollTopButton((current) =>
+        current === nextVisible ? current : nextVisible,
+      );
+    };
+
+    handleWindowScroll();
+    window.addEventListener("scroll", handleWindowScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleWindowScroll);
     };
   }, []);
 
@@ -1225,6 +1253,15 @@ export function LiveScoresClient({
         <MatchDrawer store={store} selectedMatchId={activeMatchId} />
         <ChatDrawer store={store} selectedMatchId={activeMatchId} />
       </section>
+
+      <button
+        type="button"
+        className={`scroll-top-button ${showScrollTopButton ? "is-visible" : ""}`}
+        aria-label="En üste çık"
+        onClick={handleScrollToTop}
+      >
+        <span aria-hidden="true">↑</span>
+      </button>
     </main>
   );
 }

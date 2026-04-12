@@ -367,6 +367,55 @@ input::placeholder {
   margin-top: 20px;
 }
 
+.scroll-top-button {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(73, 212, 155, 0.24), rgba(73, 212, 155, 0.1)),
+    rgba(8, 19, 15, 0.92);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px) scale(0.94);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+  z-index: 40;
+}
+
+.scroll-top-button.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.scroll-top-button:hover {
+  border-color: rgba(73, 212, 155, 0.42);
+  background:
+    linear-gradient(180deg, rgba(73, 212, 155, 0.32), rgba(73, 212, 155, 0.14)),
+    rgba(8, 19, 15, 0.96);
+}
+
+.scroll-top-button:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .scoreboard-column {
   display: grid;
   gap: 12px;
@@ -1952,6 +2001,11 @@ input::placeholder {
     align-items: stretch;
   }
 
+  .scroll-top-button {
+    right: 18px;
+    bottom: 18px;
+  }
+
   .scoreboard-nav-date {
     justify-content: flex-end;
   }
@@ -2039,6 +2093,14 @@ input::placeholder {
 
   .scoreboard-page-shell {
     width: calc(100% - 20px);
+  }
+
+  .scroll-top-button {
+    right: 14px;
+    bottom: 14px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
   }
 
   .hero-card,
