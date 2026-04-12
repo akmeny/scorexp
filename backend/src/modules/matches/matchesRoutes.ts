@@ -42,6 +42,75 @@ interface CachedMatchStatistics {
   expiresAt: number;
 }
 
+interface LeagueFavoriteRule {
+  country?: string | RegExp;
+  league: RegExp;
+}
+
+const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
+  { country: "turkey", league: /^super-lig$/ },
+  { country: "turkey", league: /^1-lig$/ },
+  { country: "turkey", league: /^(?:ziraat-turkiye-kupasi|turkiye-kupasi|cup)$/ },
+  { country: "turkey", league: /^super-cup$/ },
+  { country: "europe", league: /uefa-champions-league(?!-women)/ },
+  { country: "europe", league: /uefa-europa-league/ },
+  { country: "europe", league: /uefa-europa-conference-league|uefa-conference-league/ },
+  { country: "europe", league: /uefa-super-cup/ },
+  { country: "world", league: /fifa-club-world-cup|club-world-cup/ },
+  { country: "world", league: /world-cup(?!-u)/ },
+  {
+    country: "europe",
+    league: /uefa-european-championship|euro-championship|european-championship/,
+  },
+  { country: "europe", league: /uefa-nations-league|nations-league/ },
+  { country: "north-america", league: /concacaf-nations-league/ },
+  { country: "south-america", league: /copa-america/ },
+  { country: "asia", league: /asian-cup/ },
+  { country: "africa", league: /africa-cup-of-nations/ },
+  { country: "north-america", league: /concacaf-gold-cup/ },
+  { country: "south-america", league: /copa-libertadores|conmebol-libertadores/ },
+  { country: "south-america", league: /copa-sudamericana|conmebol-sudamericana/ },
+  { country: "north-america", league: /concacaf-champions-cup|concacaf-champions-league/ },
+  { country: "asia", league: /afc-champions-league/ },
+  { country: "africa", league: /caf-champions-league/ },
+  { country: "england", league: /^premier-league$/ },
+  { country: "england", league: /^championship$/ },
+  { country: "germany", league: /^bundesliga$/ },
+  { country: "spain", league: /^la-liga$/ },
+  { country: "germany", league: /^2-bundesliga$/ },
+  { country: "italy", league: /^serie-a$/ },
+  { country: "france", league: /^ligue-1$/ },
+  { country: "netherlands", league: /^eredivisie$/ },
+  { country: "netherlands", league: /^eerste-divisie$/ },
+  { country: "portugal", league: /^primeira-liga$/ },
+  { country: "belgium", league: /pro-league|jupiler-pro-league/ },
+  { country: "scotland", league: /premiership$/ },
+  { country: "switzerland", league: /^super-league$/ },
+  { country: "austria", league: /^bundesliga$/ },
+  { country: "denmark", league: /^superliga$/ },
+  { country: "norway", league: /^eliteserien$/ },
+  { country: "sweden", league: /^allsvenskan$/ },
+  { country: "sweden", league: /^superettan$/ },
+  { country: "czech-republic", league: /^czech-liga$|^first-league$/ },
+  { country: "poland", league: /^ekstraklasa$/ },
+  { country: "greece", league: /^super-league-1$/ },
+  { country: "croatia", league: /^hnl$/ },
+  { country: "serbia", league: /^super-liga$/ },
+  { country: "ukraine", league: /^premier-league$/ },
+  { country: "brazil", league: /^serie-a$/ },
+  { country: /united-states|usa/, league: /^major-league-soccer$/ },
+  { country: "australia", league: /^a-league$/ },
+  { country: "japan", league: /^j1-league$/ },
+  { country: "south-korea", league: /^k-league-1$/ },
+  { country: "argentina", league: /liga-profesional-argentina|primera-division/ },
+  { country: "mexico", league: /^liga-mx$/ },
+  { country: "colombia", league: /primera-a/ },
+  { country: "china", league: /^super-league$/ },
+  { country: "saudi-arabia", league: /^pro-league$/ },
+  { country: "azerbaijan", league: /premyer-liqa|premier-league/ },
+  { country: "romania", league: /^liga-i$/ },
+];
+
 function parsePositiveInteger(
   value: string | undefined,
   fallback: number,
@@ -116,6 +185,153 @@ function filterMatches(
       match.country.toLowerCase().includes(query)
     );
   });
+}
+
+function normalizeLeagueValue(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function matchesCountryRule(
+  normalizedCountry: string,
+  countryRule: LeagueFavoriteRule["country"],
+): boolean {
+  if (!countryRule) {
+    return true;
+  }
+
+  if (typeof countryRule === "string") {
+    return normalizedCountry === countryRule;
+  }
+
+  return countryRule.test(normalizedCountry);
+}
+
+function getDefaultLeagueFavoritePriority(
+  match: Pick<NormalizedMatch, "country" | "leagueName">,
+): number | null {
+  const normalizedCountry = normalizeLeagueValue(match.country);
+  const normalizedLeague = normalizeLeagueValue(match.leagueName);
+
+  for (const [index, rule] of defaultFavoriteRules.entries()) {
+    if (!matchesCountryRule(normalizedCountry, rule.country)) {
+      continue;
+    }
+
+    if (rule.league.test(normalizedLeague)) {
+      return index;
+    }
+  }
+
+  return null;
+}
+
+function compareMatchesForScoreboardPage(
+  left: Pick<NormalizedMatch, "country" | "leagueId" | "leagueName" | "startTime" | "matchId">,
+  right: Pick<
+    NormalizedMatch,
+    "country" | "leagueId" | "leagueName" | "startTime" | "matchId"
+  >,
+): number {
+  const leftPriority = getDefaultLeagueFavoritePriority(left);
+  const rightPriority = getDefaultLeagueFavoritePriority(right);
+  const leftIsFavorite = leftPriority !== null;
+  const rightIsFavorite = rightPriority !== null;
+
+  if (leftIsFavorite !== rightIsFavorite) {
+    return leftIsFavorite ? -1 : 1;
+  }
+
+  if (leftIsFavorite && rightIsFavorite && leftPriority !== rightPriority) {
+    return (leftPriority ?? Number.POSITIVE_INFINITY) -
+      (rightPriority ?? Number.POSITIVE_INFINITY);
+  }
+
+  const countryDelta = left.country.localeCompare(right.country);
+  if (countryDelta !== 0) {
+    return countryDelta;
+  }
+
+  const leagueDelta = left.leagueName.localeCompare(right.leagueName);
+  if (leagueDelta !== 0) {
+    return leagueDelta;
+  }
+
+  const leagueIdDelta = left.leagueId - right.leagueId;
+  if (leagueIdDelta !== 0) {
+    return leagueIdDelta;
+  }
+
+  const kickoffDelta =
+    new Date(left.startTime).getTime() - new Date(right.startTime).getTime();
+  if (kickoffDelta !== 0) {
+    return kickoffDelta;
+  }
+
+  return left.matchId - right.matchId;
+}
+
+function getLeaguePageKey(match: Pick<NormalizedMatch, "country" | "leagueId">): string {
+  return `${match.country}:${match.leagueId}`;
+}
+
+function paginateMatchesByLeague(
+  matches: NormalizedMatch[],
+  offset: number,
+  limit: number | null,
+): {
+  pagedMatches: NormalizedMatch[];
+  nextOffset: number | null;
+} {
+  if (limit === null) {
+    return {
+      pagedMatches: matches,
+      nextOffset: null,
+    };
+  }
+
+  if (offset >= matches.length) {
+    return {
+      pagedMatches: [],
+      nextOffset: null,
+    };
+  }
+
+  let end = Math.min(offset + limit, matches.length);
+
+  if (end < matches.length && end > offset) {
+    const boundaryMatch = matches[end - 1];
+    if (!boundaryMatch) {
+      return {
+        pagedMatches: matches.slice(offset, end),
+        nextOffset: end < matches.length ? end : null,
+      };
+    }
+
+    const boundaryGroupKey = getLeaguePageKey(boundaryMatch);
+
+    while (end < matches.length) {
+      const currentMatch = matches[end];
+
+      if (!currentMatch || getLeaguePageKey(currentMatch) !== boundaryGroupKey) {
+        break;
+      }
+
+      end += 1;
+    }
+  }
+
+  return {
+    pagedMatches: matches.slice(offset, end),
+    nextOffset: end < matches.length ? end : null,
+  };
 }
 
 export async function registerMatchesRoutes(
@@ -261,15 +477,14 @@ export async function registerMatchesRoutes(
     }
 
     const snapshot = await getMatchesForDate(dateKey);
-    const filteredMatches = filterMatches(snapshot.matches, query, liveOnly);
-    const pagedMatches =
-      limit === null
-        ? filteredMatches
-        : filteredMatches.slice(offset, offset + limit);
-    const nextOffset =
-      limit !== null && offset + pagedMatches.length < filteredMatches.length
-        ? offset + pagedMatches.length
-        : null;
+    const filteredMatches = filterMatches(snapshot.matches, query, liveOnly).sort(
+      compareMatchesForScoreboardPage,
+    );
+    const { pagedMatches, nextOffset } = paginateMatchesByLeague(
+      filteredMatches,
+      offset,
+      limit,
+    );
 
     return {
       matches: pagedMatches,
