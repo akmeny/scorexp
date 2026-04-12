@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { themeInitScript } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "ScoreXP",
@@ -14,10 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en">
       <body>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <ThemeSwitcher />
         {children}
       </body>
     </html>

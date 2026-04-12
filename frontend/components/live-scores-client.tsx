@@ -13,6 +13,8 @@ import {
   type RefObject,
 } from "react";
 import { useSearchParams } from "next/navigation";
+import { ChatDrawer } from "@/components/chat-drawer";
+import { LeagueFavoriteIcon } from "@/components/favorite-icons";
 import { MatchDrawer } from "@/components/match-drawer";
 import { MatchRowById } from "@/components/match-row";
 import {
@@ -259,9 +261,10 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
             isFavorite ? "is-active" : ""
           }`}
           aria-pressed={isFavorite}
+          aria-label={isFavorite ? "Remove league from favorites" : "Add league to favorites"}
           onClick={() => onToggleFavorite(group.key)}
         >
-          {isFavorite ? "Saved" : "Save"}
+          <LeagueFavoriteIcon active={isFavorite} />
         </button>
       </div>
 
@@ -916,8 +919,51 @@ export function LiveScoresClient({
     connectionStatus !== "live" &&
     dataAgeMs >= delayedDataThresholdMs;
 
+  const leftColumnContent =
+    !hasMatchesInStore && pagination.loading ? (
+      <section className="empty-card wake-card">
+        <span className="wake-pulse" />
+        <p>Loading matches for {selectedDateLabel}.</p>
+        <p className="empty-subtext">
+          Pulling only the first screenful now. More matches and logos load as
+          you scroll.
+        </p>
+      </section>
+    ) : !hasMatchesInStore && wakeRetry.active ? (
+      <section className="empty-card wake-card">
+        <span className="wake-pulse" />
+        <p>Backend is waking up.</p>
+        <p className="empty-subtext">
+          ScoreXP is retrying with safe backoff and will hydrate matches for{" "}
+          {selectedDateLabel} automatically.
+        </p>
+        {wakeRetry.lastError ? (
+          <p className="empty-subtext">{wakeRetry.lastError}</p>
+        ) : null}
+      </section>
+    ) : (
+      <ProgressiveScoreboardList
+        store={store}
+        groups={visibleGroups}
+        expandedLeagueKeys={expandedLeagueKeys}
+        favoriteLeagueKeys={favoriteLeagueKeys}
+        favoriteMatchIds={favoriteMatchIds}
+        selectedMatchId={activeMatchId}
+        loadedMatches={loadedMatchCount}
+        visibleMatchCount={visibleMatchCount}
+        totalMatches={meta.total}
+        pagination={pagination}
+        loadMoreRef={loadMoreRef}
+        mode={mode}
+        emptyState={emptyState}
+        onToggleLeague={handleToggleLeague}
+        onToggleFavoriteLeague={handleToggleFavoriteLeague}
+        onToggleFavoriteMatch={handleToggleFavoriteMatch}
+      />
+    );
+
   return (
-    <main className="page-shell">
+    <main className="page-shell scoreboard-page-shell">
       {transportError ? (
         <section className="banner banner-warning">
           <p>{transportError}</p>
@@ -942,64 +988,25 @@ export function LiveScoresClient({
         </section>
       ) : null}
 
-      {!hasMatchesInStore && pagination.loading ? (
-        <section className="empty-card wake-card">
-          <span className="wake-pulse" />
-          <p>Loading matches for {selectedDateLabel}.</p>
-          <p className="empty-subtext">
-            Pulling only the first screenful now. More matches and logos load as
-            you scroll.
-          </p>
-        </section>
-      ) : !hasMatchesInStore && wakeRetry.active ? (
-        <section className="empty-card wake-card">
-          <span className="wake-pulse" />
-          <p>Backend is waking up.</p>
-          <p className="empty-subtext">
-            ScoreXP is retrying with safe backoff and will hydrate matches for{" "}
-            {selectedDateLabel} automatically.
-          </p>
-          {wakeRetry.lastError ? (
-            <p className="empty-subtext">{wakeRetry.lastError}</p>
-          ) : null}
-        </section>
-      ) : (
-        <section className="scoreboard-grid">
-          <div className="scoreboard-column">
-            <ScoreboardNavigation
-              mode={mode}
-              selectedDate={selectedDate}
-              favoriteCount={favoritesCount}
-              onShowToday={handleShowToday}
-              onShowLive={handleShowLive}
-              onShowFavorites={handleShowFavorites}
-              onShiftDate={handleShiftDate}
-              onOpenDatePicker={handleOpenDatePicker}
-              onDateChange={handleDateInputChange}
-              dateInputRef={dateInputRef}
-            />
-            <ProgressiveScoreboardList
-              store={store}
-              groups={visibleGroups}
-              expandedLeagueKeys={expandedLeagueKeys}
-              favoriteLeagueKeys={favoriteLeagueKeys}
-              favoriteMatchIds={favoriteMatchIds}
-              selectedMatchId={activeMatchId}
-              loadedMatches={loadedMatchCount}
-              visibleMatchCount={visibleMatchCount}
-              totalMatches={meta.total}
-              pagination={pagination}
-              loadMoreRef={loadMoreRef}
-              mode={mode}
-              emptyState={emptyState}
-              onToggleLeague={handleToggleLeague}
-              onToggleFavoriteLeague={handleToggleFavoriteLeague}
-              onToggleFavoriteMatch={handleToggleFavoriteMatch}
-            />
-          </div>
-          <MatchDrawer store={store} selectedMatchId={activeMatchId} />
-        </section>
-      )}
+      <section className="scoreboard-grid">
+        <div className="scoreboard-column">
+          <ScoreboardNavigation
+            mode={mode}
+            selectedDate={selectedDate}
+            favoriteCount={favoritesCount}
+            onShowToday={handleShowToday}
+            onShowLive={handleShowLive}
+            onShowFavorites={handleShowFavorites}
+            onShiftDate={handleShiftDate}
+            onOpenDatePicker={handleOpenDatePicker}
+            onDateChange={handleDateInputChange}
+            dateInputRef={dateInputRef}
+          />
+          {leftColumnContent}
+        </div>
+        <MatchDrawer store={store} selectedMatchId={activeMatchId} />
+        <ChatDrawer store={store} selectedMatchId={activeMatchId} />
+      </section>
     </main>
   );
 }

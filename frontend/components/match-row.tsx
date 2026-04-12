@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { memo, useEffect, useRef, useState } from "react";
+import { MatchFavoriteIcon } from "@/components/favorite-icons";
 import {
   formatEventLine,
   formatKickoff,
@@ -168,9 +169,10 @@ export const MatchRow = memo(function MatchRow({
             isFavorite ? "is-active" : ""
           }`}
           aria-pressed={isFavorite}
+          aria-label={isFavorite ? "Remove match from favorites" : "Add match to favorites"}
           onClick={() => onToggleFavorite(match.matchId)}
         >
-          {isFavorite ? "Saved" : "Save"}
+          <MatchFavoriteIcon active={isFavorite} />
         </button>
         <Link href={`/match/${match.matchId}`} className="detail-link">
           Page
