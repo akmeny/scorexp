@@ -5,7 +5,7 @@ import { memo } from "react";
 import { MatchFavoriteIcon } from "@/components/favorite-icons";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { LiveMatchStore, useLiveMatch } from "@/lib/live-match-store";
-import type { LiveMatch } from "@/lib/types";
+import type { LiveMatch, MatchFormResult, MatchFormSnapshot } from "@/lib/types";
 
 interface MatchRowByIdProps {
   store: LiveMatchStore;
@@ -25,6 +25,52 @@ interface MatchRowProps {
 function formatScore(score: number | null): string {
   return score === null ? "-" : String(score);
 }
+
+function getFormArrow(result: MatchFormResult): string {
+  if (result === "W") {
+    return "↑";
+  }
+
+  if (result === "D") {
+    return "↔";
+  }
+
+  if (result === "L") {
+    return "↓";
+  }
+
+  return "•";
+}
+
+const TeamFormStrip = memo(function TeamFormStrip({
+  form,
+  teamName,
+}: {
+  form: MatchFormSnapshot | null | undefined;
+  teamName: string;
+}) {
+  if (!form?.last5.length) {
+    return null;
+  }
+
+  return (
+    <div
+      className="team-form-strip"
+      aria-label={`${teamName} son 5 maç formu`}
+      title={`${teamName} son 5 maç formu`}
+    >
+      {form.last5.map((result, index) => (
+        <span
+          key={`${teamName}-${index}-${result}`}
+          className={`team-form-chip is-${result.toLowerCase()}`}
+          aria-hidden="true"
+        >
+          {getFormArrow(result)}
+        </span>
+      ))}
+    </div>
+  );
+});
 
 export const MatchRowById = memo(function MatchRowById({
   store,
@@ -55,6 +101,8 @@ export const MatchRow = memo(function MatchRow({
   isFavorite,
   onToggleFavorite,
 }: MatchRowProps) {
+  const showPreMatchForm = match.statusShort === "NS";
+
   return (
     <article className={`match-row ${isSelected ? "is-selected" : ""}`}>
       <Link href={`/?matchId=${match.matchId}`} scroll={false} className="match-row-main">
@@ -80,7 +128,12 @@ export const MatchRow = memo(function MatchRow({
             ) : (
               <span className="team-logo team-logo-fallback" />
             )}
-            <span className="team-name">{match.homeTeam.name}</span>
+            <div className="team-line-content">
+              <span className="team-name">{match.homeTeam.name}</span>
+              {showPreMatchForm ? (
+                <TeamFormStrip form={match.homeForm} teamName={match.homeTeam.name} />
+              ) : null}
+            </div>
           </div>
           <div className="team-line">
             {match.awayTeam.logo ? (
@@ -97,7 +150,12 @@ export const MatchRow = memo(function MatchRow({
             ) : (
               <span className="team-logo team-logo-fallback" />
             )}
-            <span className="team-name">{match.awayTeam.name}</span>
+            <div className="team-line-content">
+              <span className="team-name">{match.awayTeam.name}</span>
+              {showPreMatchForm ? (
+                <TeamFormStrip form={match.awayForm} teamName={match.awayTeam.name} />
+              ) : null}
+            </div>
           </div>
         </div>
 

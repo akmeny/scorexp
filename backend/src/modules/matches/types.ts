@@ -42,6 +42,13 @@ export interface MatchStatisticRow {
   away: string | null;
 }
 
+export type MatchFormResult = "W" | "D" | "L" | "U";
+
+export interface MatchFormSnapshot {
+  last5: MatchFormResult[];
+  updatedAt: string;
+}
+
 export interface MatchFixtureDetails {
   referee: string | null;
   venueName: string | null;
@@ -314,6 +321,8 @@ export interface NormalizedMatchInput {
   homeScore: number | null;
   awayScore: number | null;
   eventsSummary: MatchEventsSummary | null;
+  homeForm?: MatchFormSnapshot | null;
+  awayForm?: MatchFormSnapshot | null;
 }
 
 export interface NormalizedMatch extends NormalizedMatchInput {

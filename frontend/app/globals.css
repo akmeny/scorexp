@@ -742,6 +742,14 @@ input::placeholder {
   min-width: 0;
 }
 
+.team-line-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
 .team-logo,
 .team-logo-fallback,
 .detail-logo {
@@ -768,7 +776,53 @@ input::placeholder {
 }
 
 .team-name {
+  min-width: 0;
+  flex: 1;
   font-weight: 700;
+}
+
+.team-form-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.team-form-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--detail-box-border);
+  background: var(--neutral-fill);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.team-form-chip.is-w {
+  border-color: rgba(73, 212, 155, 0.28);
+  background: rgba(73, 212, 155, 0.14);
+  color: var(--accent);
+}
+
+.team-form-chip.is-d {
+  border-color: rgba(240, 177, 92, 0.24);
+  background: rgba(240, 177, 92, 0.14);
+  color: var(--warning);
+}
+
+.team-form-chip.is-l {
+  border-color: rgba(201, 83, 83, 0.26);
+  background: rgba(201, 83, 83, 0.16);
+  color: #ff8f8f;
+}
+
+.team-form-chip.is-u {
+  color: var(--muted);
 }
 
 .kickoff-label,

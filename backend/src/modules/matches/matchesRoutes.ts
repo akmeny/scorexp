@@ -2,7 +2,11 @@ import type { FastifyInstance } from "fastify";
 import type { ApiSportsClient } from "./apiSportsClient.js";
 import { MatchDetailService } from "./matchDetailService.js";
 import type { MatchStore } from "./matchStore.js";
-import { normalizeFixture, summarizeStatistics } from "./normalizer.js";
+import {
+  normalizeFixture,
+  normalizeRecentForm,
+  summarizeStatistics,
+} from "./normalizer.js";
 import {
   compareMatches,
   type MatchStatisticsSummary,
@@ -39,6 +43,24 @@ interface CachedDateSnapshot {
 
 interface CachedMatchStatistics {
   statistics: MatchStatisticsSummary | null;
+  expiresAt: number;
+}
+
+type MatchFormResult = "W" | "D" | "L" | "U";
+
+interface MatchFormSnapshot {
+  last5: MatchFormResult[];
+  updatedAt: string;
+}
+
+interface CachedMatchForm {
+  homeForm: MatchFormSnapshot | null;
+  awayForm: MatchFormSnapshot | null;
+  expiresAt: number;
+}
+
+interface CachedTeamForm {
+  form: MatchFormSnapshot | null;
   expiresAt: number;
 }
 
@@ -110,6 +132,11 @@ const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
   { country: "azerbaijan", league: /premyer-liqa|premier-league/ },
   { country: "romania", league: /^liga-i$/ },
 ];
+
+const preMatchStatuses = new Set(["NS", "TBD"]);
+const matchFormCacheTtlMs = 6 * 60 * 60 * 1000;
+const emptyFormCacheTtlMs = 60 * 60 * 1000;
+const formFetchConcurrency = 4;
 
 function parsePositiveInteger(
   value: string | undefined,
@@ -185,6 +212,48 @@ function filterMatches(
       match.country.toLowerCase().includes(query)
     );
   });
+}
+
+function normalizePredictionForm(
+  form: string | null | undefined,
+): MatchFormResult[] | null {
+  if (!form) {
+    return null;
+  }
+
+  const entries = [...form.trim().toUpperCase()]
+    .map((value) => {
+      if (value === "W" || value === "D" || value === "L") {
+        return value;
+      }
+
+      return "U";
+    })
+    .filter((value) => value !== "U");
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return entries.slice(-5) as MatchFormResult[];
+}
+
+function createFormSnapshot(
+  last5: MatchFormResult[] | null,
+  updatedAt: string,
+): MatchFormSnapshot | null {
+  if (!last5 || last5.length === 0) {
+    return null;
+  }
+
+  return {
+    last5,
+    updatedAt,
+  };
+}
+
+function isPreMatchStatus(statusShort: string): boolean {
+  return preMatchStatuses.has(statusShort);
 }
 
 function normalizeLeagueValue(value: string): string {
@@ -341,6 +410,8 @@ export async function registerMatchesRoutes(
 ): Promise<void> {
   const customDateCache = new Map<string, CachedDateSnapshot>();
   const matchStatisticsCache = new Map<number, CachedMatchStatistics>();
+  const matchFormCache = new Map<number, CachedMatchForm>();
+  const teamFormCache = new Map<number, CachedTeamForm>();
   const matchDetailService = new MatchDetailService(
     options.client,
     app.log.child({
@@ -390,6 +461,194 @@ export async function registerMatchesRoutes(
 
       return cached?.statistics ?? null;
     }
+  };
+
+  const getTeamRecentForm = async (
+    teamId: number,
+  ): Promise<MatchFormSnapshot | null> => {
+    const cached = teamFormCache.get(teamId);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.form;
+    }
+
+    if (!options.providerEnabled) {
+      return null;
+    }
+
+    try {
+      const result = await options.client.getRecentFixturesForTeam(teamId, 5);
+      const last5 = normalizeRecentForm(result.data, teamId)
+        .slice(0, 5)
+        .map((entry) => entry.result)
+        .reverse();
+      const form = createFormSnapshot(last5, new Date().toISOString());
+
+      teamFormCache.set(teamId, {
+        form,
+        expiresAt: Date.now() + (form ? matchFormCacheTtlMs : emptyFormCacheTtlMs),
+      });
+
+      return form;
+    } catch (error) {
+      app.log.warn(
+        {
+          error,
+          teamId,
+        },
+        "Failed to fetch recent team form",
+      );
+
+      teamFormCache.set(teamId, {
+        form: null,
+        expiresAt: Date.now() + emptyFormCacheTtlMs,
+      });
+
+      return null;
+    }
+  };
+
+  const getMatchForm = async (
+    match: NormalizedMatch,
+  ): Promise<{
+    homeForm: MatchFormSnapshot | null;
+    awayForm: MatchFormSnapshot | null;
+  }> => {
+    const cached = matchFormCache.get(match.matchId);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return {
+        homeForm: cached.homeForm,
+        awayForm: cached.awayForm,
+      };
+    }
+
+    if (!options.providerEnabled || !isPreMatchStatus(match.statusShort)) {
+      return {
+        homeForm: null,
+        awayForm: null,
+      };
+    }
+
+    let homeForm: MatchFormSnapshot | null = null;
+    let awayForm: MatchFormSnapshot | null = null;
+
+    try {
+      const predictionResult = await options.client.getPredictions(match.matchId);
+      const prediction = predictionResult.data[0];
+      const updatedAt = new Date().toISOString();
+
+      homeForm = createFormSnapshot(
+        normalizePredictionForm(prediction?.teams?.home?.last_5?.form),
+        updatedAt,
+      );
+      awayForm = createFormSnapshot(
+        normalizePredictionForm(prediction?.teams?.away?.last_5?.form),
+        updatedAt,
+      );
+    } catch (error) {
+      app.log.warn(
+        {
+          error,
+          matchId: match.matchId,
+        },
+        "Failed to fetch pre-match prediction form",
+      );
+    }
+
+    if (!homeForm) {
+      homeForm = await getTeamRecentForm(match.homeTeam.id);
+    }
+
+    if (!awayForm) {
+      awayForm = await getTeamRecentForm(match.awayTeam.id);
+    }
+
+    matchFormCache.set(match.matchId, {
+      homeForm,
+      awayForm,
+      expiresAt:
+        Date.now() +
+        (homeForm || awayForm ? matchFormCacheTtlMs : emptyFormCacheTtlMs),
+    });
+
+    return {
+      homeForm,
+      awayForm,
+    };
+  };
+
+  const mapWithConcurrency = async <T, R>(
+    items: readonly T[],
+    concurrency: number,
+    mapper: (item: T) => Promise<R>,
+  ): Promise<R[]> => {
+    const results = new Array<R>(items.length);
+    let index = 0;
+
+    const worker = async (): Promise<void> => {
+      while (index < items.length) {
+        const currentIndex = index;
+        index += 1;
+        results[currentIndex] = await mapper(items[currentIndex] as T);
+      }
+    };
+
+    await Promise.all(
+      Array.from(
+        {
+          length: Math.min(concurrency, items.length),
+        },
+        () => worker(),
+      ),
+    );
+
+    return results;
+  };
+
+  const enrichMatchesWithForm = async (
+    matches: NormalizedMatch[],
+  ): Promise<
+    Array<
+      NormalizedMatch & {
+        homeForm?: MatchFormSnapshot | null;
+        awayForm?: MatchFormSnapshot | null;
+      }
+    >
+  > => {
+    const indexedMatches = matches.map((match, index) => ({
+      match,
+      index,
+    }));
+    const nextMatches = [...matches];
+    const candidates = indexedMatches.filter(({ match }) =>
+      isPreMatchStatus(match.statusShort),
+    );
+
+    const enriched = await mapWithConcurrency(
+      candidates,
+      formFetchConcurrency,
+      async ({ match, index }) => ({
+        index,
+        forms: await getMatchForm(match),
+      }),
+    );
+
+    for (const entry of enriched) {
+      const match = matches[entry.index];
+
+      if (!match) {
+        continue;
+      }
+
+      nextMatches[entry.index] = {
+        ...match,
+        homeForm: entry.forms.homeForm,
+        awayForm: entry.forms.awayForm,
+      };
+    }
+
+    return nextMatches;
   };
 
   const getMatchesForDate = async (
@@ -485,9 +744,10 @@ export async function registerMatchesRoutes(
       offset,
       limit,
     );
+    const enrichedMatches = await enrichMatchesWithForm(pagedMatches);
 
     return {
-      matches: pagedMatches,
+      matches: enrichedMatches,
       generatedAt: snapshot.generatedAt,
       total: filteredMatches.length,
       offset,
