@@ -444,7 +444,7 @@ export function LiveScoresClient({
       store.applySnapshot(createEmptySnapshot());
     });
     void loadMatchesPage(true);
-  }, [deferredQuery, liveOnly, loadMatchesPage, setPaginationState, store]);
+  }, [deferredQuery, liveOnly, store]);
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
@@ -472,7 +472,6 @@ export function LiveScoresClient({
     };
   }, [
     hasMatchesInStore,
-    loadMatchesPage,
     pagination.hasMore,
     visibleGroups.length,
   ]);
