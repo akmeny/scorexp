@@ -17,6 +17,7 @@ import { ChatDrawer } from "@/components/chat-drawer";
 import { LeagueFavoriteIcon } from "@/components/favorite-icons";
 import { MatchDrawer } from "@/components/match-drawer";
 import { MatchRowById } from "@/components/match-row";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   describeBackendError,
   fetchTodayMatchesPage,
@@ -178,14 +179,17 @@ const ScoreXPHeader = memo(function ScoreXPHeader({
         ))}
       </nav>
 
-      <button
-        type="button"
-        className="scorexp-profile-button"
-        aria-label="Profil"
-        title="Profil"
-      >
-        <span className="scorexp-profile-icon" aria-hidden="true" />
-      </button>
+      <div className="scorexp-header-actions">
+        <ThemeToggle />
+        <button
+          type="button"
+          className="scorexp-profile-button"
+          aria-label="Profil"
+          title="Profil"
+        >
+          <span className="scorexp-profile-icon" aria-hidden="true" />
+        </button>
+      </div>
     </header>
   );
 });

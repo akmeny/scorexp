@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { startTransition, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { MatchDetailContent, matchDetailTabLabels } from "@/components/match-detail-content";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { fetchMatchDetailPageData } from "@/lib/api";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { translateCountryName } from "@/lib/i18n";
@@ -236,9 +237,12 @@ export function LiveMatchDetailPage({
           </p>
         </div>
 
-        <span className={`status-pill ${connectionStatus === "live" ? "is-live" : "is-muted"}`}>
-          {connectionStatus === "live" ? "Canlı güncelleme açık" : "Yeniden bağlanıyor"}
-        </span>
+        <div className="detail-hero-actions">
+          <ThemeToggle />
+          <span className={`status-pill ${connectionStatus === "live" ? "is-live" : "is-muted"}`}>
+            {connectionStatus === "live" ? "Canlı güncelleme açık" : "Yeniden bağlanıyor"}
+          </span>
+        </div>
       </section>
 
       {removed ? (
