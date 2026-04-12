@@ -36,14 +36,16 @@ async function fetchJson<T>(path: string): Promise<T> {
     });
   } catch (error) {
     throw new BackendRequestError(
-      error instanceof Error ? error.message : "Backend is unreachable",
+      error instanceof Error
+        ? error.message
+        : "Sunucuya ula\u015F\u0131lam\u0131yor",
       null,
     );
   }
 
   if (!response.ok) {
     throw new BackendRequestError(
-      `Request failed with status ${response.status}`,
+      `\u0130stek ${response.status} durum koduyla ba\u015Far\u0131s\u0131z oldu`,
       response.status,
     );
   }
@@ -66,14 +68,14 @@ export function isLikelyBackendWakeup(error: unknown): boolean {
 
 export function describeBackendError(error: unknown): string {
   if (isLikelyBackendWakeup(error)) {
-    return "The backend is waking up. Live data will appear automatically once Render starts the service.";
+    return "Sunucu uyan\u0131yor. Render servisi ba\u015Flad\u0131ktan sonra canl\u0131 veriler otomatik olarak g\u00F6r\u00FCnecek.";
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "Backend is unavailable right now.";
+  return "Sunucu \u015Fu anda kullan\u0131lam\u0131yor.";
 }
 
 export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotResponse> {

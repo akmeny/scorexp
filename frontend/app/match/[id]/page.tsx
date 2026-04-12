@@ -18,9 +18,9 @@ export default async function MatchPage({ params }: MatchPageProps) {
     return (
       <main className="page-shell">
         <section className="empty-card">
-          <p>That match id is not valid.</p>
+          <p>Bu ma\u00E7 kimli\u011Fi ge\u00E7erli de\u011Fil.</p>
           <Link href="/" className="secondary-link">
-            Back to live scores
+            Canl\u0131 skorlara d\u00F6n
           </Link>
         </section>
       </main>
@@ -33,9 +33,9 @@ export default async function MatchPage({ params }: MatchPageProps) {
     return (
       <main className="page-shell">
         <section className="empty-card">
-          <p>That live match is not available right now.</p>
+          <p>Bu canl\u0131 ma\u00E7 \u015Fu anda kullan\u0131lam\u0131yor.</p>
           <Link href="/" className="secondary-link">
-            Back to live scores
+            Canl\u0131 skorlara d\u00F6n
           </Link>
         </section>
       </main>

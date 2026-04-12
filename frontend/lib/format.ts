@@ -1,10 +1,12 @@
+import { formatTranslatedEventLine, translateStatusLong } from "@/lib/i18n";
 import type { LiveMatch, MatchEventSummaryItem } from "@/lib/types";
 
-const kickoffFormatter = new Intl.DateTimeFormat("en-US", {
+const kickoffFormatter = new Intl.DateTimeFormat("tr-TR", {
   month: "short",
   day: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hour12: false,
 });
 
 const kickoffClockFormatter = new Intl.DateTimeFormat("tr-TR", {
@@ -13,10 +15,11 @@ const kickoffClockFormatter = new Intl.DateTimeFormat("tr-TR", {
   hour12: false,
 });
 
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
+const timeFormatter = new Intl.DateTimeFormat("tr-TR", {
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
+  hour12: false,
 });
 
 export function formatKickoff(iso: string): string {
@@ -33,7 +36,7 @@ export function formatMinute(match: LiveMatch): string {
   }
 
   if (match.statusShort === "P") {
-    return "Penaltı Atışları";
+    return "Penalt\u0131 At\u0131\u015Flar\u0131";
   }
 
   if (match.statusShort === "HT") {
@@ -53,7 +56,7 @@ export function formatMinute(match: LiveMatch): string {
   }
 
   if (["PST", "CANC", "ABD", "AWD", "WO"].includes(match.statusShort)) {
-    return "İptal";
+    return "\u0130ptal";
   }
 
   if (match.statusShort === "NS" || match.statusShort === "TBD") {
@@ -64,16 +67,11 @@ export function formatMinute(match: LiveMatch): string {
     return `${match.minute}'`;
   }
 
-  return match.statusLong;
+  return translateStatusLong(match.statusShort, match.statusLong);
 }
 
 export function formatEventLine(event: MatchEventSummaryItem): string {
-  const minute = event.minute !== null ? `${event.minute}` : "-";
-  const extra = event.extraMinute ? `+${event.extraMinute}` : "";
-  const player = event.playerName ? ` ${event.playerName}` : "";
-  const team = event.teamName ? `${event.teamName} ` : "";
-
-  return `${minute}${extra}' ${team}${event.type}${player} - ${event.detail}`;
+  return formatTranslatedEventLine(event);
 }
 
 export function getStatusTone(statusShort: string): string {

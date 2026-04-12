@@ -3,7 +3,7 @@ import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "ScoreXP",
-  description: "Today's football scores and live updates powered by API-Sports.",
+  description: "API-Sports destekli günlük futbol skorları ve canlı güncellemeler.",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body>
         {children}
       </body>

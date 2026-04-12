@@ -148,7 +148,11 @@ export const MatchRow = memo(function MatchRow({
             isFavorite ? "is-active" : ""
           }`}
           aria-pressed={isFavorite}
-          aria-label={isFavorite ? "Remove match from favorites" : "Add match to favorites"}
+          aria-label={
+            isFavorite
+              ? "Maçı favorilerden çıkar"
+              : "Maçı favorilere ekle"
+          }
           onClick={() => onToggleFavorite(match.matchId)}
         >
           <MatchFavoriteIcon active={isFavorite} />

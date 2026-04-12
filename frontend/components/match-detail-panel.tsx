@@ -1,4 +1,11 @@
-import { formatEventLine, formatKickoff, formatLastUpdated, formatMinute, getStatusTone } from "@/lib/format";
+import {
+  formatEventLine,
+  formatKickoff,
+  formatLastUpdated,
+  formatMinute,
+  getStatusTone,
+} from "@/lib/format";
+import { translateCountryName, translateMatchStatus } from "@/lib/i18n";
 import type { LiveMatch } from "@/lib/types";
 
 interface MatchDetailPanelProps {
@@ -22,13 +29,14 @@ export function MatchDetailPanel({
         <div className="detail-empty">
           <p className="detail-empty-title">
             {removed
-              ? "That match is no longer in today's board."
-              : "Choose a match to inspect."}
+              ? "Bu ma\u00E7 art\u0131k bug\u00FCn\u00FCn ekran\u0131nda yer alm\u0131yor."
+              : "\u0130ncelemek i\u00E7in bir ma\u00E7 se\u00E7in."}
           </p>
           {matchId ? (
             <p className="detail-empty-subtext">
-              Match id {matchId} either moved outside the current filters or
-              is no longer in today's board.
+              Ma\u00E7 kimli\u011Fi {matchId}, mevcut filtrelerin d\u0131\u015F\u0131na
+              \u00E7\u0131km\u0131\u015F olabilir veya art\u0131k bug\u00FCn ekran\u0131nda
+              yer alm\u0131yor.
             </p>
           ) : null}
         </div>
@@ -40,16 +48,18 @@ export function MatchDetailPanel({
     <section className="detail-panel">
       <header className="detail-header">
         <div>
-          <p className="eyebrow">Match detail</p>
+          <p className="eyebrow">Ma\u00E7 Detay\u0131</p>
           <h2 className="detail-title">{match.leagueName}</h2>
-          <p className="league-country">{match.country}</p>
+          <p className="league-country">
+            {translateCountryName(match.country, match.countryFlag)}
+          </p>
         </div>
         <div className="detail-status">
           <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
             {formatMinute(match)}
           </span>
           <span className="timestamp-label">
-            Updated {formatLastUpdated(match.lastUpdatedAt)}
+            G\u00FCncellendi {formatLastUpdated(match.lastUpdatedAt)}
           </span>
         </div>
       </header>
@@ -96,31 +106,31 @@ export function MatchDetailPanel({
 
       <dl className="detail-facts">
         <div>
-          <dt>Kickoff</dt>
+          <dt>Ba\u015Flang\u0131\u00E7</dt>
           <dd>{formatKickoff(match.startTime)}</dd>
         </div>
         <div>
-          <dt>Status</dt>
-          <dd>{match.statusLong}</dd>
+          <dt>Durum</dt>
+          <dd>{translateMatchStatus(match)}</dd>
         </div>
         <div>
-          <dt>League id</dt>
+          <dt>Lig Kimli\u011Fi</dt>
           <dd>{match.leagueId}</dd>
         </div>
         <div>
-          <dt>Match id</dt>
+          <dt>Ma\u00E7 Kimli\u011Fi</dt>
           <dd>{match.matchId}</dd>
         </div>
       </dl>
 
       <section className="detail-events">
         <header className="detail-events-header">
-          <h3>Event summary</h3>
+          <h3>Olay \u00D6zeti</h3>
           {match.eventsSummary ? (
             <div className="event-totals">
-              <span>{match.eventsSummary.total} events</span>
-              <span>{match.eventsSummary.goals} goals</span>
-              <span>{match.eventsSummary.cards} cards</span>
+              <span>{match.eventsSummary.total} olay</span>
+              <span>{match.eventsSummary.goals} gol</span>
+              <span>{match.eventsSummary.cards} kart</span>
             </div>
           ) : null}
         </header>
@@ -135,7 +145,8 @@ export function MatchDetailPanel({
           </ul>
         ) : (
           <p className="detail-empty-subtext">
-            No event summary is cached for this fixture yet.
+            Bu kar\u015F\u0131la\u015Fma i\u00E7in hen\u00FCz olay \u00F6zeti
+            \u00F6nbelle\u011Fe al\u0131nmad\u0131.
           </p>
         )}
       </section>
