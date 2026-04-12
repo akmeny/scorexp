@@ -115,7 +115,10 @@ export class SocketHub {
 
   private onConnection(socket: Socket): void {
     this.logger.info({ socketId: socket.id }, "Socket client connected");
-    this.emitSnapshotTo(socket);
+
+    if (socket.handshake.query.snapshot !== "off") {
+      this.emitSnapshotTo(socket);
+    }
 
     socket.on("match:watch", (matchId: unknown) => {
       const parsed = Number(matchId);

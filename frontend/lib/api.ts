@@ -1,5 +1,6 @@
 import type {
   MatchDetailResponse,
+  MatchesPageResponse,
   MatchesSnapshotResponse,
   MatchesSnapshotViewModel,
 } from "@/lib/types";
@@ -77,6 +78,34 @@ export function describeBackendError(error: unknown): string {
 
 export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotResponse> {
   return fetchJson<MatchesSnapshotResponse>("/api/matches/today");
+}
+
+export async function fetchTodayMatchesPage({
+  offset,
+  limit,
+  query,
+  liveOnly,
+}: {
+  offset: number;
+  limit: number;
+  query: string;
+  liveOnly: boolean;
+}): Promise<MatchesPageResponse> {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const trimmedQuery = query.trim();
+
+  if (trimmedQuery) {
+    params.set("q", trimmedQuery);
+  }
+
+  if (liveOnly) {
+    params.set("liveOnly", "true");
+  }
+
+  return fetchJson<MatchesPageResponse>(`/api/matches/today?${params}`);
 }
 
 export async function fetchTodayMatchesSnapshotSafe(): Promise<MatchesSnapshotViewModel> {

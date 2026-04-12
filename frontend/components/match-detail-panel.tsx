@@ -22,12 +22,13 @@ export function MatchDetailPanel({
         <div className="detail-empty">
           <p className="detail-empty-title">
             {removed
-              ? "That match is no longer in the live store."
-              : "Choose a live match to inspect."}
+              ? "That match is no longer in today's board."
+              : "Choose a match to inspect."}
           </p>
           {matchId ? (
             <p className="detail-empty-subtext">
-              Match id {matchId} either finished or dropped out of the live feed.
+              Match id {matchId} either moved outside the current filters or
+              is no longer in today's board.
             </p>
           ) : null}
         </div>
@@ -61,6 +62,8 @@ export function MatchDetailPanel({
               alt=""
               width={40}
               height={40}
+              loading="lazy"
+              decoding="async"
               className="detail-logo"
             />
           ) : (
@@ -80,6 +83,8 @@ export function MatchDetailPanel({
               alt=""
               width={40}
               height={40}
+              loading="lazy"
+              decoding="async"
               className="detail-logo"
             />
           ) : (
@@ -130,7 +135,7 @@ export function MatchDetailPanel({
           </ul>
         ) : (
           <p className="detail-empty-subtext">
-            No live event summary is cached for this fixture yet.
+            No event summary is cached for this fixture yet.
           </p>
         )}
       </section>

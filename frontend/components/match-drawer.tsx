@@ -30,7 +30,7 @@ export const MatchDrawer = memo(function MatchDrawer({
   return (
     <aside className="match-drawer">
       <header className="drawer-header">
-        <span className="drawer-title">Live detail</span>
+        <span className="drawer-title">Match detail</span>
         <div className="drawer-actions">
           {match ? (
             <Link href={`/match/${match.matchId}`} className="secondary-link">

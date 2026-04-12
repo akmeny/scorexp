@@ -10,22 +10,20 @@ import {
   useMemo,
   useRef,
   useState,
-  type UIEvent,
+  type RefObject,
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { MatchDrawer } from "@/components/match-drawer";
 import { MatchRowById } from "@/components/match-row";
 import {
   describeBackendError,
-  fetchTodayMatchesSnapshot,
+  fetchTodayMatchesPage,
   isLikelyBackendWakeup,
 } from "@/lib/api";
 import { formatLastUpdated } from "@/lib/format";
 import { clientLogger } from "@/lib/logger";
 import {
   buildVisibleGroups,
-  flattenGroups,
-  type FlatListItem,
   type LeagueGroup,
   type MatchFilters,
 } from "@/lib/matches";
@@ -37,6 +35,7 @@ import {
 import { getSocket } from "@/lib/socket";
 import type {
   MatchesDiffResponse,
+  MatchesPageResponse,
   MatchesSnapshotResponse,
   MatchesSnapshotViewModel,
 } from "@/lib/types";
@@ -50,65 +49,18 @@ interface WakeRetryState {
   lastError: string | null;
 }
 
-interface ItemMeasurements {
-  heights: number[];
-  offsets: number[];
-  totalHeight: number;
+interface PaginationState {
+  hasMore: boolean;
+  loading: boolean;
+  nextOffset: number;
+  error: string | null;
 }
 
-const leagueHeaderHeight = 70;
-const matchRowHeight = 82;
-const overscan = 8;
+const pageSize = 72;
 const coldStartRetryDelays = [2500, 5000, 10000, 20000, 30000];
 const delayedDataThresholdMs = 90_000;
 const freshnessTickMs = 30_000;
-
-function getItemHeight(item: FlatListItem): number {
-  return item.type === "league" ? leagueHeaderHeight : matchRowHeight;
-}
-
-function buildMeasurements(items: readonly FlatListItem[]): ItemMeasurements {
-  const heights: number[] = [];
-  const offsets: number[] = [];
-  let totalHeight = 0;
-
-  for (const item of items) {
-    const height = getItemHeight(item);
-    offsets.push(totalHeight);
-    heights.push(height);
-    totalHeight += height;
-  }
-
-  return {
-    heights,
-    offsets,
-    totalHeight,
-  };
-}
-
-function findStartIndex(
-  offsets: readonly number[],
-  heights: readonly number[],
-  scrollTop: number,
-): number {
-  let low = 0;
-  let high = offsets.length - 1;
-  let result = 0;
-
-  while (low <= high) {
-    const middle = Math.floor((low + high) / 2);
-    const itemBottom = (offsets[middle] ?? 0) + (heights[middle] ?? 0);
-
-    if (itemBottom <= scrollTop) {
-      low = middle + 1;
-    } else {
-      result = middle;
-      high = middle - 1;
-    }
-  }
-
-  return result;
-}
+const loadMoreRootMargin = "1200px 0px 1600px";
 
 function countVisibleMatches(groups: readonly LeagueGroup[]): number {
   return groups.reduce((total, group) => total + group.matchIds.length, 0);
@@ -116,6 +68,14 @@ function countVisibleMatches(groups: readonly LeagueGroup[]): number {
 
 function formatSeconds(milliseconds: number): string {
   return `${Math.ceil(milliseconds / 1000)}s`;
+}
+
+function createEmptySnapshot(): MatchesSnapshotResponse {
+  return {
+    matches: [],
+    generatedAt: new Date().toISOString(),
+    total: 0,
+  };
 }
 
 const FilterBar = memo(function FilterBar({
@@ -164,146 +124,89 @@ const FilterBar = memo(function FilterBar({
   );
 });
 
-const LeagueVirtualHeader = memo(function LeagueVirtualHeader({
+const LeagueStreamSection = memo(function LeagueStreamSection({
+  store,
   group,
+  selectedMatchId,
 }: {
+  store: LiveMatchStore;
   group: LeagueGroup;
+  selectedMatchId: number | null;
 }) {
   return (
-    <header className="league-flat-header">
-      <div>
-        <h2 className="league-title">{group.leagueName}</h2>
-        <p className="league-country">{group.country}</p>
+    <section className="league-stream-section">
+      <header className="league-flat-header">
+        <div>
+          <h2 className="league-title">{group.leagueName}</h2>
+          <p className="league-country">{group.country}</p>
+        </div>
+        <span className="league-count">{group.matchIds.length}</span>
+      </header>
+
+      <div className="league-stream-matches">
+        {group.matchIds.map((matchId) => (
+          <MatchRowById
+            key={matchId}
+            store={store}
+            matchId={matchId}
+            isSelected={selectedMatchId === matchId}
+          />
+        ))}
       </div>
-      <span className="league-count">{group.matchIds.length}</span>
-    </header>
+    </section>
   );
 });
 
-const VirtualizedScoreboardList = memo(function VirtualizedScoreboardList({
+const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
   store,
   groups,
   selectedMatchId,
+  loadedMatches,
+  totalMatches,
+  pagination,
+  loadMoreRef,
 }: {
   store: LiveMatchStore;
   groups: readonly LeagueGroup[];
   selectedMatchId: number | null;
+  loadedMatches: number;
+  totalMatches: number;
+  pagination: PaginationState;
+  loadMoreRef: RefObject<HTMLDivElement | null>;
 }) {
-  const items = useMemo(() => flattenGroups(groups), [groups]);
-  const measurements = useMemo(() => buildMeasurements(items), [items]);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const frameRef = useRef<number | null>(null);
-  const pendingScrollTopRef = useRef(0);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(680);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-
-    if (!viewport) {
-      return;
-    }
-
-    const updateViewportHeight = () => {
-      setViewportHeight(viewport.clientHeight || 680);
-    };
-
-    updateViewportHeight();
-
-    const observer = new ResizeObserver(updateViewportHeight);
-    observer.observe(viewport);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, []);
-
-  const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
-    pendingScrollTopRef.current = event.currentTarget.scrollTop;
-
-    if (frameRef.current !== null) {
-      return;
-    }
-
-    frameRef.current = window.requestAnimationFrame(() => {
-      frameRef.current = null;
-      setScrollTop(pendingScrollTopRef.current);
-    });
-  }, []);
-
-  if (items.length === 0) {
-    return null;
-  }
-
-  const maxScrollTop = Math.max(0, measurements.totalHeight - viewportHeight);
-  const clampedScrollTop = Math.min(scrollTop, maxScrollTop);
-  const firstVisibleIndex = findStartIndex(
-    measurements.offsets,
-    measurements.heights,
-    clampedScrollTop,
-  );
-  const viewportBottom = clampedScrollTop + viewportHeight;
-  let lastVisibleIndex = firstVisibleIndex;
-
-  while (
-    lastVisibleIndex < items.length &&
-    (measurements.offsets[lastVisibleIndex] ?? 0) < viewportBottom
-  ) {
-    lastVisibleIndex += 1;
-  }
-
-  const startIndex = Math.max(0, firstVisibleIndex - overscan);
-  const endIndex = Math.min(items.length, lastVisibleIndex + overscan);
-  const visibleItems = items.slice(startIndex, endIndex);
-
   return (
-    <section className="scoreboard-virtual-card" aria-label="Live scores">
-      <div
-        ref={viewportRef}
-        className="scoreboard-list-viewport"
-        onScroll={handleScroll}
-      >
-        <div
-          className="scoreboard-virtual-inner"
-          style={{
-            height: measurements.totalHeight,
-          }}
-        >
-          {visibleItems.map((item, visibleIndex) => {
-            const itemIndex = startIndex + visibleIndex;
-            const height = measurements.heights[itemIndex] ?? matchRowHeight;
-            const offset = measurements.offsets[itemIndex] ?? 0;
+    <section className="scoreboard-stream" aria-label="Today scores">
+      {groups.map((group) => (
+        <LeagueStreamSection
+          key={group.key}
+          store={store}
+          group={group}
+          selectedMatchId={selectedMatchId}
+        />
+      ))}
 
-            return (
-              <div
-                key={item.key}
-                className={`scoreboard-virtual-item is-${item.type}`}
-                style={{
-                  height,
-                  transform: `translateY(${offset}px)`,
-                }}
-              >
-                {item.type === "league" ? (
-                  <LeagueVirtualHeader group={item.group} />
-                ) : (
-                  <MatchRowById
-                    store={store}
-                    matchId={item.matchId}
-                    isSelected={selectedMatchId === item.matchId}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
+      <div ref={loadMoreRef} className="load-more-sentinel" aria-live="polite">
+        {pagination.loading ? (
+          <div className="progressive-loader">
+            <span className="loader-shimmer" />
+            <span>Loading more matches...</span>
+          </div>
+        ) : pagination.error ? (
+          <div className="progressive-loader is-error">
+            <span>{pagination.error}</span>
+          </div>
+        ) : pagination.hasMore ? (
+          <div className="progressive-loader">
+            <span>{loadedMatches} loaded</span>
+            <span>Scroll for more</span>
+          </div>
+        ) : (
+          <div className="progressive-loader is-complete">
+            <span>
+              All {totalMatches} matches loaded for this view.
+            </span>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -326,9 +229,23 @@ export function LiveScoresClient({
     nextDelayMs: initialSnapshot.error ? coldStartRetryDelays[0] ?? null : null,
     lastError: initialSnapshot.error,
   });
+  const [pagination, setPagination] = useState<PaginationState>({
+    hasMore: true,
+    loading: false,
+    nextOffset: 0,
+    error: null,
+  });
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [query, setQuery] = useState("");
   const [liveOnly, setLiveOnly] = useState(false);
+  const paginationRef = useRef<PaginationState>({
+    hasMore: true,
+    loading: false,
+    nextOffset: 0,
+    error: null,
+  });
+  const retryTimerRef = useRef<number | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const deferredQuery = useDeferredValue(query);
   const structure = useLiveMatchStructure(store);
   const meta = useLiveMatchStoreMeta(store);
@@ -338,6 +255,11 @@ export function LiveScoresClient({
     Number.isInteger(selectedMatchId) && selectedMatchId > 0
       ? selectedMatchId
       : null;
+
+  const setPaginationState = useEffectEvent((next: PaginationState) => {
+    paginationRef.current = next;
+    setPagination(next);
+  });
 
   const filters: MatchFilters = useMemo(
     () => ({
@@ -355,6 +277,8 @@ export function LiveScoresClient({
     () => countVisibleMatches(visibleGroups),
     [visibleGroups],
   );
+  const loadedMatchCount = structure.orderedIds.length;
+  const hasMatchesInStore = loadedMatchCount > 0;
 
   const handleQueryChange = useCallback((value: string) => {
     setQuery(value);
@@ -365,6 +289,100 @@ export function LiveScoresClient({
       setLiveOnly(value);
     });
   }, []);
+
+  const loadMatchesPage = useEffectEvent(async (reset: boolean) => {
+    const current = paginationRef.current;
+
+    if (current.loading || (!reset && !current.hasMore)) {
+      return;
+    }
+
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+
+    const offset = reset ? 0 : current.nextOffset;
+    setPaginationState({
+      hasMore: reset ? true : current.hasMore,
+      loading: true,
+      nextOffset: offset,
+      error: null,
+    });
+
+    try {
+      const page: MatchesPageResponse = await fetchTodayMatchesPage({
+        offset,
+        limit: pageSize,
+        query: deferredQuery,
+        liveOnly,
+      });
+
+      startTransition(() => {
+        if (reset) {
+          store.applySnapshot(page);
+        } else {
+          store.applyPage(page);
+        }
+      });
+
+      setTransportError(null);
+      setWakeRetry({
+        active: false,
+        attempt: 0,
+        nextDelayMs: null,
+        lastError: null,
+      });
+      setPaginationState({
+        hasMore: page.hasMore,
+        loading: false,
+        nextOffset: page.nextOffset ?? offset + page.matches.length,
+        error: null,
+      });
+    } catch (error) {
+      const message = describeBackendError(error);
+      const likelyWakeup = isLikelyBackendWakeup(error);
+      const storeEmpty = store.getStructureSnapshot().orderedIds.length === 0;
+
+      setConnectionStatus(storeEmpty ? "waking" : "reconnecting");
+      setTransportError(message);
+      setPaginationState({
+        hasMore: reset ? true : current.hasMore,
+        loading: false,
+        nextOffset: offset,
+        error: message,
+      });
+      clientLogger.warn("Today page fetch failed", {
+        offset,
+        reset,
+        likelyWakeup,
+        message,
+      });
+
+      if (likelyWakeup && storeEmpty) {
+        setWakeRetry((currentWakeRetry) => {
+          const attempt = currentWakeRetry.active
+            ? currentWakeRetry.attempt + 1
+            : 1;
+          const delay =
+            coldStartRetryDelays[
+              Math.min(attempt - 1, coldStartRetryDelays.length - 1)
+            ] ?? 30000;
+
+          retryTimerRef.current = window.setTimeout(() => {
+            void loadMatchesPage(true);
+          }, delay);
+
+          return {
+            active: true,
+            attempt,
+            nextDelayMs: delay,
+            lastError: message,
+          };
+        });
+      }
+    }
+  });
 
   const handleSnapshot = useEffectEvent((snapshot: MatchesSnapshotResponse) => {
     setTransportError(null);
@@ -403,88 +421,61 @@ export function LiveScoresClient({
   }, []);
 
   useEffect(() => {
-    if (!initialSnapshot.error) {
+    return () => {
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+
+    setPaginationState({
+      hasMore: true,
+      loading: false,
+      nextOffset: 0,
+      error: null,
+    });
+    startTransition(() => {
+      store.applySnapshot(createEmptySnapshot());
+    });
+    void loadMatchesPage(true);
+  }, [deferredQuery, liveOnly, loadMatchesPage, setPaginationState, store]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+
+    if (!sentinel) {
       return;
     }
 
-    let cancelled = false;
-    let timer: number | null = null;
-    let attempt = 0;
-
-    const scheduleSnapshotRetry = () => {
-      const delay =
-        coldStartRetryDelays[
-          Math.min(attempt, coldStartRetryDelays.length - 1)
-        ] ?? 30000;
-
-      setWakeRetry((current) => ({
-        active: true,
-        attempt: attempt + 1,
-        nextDelayMs: delay,
-        lastError: current.lastError,
-      }));
-      setConnectionStatus((current) => (current === "live" ? current : "waking"));
-
-      timer = window.setTimeout(() => {
-        void retrySnapshot();
-      }, delay);
-    };
-
-    const retrySnapshot = async () => {
-      try {
-        clientLogger.info("Retrying today snapshot after backend wake delay", {
-          attempt: attempt + 1,
-        });
-
-        const snapshot = await fetchTodayMatchesSnapshot();
-
-        if (cancelled) {
-          return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMatchesPage(false);
         }
+      },
+      {
+        root: null,
+        rootMargin: loadMoreRootMargin,
+      },
+    );
 
-        startTransition(() => {
-          store.applySnapshot(snapshot);
-        });
-        setTransportError(null);
-        setWakeRetry({
-          active: false,
-          attempt: 0,
-          nextDelayMs: null,
-          lastError: null,
-        });
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        const message = describeBackendError(error);
-        attempt += 1;
-        setTransportError(message);
-        setWakeRetry({
-          active: isLikelyBackendWakeup(error),
-          attempt,
-          nextDelayMs: null,
-          lastError: message,
-        });
-        clientLogger.warn("Today snapshot retry failed", {
-          attempt,
-          likelyWakeup: isLikelyBackendWakeup(error),
-          message,
-        });
-        scheduleSnapshotRetry();
-      }
-    };
-
-    scheduleSnapshotRetry();
+    observer.observe(sentinel);
 
     return () => {
-      cancelled = true;
-
-      if (timer) {
-        window.clearTimeout(timer);
-      }
+      observer.disconnect();
     };
-  }, [initialSnapshot.error, store]);
+  }, [
+    hasMatchesInStore,
+    loadMatchesPage,
+    pagination.hasMore,
+    visibleGroups.length,
+  ]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -564,7 +555,6 @@ export function LiveScoresClient({
         : connectionStatus === "waking"
           ? "Backend waking"
           : "Reconnecting";
-  const hasMatchesInStore = structure.orderedIds.length > 0;
   const lastUpdateMs = new Date(meta.generatedAt).getTime();
   const dataAgeMs = Number.isFinite(lastUpdateMs)
     ? Math.max(0, nowMs - lastUpdateMs)
@@ -628,7 +618,16 @@ export function LiveScoresClient({
         </section>
       ) : null}
 
-      {!hasMatchesInStore ? (
+      {!hasMatchesInStore && pagination.loading ? (
+        <section className="empty-card wake-card">
+          <span className="wake-pulse" />
+          <p>Loading today&apos;s football board.</p>
+          <p className="empty-subtext">
+            Pulling only the first screenful now. More matches and logos load as
+            you scroll.
+          </p>
+        </section>
+      ) : !hasMatchesInStore ? (
         <section className={`empty-card ${wakeRetry.active ? "wake-card" : ""}`}>
           {wakeRetry.active ? <span className="wake-pulse" /> : null}
           <p>
@@ -654,10 +653,14 @@ export function LiveScoresClient({
         </section>
       ) : (
         <section className="scoreboard-grid">
-          <VirtualizedScoreboardList
+          <ProgressiveScoreboardList
             store={store}
             groups={visibleGroups}
             selectedMatchId={activeMatchId}
+            loadedMatches={loadedMatchCount}
+            totalMatches={meta.total}
+            pagination={pagination}
+            loadMoreRef={loadMoreRef}
           />
           <MatchDrawer store={store} selectedMatchId={activeMatchId} />
         </section>

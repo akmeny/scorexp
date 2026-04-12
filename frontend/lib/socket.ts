@@ -22,6 +22,9 @@ export function getSocket(): Socket {
 
     socket = io(SOCKET_URL, {
       autoConnect: false,
+      query: {
+        snapshot: "off",
+      },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,

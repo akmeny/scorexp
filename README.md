@@ -428,6 +428,7 @@ Backend HTTP:
 
 - `GET /health`
 - `GET /api/matches/today`
+- `GET /api/matches/today?offset=0&limit=72&q=team&liveOnly=true`
 - `GET /api/matches/live`
 - `GET /api/matches/:id`
 
@@ -556,12 +557,16 @@ The backend tracks freshness metadata per match, including:
 6. The new normalized state is reconciled against the in-memory store.
 7. Only added matches, compact updates, and removals are queued for sockets.
 8. Socket broadcasts are batched in a short window before clients receive them.
-9. The frontend fetches an initial REST snapshot and then applies compact socket diffs.
+9. The frontend renders the shell first, then fetches the first small page of matches.
+10. As the browser scroll reaches the bottom sentinel, the next match page is fetched and appended.
+11. Team logos use native lazy loading and async decoding, so lower rows do not pull logo assets until the user approaches them.
+12. Socket diffs stay connected without forcing a full all-match socket snapshot on page load.
 
 ## Notes
 
 - If `APISPORTS_KEY` is empty, the backend still starts, but polling is disabled and `/health` returns a degraded status.
-- `GET /api/matches/today` returns the full current today snapshot for first paint.
+- `GET /api/matches/today` returns the current today snapshot; the frontend uses paginated calls for first paint and scroll loading.
+- Passing `offset` and `limit` to `GET /api/matches/today` returns a paginated slice for progressive loading.
 - `GET /api/matches/live` is kept as a backwards-compatible alias for the same snapshot.
 - `match:update` is used by the match detail page after it joins a match-specific room.
 

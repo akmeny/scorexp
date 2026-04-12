@@ -102,6 +102,8 @@ export const MatchRow = memo(function MatchRow({
                 width={20}
                 height={20}
                 loading="lazy"
+                decoding="async"
+                fetchPriority="low"
                 className="team-logo"
               />
             ) : (
@@ -117,6 +119,8 @@ export const MatchRow = memo(function MatchRow({
                 width={20}
                 height={20}
                 loading="lazy"
+                decoding="async"
+                fetchPriority="low"
                 className="team-logo"
               />
             ) : (

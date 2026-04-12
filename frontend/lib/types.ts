@@ -63,6 +63,13 @@ export interface MatchesSnapshotViewModel extends MatchesSnapshotResponse {
   error: string | null;
 }
 
+export interface MatchesPageResponse extends MatchesSnapshotResponse {
+  offset: number;
+  limit: number;
+  nextOffset: number | null;
+  hasMore: boolean;
+}
+
 export interface MatchesDiffResponse {
   added: LiveMatch[];
   updated: MatchPatch[];

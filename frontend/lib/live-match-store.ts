@@ -9,6 +9,7 @@ import {
 import type {
   LiveMatch,
   MatchesDiffResponse,
+  MatchesPageResponse,
   MatchesSnapshotResponse,
 } from "@/lib/types";
 
@@ -108,6 +109,38 @@ export class LiveMatchStore {
     this.emitMeta();
   }
 
+  applyPage(page: MatchesPageResponse): void {
+    const changedMatchIds = new Set<number>();
+    let structureChanged = false;
+
+    for (const match of page.matches) {
+      const previous = this.matches.get(match.matchId);
+
+      this.matches.set(match.matchId, match);
+      changedMatchIds.add(match.matchId);
+
+      if (!previous || previous !== match || patchAffectsStructure(match)) {
+        structureChanged = true;
+      }
+    }
+
+    this.metaSnapshot = {
+      generatedAt: page.generatedAt,
+      total: page.total,
+    };
+
+    if (structureChanged) {
+      this.rebuildStructure();
+      this.emitStructure();
+    }
+
+    for (const matchId of changedMatchIds) {
+      this.emitMatch(matchId);
+    }
+
+    this.emitMeta();
+  }
+
   applyDiff(diff: MatchesDiffResponse): void {
     let structureChanged = false;
     const changedMatchIds = new Set<number>();
@@ -145,7 +178,7 @@ export class LiveMatchStore {
 
     this.metaSnapshot = {
       generatedAt: diff.generatedAt,
-      total: diff.total,
+      total: Math.max(this.metaSnapshot.total, this.matches.size),
     };
 
     if (structureChanged) {
