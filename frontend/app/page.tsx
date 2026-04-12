@@ -1,10 +1,10 @@
 import { LiveScoresClient } from "@/components/live-scores-client";
-import { fetchLiveMatchesSnapshotSafe } from "@/lib/api";
+import { fetchTodayMatchesSnapshotSafe } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const snapshot = await fetchLiveMatchesSnapshotSafe();
+  const snapshot = await fetchTodayMatchesSnapshotSafe();
 
   return <LiveScoresClient initialSnapshot={snapshot} />;
 }

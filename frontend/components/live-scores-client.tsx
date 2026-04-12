@@ -17,7 +17,7 @@ import { MatchDrawer } from "@/components/match-drawer";
 import { MatchRowById } from "@/components/match-row";
 import {
   describeBackendError,
-  fetchLiveMatchesSnapshot,
+  fetchTodayMatchesSnapshot,
   isLikelyBackendWakeup,
 } from "@/lib/api";
 import { formatLastUpdated } from "@/lib/format";
@@ -158,7 +158,7 @@ const FilterBar = memo(function FilterBar({
         <strong>{visibleMatches}</strong>
         <span>shown</span>
         <span className="summary-divider">/</span>
-        <span>{totalMatches} in store</span>
+        <span>{totalMatches} today</span>
       </div>
     </section>
   );
@@ -432,11 +432,11 @@ export function LiveScoresClient({
 
     const retrySnapshot = async () => {
       try {
-        clientLogger.info("Retrying live snapshot after backend wake delay", {
+        clientLogger.info("Retrying today snapshot after backend wake delay", {
           attempt: attempt + 1,
         });
 
-        const snapshot = await fetchLiveMatchesSnapshot();
+        const snapshot = await fetchTodayMatchesSnapshot();
 
         if (cancelled) {
           return;
@@ -466,7 +466,7 @@ export function LiveScoresClient({
           nextDelayMs: null,
           lastError: message,
         });
-        clientLogger.warn("Live snapshot retry failed", {
+        clientLogger.warn("Today snapshot retry failed", {
           attempt,
           likelyWakeup: isLikelyBackendWakeup(error),
           message,
@@ -579,10 +579,10 @@ export function LiveScoresClient({
       <section className="hero-card">
         <div>
           <p className="eyebrow">ScoreXP</p>
-          <h1 className="page-title">Live football scores</h1>
+          <h1 className="page-title">Today&apos;s football scores</h1>
           <p className="page-subtitle">
-            Initial REST snapshot, compact socket diffs after connect, and
-            row-level subscriptions so score changes only repaint touched rows.
+            Full-day fixture coverage grouped by league, with live matches
+            refreshed through compact socket diffs as the action changes.
           </p>
         </div>
         <div className="hero-meta">
@@ -634,12 +634,12 @@ export function LiveScoresClient({
           <p>
             {wakeRetry.active
               ? "Backend is waking up."
-              : "No live football matches are in the store right now."}
+              : "No football matches are in today's store right now."}
           </p>
           <p className="empty-subtext">
             {wakeRetry.active
               ? "Render free services can sleep after inactivity. ScoreXP is retrying with safe backoff and will hydrate the live list automatically."
-              : "Once the backend sees live fixtures from API-Sports, they will appear here automatically."}
+              : "Once API-Sports returns today's fixtures, they will appear here automatically."}
           </p>
           {wakeRetry.active && wakeRetry.lastError ? (
             <p className="empty-subtext">{wakeRetry.lastError}</p>

@@ -18,6 +18,8 @@ services:
         sync: false
       - key: APISPORTS_BASE_URL
         value: https://v3.football.api-sports.io
+      - key: APISPORTS_TIMEZONE
+        value: Europe/Istanbul
       - key: FRONTEND_ORIGIN
         sync: false
       - key: POLL_INTERVAL_MS
@@ -42,6 +44,8 @@ services:
         sync: false
       - key: APISPORTS_BASE_URL
         value: https://v3.football.api-sports.io
+      - key: APISPORTS_TIMEZONE
+        value: Europe/Istanbul
       - key: FRONTEND_ORIGIN
         sync: false
       - key: POLL_INTERVAL_MS

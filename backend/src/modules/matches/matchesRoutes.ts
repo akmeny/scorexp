@@ -9,13 +9,16 @@ export async function registerMatchesRoutes(
   app: FastifyInstance,
   store: MatchStore,
 ): Promise<void> {
-  app.get("/api/matches/live", async () => {
+  const getSnapshot = async () => {
     return {
       matches: store.getAll(),
       generatedAt: new Date().toISOString(),
       total: store.size(),
     };
-  });
+  };
+
+  app.get("/api/matches/today", getSnapshot);
+  app.get("/api/matches/live", getSnapshot);
 
   app.get<{ Params: MatchIdParams }>("/api/matches/:id", async (request, reply) => {
     const matchId = Number(request.params.id);

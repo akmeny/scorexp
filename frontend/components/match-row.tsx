@@ -13,6 +13,7 @@ import {
   LiveMatchStore,
   useLiveMatch,
 } from "@/lib/live-match-store";
+import { isLiveStatus } from "@/lib/matches";
 import type { LiveMatch } from "@/lib/types";
 
 interface MatchRowByIdProps {
@@ -49,6 +50,11 @@ export const MatchRow = memo(function MatchRow({
   isSelected,
 }: MatchRowProps) {
   const latestEvent = match.eventsSummary?.latest ?? null;
+  const latestEventLabel = latestEvent
+    ? formatEventLine(latestEvent)
+    : isLiveStatus(match.statusShort)
+      ? "Waiting for event feed"
+      : "No events yet";
   const previousUpdatedAtRef = useRef(match.lastUpdatedAt);
   const [isFresh, setIsFresh] = useState(false);
 
@@ -127,9 +133,7 @@ export const MatchRow = memo(function MatchRow({
 
         <div className="match-meta-column">
           <span className="kickoff-label">{formatKickoff(match.startTime)}</span>
-          <span className="latest-event">
-            {latestEvent ? formatEventLine(latestEvent) : "Waiting for event feed"}
-          </span>
+          <span className="latest-event">{latestEventLabel}</span>
           <span className={`freshness-chip ${isFresh ? "is-fresh" : ""}`}>
             {isFresh
               ? "Just updated"

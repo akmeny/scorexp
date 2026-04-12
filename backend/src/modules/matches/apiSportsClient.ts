@@ -20,7 +20,7 @@ export interface ApiSportsClientMetrics {
   successfulRequestCount: number;
   failedRequestCount: number;
   liveRequests: number;
-  fallbackFixtureRequests: number;
+  todayFixtureRequests: number;
   eventRequests: number;
   lastRequestAt: string | null;
 }
@@ -31,7 +31,7 @@ interface ApiSportsClientOptions {
   requestTimeoutMs: number;
 }
 
-type RequestKind = "live" | "fallback" | "events";
+type RequestKind = "live" | "today" | "events";
 
 export class ApiSportsError extends Error {
   readonly status: number;
@@ -112,7 +112,7 @@ export class ApiSportsClient {
     successfulRequestCount: 0,
     failedRequestCount: 0,
     liveRequests: 0,
-    fallbackFixtureRequests: 0,
+    todayFixtureRequests: 0,
     eventRequests: 0,
     lastRequestAt: null,
   };
@@ -127,9 +127,11 @@ export class ApiSportsClient {
 
   async getFixturesByDate(
     date: string,
+    timezone: string,
   ): Promise<ApiSportsRequestResult<ProviderFixtureResponse>> {
-    return this.request<ProviderFixtureResponse>("fallback", "fixtures", {
+    return this.request<ProviderFixtureResponse>("today", "fixtures", {
       date,
+      timezone,
     });
   }
 
@@ -157,8 +159,8 @@ export class ApiSportsClient {
 
     if (kind === "live") {
       this.metrics.liveRequests += 1;
-    } else if (kind === "fallback") {
-      this.metrics.fallbackFixtureRequests += 1;
+    } else if (kind === "today") {
+      this.metrics.todayFixtureRequests += 1;
     } else {
       this.metrics.eventRequests += 1;
     }

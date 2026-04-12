@@ -20,8 +20,8 @@ function normalizeTimestamp(fixture: ProviderFixtureResponse["fixture"]): string
   return new Date().toISOString();
 }
 
-function scoreOrZero(value: number | null | undefined): number {
-  return typeof value === "number" ? value : 0;
+function scoreOrNull(value: number | null | undefined): number | null {
+  return typeof value === "number" ? value : null;
 }
 
 export function normalizeFixture(
@@ -47,8 +47,8 @@ export function normalizeFixture(
       name: fixture.teams.away.name?.trim() || "Away Team",
       logo: fixture.teams.away.logo?.trim() || "",
     },
-    homeScore: scoreOrZero(fixture.goals.home),
-    awayScore: scoreOrZero(fixture.goals.away),
+    homeScore: scoreOrNull(fixture.goals.home),
+    awayScore: scoreOrNull(fixture.goals.away),
     eventsSummary: eventSummary,
   };
 }

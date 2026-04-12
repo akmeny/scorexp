@@ -1,10 +1,10 @@
 # ScoreXP
 
-ScoreXP is a real-data live football scores app with:
+ScoreXP is a real-data football scores app with today's full fixture list and live updates:
 
 - `frontend/`: Next.js + TypeScript
 - `backend/`: Fastify + Socket.IO + TypeScript
-- live football data from API-Sports at `https://v3.football.api-sports.io`
+- football fixture and live-score data from API-Sports at `https://v3.football.api-sports.io`
 
 The frontend never calls API-Sports directly. All provider access stays in the backend through `APISPORTS_KEY`.
 
@@ -44,6 +44,7 @@ NODE_ENV=production
 PORT=4000
 APISPORTS_KEY=
 APISPORTS_BASE_URL=https://v3.football.api-sports.io
+APISPORTS_TIMEZONE=Europe/Istanbul
 FRONTEND_ORIGIN=https://scorexp.com,https://www.scorexp.com,https://scorexp-iota.vercel.app
 POLL_INTERVAL_MS=15000
 LOG_LEVEL=info
@@ -277,6 +278,7 @@ NODE_ENV=production
 LOG_LEVEL=info
 APISPORTS_KEY=<your_api_sports_key>
 APISPORTS_BASE_URL=https://v3.football.api-sports.io
+APISPORTS_TIMEZONE=Europe/Istanbul
 FRONTEND_ORIGIN=https://scorexp.com,https://www.scorexp.com,https://scorexp-iota.vercel.app
 POLL_INTERVAL_MS=15000
 ```
@@ -288,6 +290,7 @@ NODE_ENV=production
 LOG_LEVEL=info
 APISPORTS_KEY=<your_api_sports_key>
 APISPORTS_BASE_URL=https://v3.football.api-sports.io
+APISPORTS_TIMEZONE=Europe/Istanbul
 FRONTEND_ORIGIN=https://<vercel-dev-preview-url>.vercel.app,http://localhost:3000
 POLL_INTERVAL_MS=30000
 ```
@@ -399,7 +402,7 @@ How ScoreXP handles this:
 
 - The Vercel frontend first attempts the normal REST snapshot.
 - If the backend is unreachable or returns a likely cold-start gateway error, the UI shows `Backend waking` instead of a broken empty state.
-- The client retries the live snapshot with safe backoff: about 2.5s, 5s, 10s, 20s, then 30s between attempts.
+- The client retries the today snapshot with safe backoff: about 2.5s, 5s, 10s, 20s, then 30s between attempts.
 - Socket.IO reconnects are also backed off with jitter and a 30s max delay, so sleeping backends are not hammered by tight reconnect loops.
 - If existing match data is already on screen and the socket drops, ScoreXP keeps the latest known real scores visible and shows a delayed-data banner instead of clearing the list.
 - No fake scores or mock events are generated during delays.
@@ -424,6 +427,7 @@ Environment setup reminders:
 Backend HTTP:
 
 - `GET /health`
+- `GET /api/matches/today`
 - `GET /api/matches/live`
 - `GET /api/matches/:id`
 
@@ -443,13 +447,13 @@ Client socket helpers used by the detail page:
 The backend uses:
 
 - `GET /fixtures?live=all`
-- `GET /fixtures?date=YYYY-MM-DD`
+- `GET /fixtures?date=YYYY-MM-DD&timezone=Europe/Istanbul`
 - `GET /fixtures/events?fixture=<fixtureId>`
 
 ### Why these endpoints
 
-- `fixtures?live=all` is the fast path for active matches.
-- `fixtures?date=YYYY-MM-DD` is the slower fallback refresh used to smooth live-feed gaps and confirm half-time or full-time transitions.
+- `fixtures?date=YYYY-MM-DD&timezone=...` is the broad today snapshot used to populate upcoming, live, and finished matches.
+- `fixtures?live=all` is the fast overlay for active matches, because that feed is fresher and cheaper than broad date refreshes.
 - `fixtures/events` is fetched selectively for only a small number of changed or transition-priority matches.
 
 ## Polling strategy
@@ -465,14 +469,17 @@ The backend is optimized to reduce provider traffic while keeping the app feelin
 
 ### Split fetch strategy
 
-- Fast path: `fixtures?live=all`
-- Slow path: `fixtures?date=YYYY-MM-DD`
+- Broad today path: `fixtures?date=YYYY-MM-DD&timezone=...`
+- Fast live overlay: `fixtures?live=all`
 
-The slow path is not called every cycle. It runs on a much longer interval and is used only to:
+The broad today path is not called every cycle. It runs immediately when the day cache is empty, then on a longer interval. It is used to:
 
-- keep tracked matches visible if the live feed briefly drops them during transitions
-- improve removal reasons and final statuses for matches that just left the live endpoint
+- populate the complete today board, including upcoming and finished fixtures
+- keep finished matches visible after they leave the live endpoint
+- catch schedule/status corrections without hammering the provider every loop
 - avoid hammering the provider with broad fixture refreshes on every loop
+
+The live overlay is called more often and wins for any matching fixture id, so score/minute changes feel real-time while the full-day board stays complete.
 
 ### Event fetch strategy
 
@@ -494,8 +501,8 @@ The backend computes provider response fingerprints and keeps per-match freshnes
 ### Provider dedupe
 
 - live responses are hashed and counted when unchanged
-- fallback responses are hashed and counted when unchanged
-- per-match live and fallback unchanged streaks are tracked in freshness metadata
+- today fixture responses are hashed and counted when unchanged
+- per-match live and today-fixture unchanged streaks are tracked in freshness metadata
 
 ### Compact socket diffs
 
@@ -513,16 +520,16 @@ The backend no longer broadcasts full updated match objects to everyone.
 
 ## Per-match freshness metadata
 
-The backend tracks freshness metadata per live match, including:
+The backend tracks freshness metadata per match, including:
 
 - last live provider sighting
-- last fallback provider sighting
+- last broad today-fixture provider sighting
 - last event summary refresh
 - last provider change time
-- source visibility: `live`, `fallback`, or `live+fallback`
-- unchanged streak counters for live and fallback responses
+- source visibility from the live feed, the today fixture feed, or both
+- unchanged streak counters for live and today fixture responses
 
-`GET /api/matches/:id` returns the live match plus its freshness metadata.
+`GET /api/matches/:id` returns the match plus its freshness metadata.
 
 ## Metrics
 
@@ -530,10 +537,10 @@ The backend tracks freshness metadata per live match, including:
 
 - provider request count
 - live request count
-- fallback request count
+- today fixture request count
 - event request count
 - changed match count
-- live and fallback dedupe counts
+- live and today fixture dedupe counts
 - diff payload size
 - socket broadcast count
 - socket broadcast frequency over the last minute
@@ -542,18 +549,20 @@ The backend tracks freshness metadata per live match, including:
 ## Data flow
 
 1. The backend polls `fixtures?live=all`.
-2. The backend optionally performs a slower `fixtures?date=YYYY-MM-DD` fallback refresh.
-3. Relevant provider responses are normalized into the internal match model.
-4. Select fixtures get event-summary enrichment from `fixtures/events`.
-5. The new normalized state is reconciled against the in-memory store.
-6. Only added matches, compact updates, and removals are queued for sockets.
-7. Socket broadcasts are batched in a short window before clients receive them.
-8. The frontend fetches an initial REST snapshot and then applies compact socket diffs.
+2. The backend performs an immediate, then slower, `fixtures?date=YYYY-MM-DD&timezone=...` refresh for the complete today board.
+3. Today's fixtures are cached in memory and live fixtures overlay matching ids.
+4. Relevant provider responses are normalized into the internal match model.
+5. Select fixtures get event-summary enrichment from `fixtures/events`.
+6. The new normalized state is reconciled against the in-memory store.
+7. Only added matches, compact updates, and removals are queued for sockets.
+8. Socket broadcasts are batched in a short window before clients receive them.
+9. The frontend fetches an initial REST snapshot and then applies compact socket diffs.
 
 ## Notes
 
 - If `APISPORTS_KEY` is empty, the backend still starts, but polling is disabled and `/health` returns a degraded status.
-- `GET /api/matches/live` still returns the full current live snapshot for first paint.
+- `GET /api/matches/today` returns the full current today snapshot for first paint.
+- `GET /api/matches/live` is kept as a backwards-compatible alias for the same snapshot.
 - `match:update` is used by the match detail page after it joins a match-specific room.
 
 ## Verification

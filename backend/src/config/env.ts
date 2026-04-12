@@ -37,6 +37,7 @@ export const env = {
     process.env.APISPORTS_BASE_URL?.trim() ??
       "https://v3.football.api-sports.io",
   ),
+  apiSportsTimezone: process.env.APISPORTS_TIMEZONE?.trim() ?? "Europe/Istanbul",
   frontendOrigins: parseOrigins(process.env.FRONTEND_ORIGIN),
   pollIntervalMs: parseNumber(process.env.POLL_INTERVAL_MS, 15_000),
   requestTimeoutMs: 10_000,

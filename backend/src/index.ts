@@ -53,6 +53,7 @@ async function buildServer() {
     maxIntervalMs: env.maxPollIntervalMs,
     eventSummaryTtlMs: env.eventSummaryTtlMs,
     maxEventRefreshesPerTick: env.maxEventRefreshesPerTick,
+    scoreboardTimezone: env.apiSportsTimezone,
     enabled: isApiSportsConfigured,
   });
 
@@ -119,6 +120,7 @@ async function start() {
       {
         port: env.port,
         frontendOrigins: env.frontendOrigins,
+        timezone: env.apiSportsTimezone,
       },
       "ScoreXP backend listening",
     );

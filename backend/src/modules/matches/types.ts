@@ -46,12 +46,12 @@ export interface MatchFreshness {
   matchId: number;
   lastSeenAt: string;
   lastLiveSeenAt: string | null;
-  lastFallbackSeenAt: string | null;
+  lastTodaySeenAt: string | null;
   lastEventsRefreshAt: string | null;
   lastProviderChangeAt: string;
-  providerSource: "live" | "fallback" | "live+fallback";
+  providerSource: "live" | "today" | "live+today";
   liveUnchangedStreak: number;
-  fallbackUnchangedStreak: number;
+  todayUnchangedStreak: number;
 }
 
 export type MatchPatchChanges = Partial<Omit<NormalizedMatch, "matchId">>;

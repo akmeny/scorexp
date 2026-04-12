@@ -3,7 +3,7 @@ import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "ScoreXP",
-  description: "Real-time football scores powered by API-Sports.",
+  description: "Today's football scores and live updates powered by API-Sports.",
 };
 
 export default function RootLayout({

@@ -75,13 +75,13 @@ export function describeBackendError(error: unknown): string {
   return "Backend is unavailable right now.";
 }
 
-export async function fetchLiveMatchesSnapshot(): Promise<MatchesSnapshotResponse> {
-  return fetchJson<MatchesSnapshotResponse>("/api/matches/live");
+export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotResponse> {
+  return fetchJson<MatchesSnapshotResponse>("/api/matches/today");
 }
 
-export async function fetchLiveMatchesSnapshotSafe(): Promise<MatchesSnapshotViewModel> {
+export async function fetchTodayMatchesSnapshotSafe(): Promise<MatchesSnapshotViewModel> {
   try {
-    const snapshot = await fetchLiveMatchesSnapshot();
+    const snapshot = await fetchTodayMatchesSnapshot();
     return {
       ...snapshot,
       error: null,
@@ -95,6 +95,9 @@ export async function fetchLiveMatchesSnapshotSafe(): Promise<MatchesSnapshotVie
     };
   }
 }
+
+export const fetchLiveMatchesSnapshot = fetchTodayMatchesSnapshot;
+export const fetchLiveMatchesSnapshotSafe = fetchTodayMatchesSnapshotSafe;
 
 export async function fetchMatchById(
   matchId: number,

@@ -15,7 +15,6 @@ import type {
   MatchFreshness,
   NormalizedMatch,
   NormalizedMatchInput,
-  RemovedMatch,
 } from "./types.js";
 
 interface EventCacheEntry {
@@ -33,27 +32,22 @@ interface LiveMatchesPollingServiceOptions {
   maxIntervalMs: number;
   eventSummaryTtlMs: number;
   maxEventRefreshesPerTick: number;
+  scoreboardTimezone: string;
   enabled: boolean;
 }
 
 interface PollingMetrics {
   livePollCount: number;
-  fallbackPollCount: number;
+  todayFixturePollCount: number;
   liveResponseDedupCount: number;
-  fallbackResponseDedupCount: number;
+  todayFixtureResponseDedupCount: number;
   totalChangedMatches: number;
   lastChangedMatches: number;
   trackedRecentMatches: number;
-}
-
-interface RemovalOverride {
-  statusShort: string;
-  statusLong: string;
-  reason: RemovedMatch["reason"];
+  todayFixtureCount: number;
 }
 
 const liveLikeStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
-const finalStatuses = new Set(["FT", "AET", "PEN", "ABD", "AWD", "WO", "CANC"]);
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -114,14 +108,29 @@ function isLiveLikeStatus(statusShort: string): boolean {
   return liveLikeStatuses.has(statusShort);
 }
 
-function inferRemovalReason(statusShort: string): RemovedMatch["reason"] {
-  return finalStatuses.has(statusShort) ? "finished" : "no-longer-live";
-}
+function formatDateKey(date: Date, timeZone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const lookup = new Map(parts.map((part) => [part.type, part.value]));
+    const year = lookup.get("year");
+    const month = lookup.get("month");
+    const day = lookup.get("day");
 
-function formatDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Fall back to UTC below if the configured timezone is invalid.
+  }
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -184,25 +193,30 @@ export class LiveMatchesPollingService {
 
   private readonly liveFingerprints = new Map<number, string>();
 
-  private readonly fallbackFingerprints = new Map<number, string>();
+  private readonly todayFixtureFingerprints = new Map<number, string>();
 
   private readonly recentSeenAt = new Map<number, number>();
 
+  private readonly todayFixturesById = new Map<number, ProviderFixtureResponse>();
+
   private readonly metrics: PollingMetrics = {
     livePollCount: 0,
-    fallbackPollCount: 0,
+    todayFixturePollCount: 0,
     liveResponseDedupCount: 0,
-    fallbackResponseDedupCount: 0,
+    todayFixtureResponseDedupCount: 0,
     totalChangedMatches: 0,
     lastChangedMatches: 0,
     trackedRecentMatches: 0,
+    todayFixtureCount: 0,
   };
 
   private lastLiveResponseHash: string | null = null;
 
-  private lastFallbackResponseHash: string | null = null;
+  private lastTodayFixturesResponseHash: string | null = null;
 
-  private lastFallbackPollAtMs = 0;
+  private lastTodayFixturesPollAtMs = 0;
+
+  private todayDateKey: string | null = null;
 
   constructor(private readonly options: LiveMatchesPollingServiceOptions) {
     this.currentDelayMs = options.baseIntervalMs;
@@ -243,12 +257,13 @@ export class LiveMatchesPollingService {
     consecutiveFailures: number;
     rateLimit: RateLimitInfo | null;
     lastLiveResponseHash: string | null;
-    lastFallbackResponseHash: string | null;
+    lastTodayFixturesResponseHash: string | null;
     metrics: PollingMetrics;
     provider: ReturnType<ApiSportsClient["getMetrics"]>;
     freshnessSample: MatchFreshness[];
   } {
     this.metrics.trackedRecentMatches = this.recentSeenAt.size;
+    this.metrics.todayFixtureCount = this.todayFixturesById.size;
 
     return {
       enabled: this.options.enabled,
@@ -260,7 +275,7 @@ export class LiveMatchesPollingService {
       consecutiveFailures: this.consecutiveFailures,
       rateLimit: this.latestRateLimit,
       lastLiveResponseHash: this.lastLiveResponseHash,
-      lastFallbackResponseHash: this.lastFallbackResponseHash,
+      lastTodayFixturesResponseHash: this.lastTodayFixturesResponseHash,
       metrics: {
         ...this.metrics,
       },
@@ -315,7 +330,13 @@ export class LiveMatchesPollingService {
 
       const pollTimestamp = new Date().toISOString();
       const nowMs = Date.now();
+      const dateKey = formatDateKey(
+        new Date(nowMs),
+        this.options.scoreboardTimezone,
+      );
       const liveResponseHash = fixturesResponseHash(liveResult.data);
+
+      this.ensureTodayDate(dateKey);
 
       if (liveResponseHash === this.lastLiveResponseHash) {
         this.metrics.liveResponseDedupCount += 1;
@@ -324,33 +345,44 @@ export class LiveMatchesPollingService {
       this.lastLiveResponseHash = liveResponseHash;
 
       const previousMatches = this.options.store.getMap();
-      const liveFixtureIds = new Set<number>();
       const liveFixturesById = new Map<number, ProviderFixtureResponse>();
 
       for (const fixture of liveResult.data) {
         const matchId = fixture.fixture.id;
         const fingerprint = fixtureFingerprint(fixture);
 
-        liveFixtureIds.add(matchId);
         liveFixturesById.set(matchId, fixture);
         this.recentSeenAt.set(matchId, nowMs);
         this.noteFreshness(matchId, "live", pollTimestamp, fingerprint);
       }
 
-      const fallbackContext = await this.maybeFetchFallbackFixtures(
-        liveResult.data,
-        liveFixtureIds,
-        previousMatches,
-        nowMs,
-        pollTimestamp,
-      );
+      const todayContext = {
+        used: false,
+      };
 
-      const effectiveFixtures = new Map(liveFixturesById);
+      try {
+        const result = await this.maybeFetchTodayFixtures(
+          dateKey,
+          liveResult.data,
+          nowMs,
+          pollTimestamp,
+        );
+        todayContext.used = result.used;
+      } catch (error) {
+        this.options.logger.warn(
+          {
+            error: serializeError(error),
+            dateKey,
+            cachedTodayFixtures: this.todayFixturesById.size,
+          },
+          "Today fixtures refresh failed; continuing with cached fixtures and live overlay",
+        );
+      }
 
-      for (const [matchId, fixture] of fallbackContext.keepLiveByFallback) {
-        if (!effectiveFixtures.has(matchId)) {
-          effectiveFixtures.set(matchId, fixture);
-        }
+      const effectiveFixtures = new Map(this.todayFixturesById);
+
+      for (const [matchId, fixture] of liveFixturesById) {
+        effectiveFixtures.set(matchId, fixture);
       }
 
       const currentInputs = [...effectiveFixtures.values()].map((fixture) =>
@@ -379,7 +411,6 @@ export class LiveMatchesPollingService {
         previousMatches,
         latestInputs,
         generatedAt,
-        fallbackContext.removalOverrides,
       );
 
       const nextFreshness = new Map<number, MatchFreshness>();
@@ -414,24 +445,31 @@ export class LiveMatchesPollingService {
         this.options.socketHub.queueDiff(reconcileResult.diff);
       }
 
+      const liveInputsForCadence = liveResult.data.map((fixture) =>
+        normalizeFixture(fixture, null),
+      );
+
       this.currentDelayMs = this.getSuccessDelay(
-        latestInputs,
+        liveInputsForCadence,
         liveResult.rateLimit,
       );
 
       this.options.logger.info(
         {
           liveMatches: liveResult.data.length,
+          todayFixtures: this.todayFixturesById.size,
           effectiveMatches: latestInputs.length,
+          dateKey,
+          timezone: this.options.scoreboardTimezone,
           added: reconcileResult.diff.added.length,
           updated: reconcileResult.diff.updated.length,
           removed: reconcileResult.diff.removed.length,
-          fallbackUsed: fallbackContext.used,
+          todayRefreshUsed: todayContext.used,
           eventRefreshes: eventRefreshCandidates.length,
           nextPollInMs: this.currentDelayMs,
           rateLimit: liveResult.rateLimit,
         },
-        "Live matches poll completed",
+        "Scoreboard poll completed",
       );
     } catch (error) {
       const message =
@@ -448,7 +486,7 @@ export class LiveMatchesPollingService {
           nextPollInMs: this.currentDelayMs,
           consecutiveFailures: this.consecutiveFailures,
         },
-        "Live matches poll failed",
+        "Scoreboard poll failed",
       );
     } finally {
       this.inFlight = false;
@@ -459,31 +497,26 @@ export class LiveMatchesPollingService {
     }
   }
 
-  private async maybeFetchFallbackFixtures(
+  private async maybeFetchTodayFixtures(
+    dateKey: string,
     liveFixtures: ProviderFixtureResponse[],
-    liveFixtureIds: Set<number>,
-    previousMatches: Map<number, NormalizedMatch>,
     nowMs: number,
     pollTimestamp: string,
   ): Promise<{
     used: boolean;
-    keepLiveByFallback: Map<number, ProviderFixtureResponse>;
-    removalOverrides: Map<number, RemovalOverride>;
   }> {
-    const keepLiveByFallback = new Map<number, ProviderFixtureResponse>();
-    const removalOverrides = new Map<number, RemovalOverride>();
-
-    if (!this.shouldRunFallbackPoll(nowMs, liveFixtures)) {
+    if (!this.shouldRunTodayFixturesPoll(nowMs, liveFixtures)) {
       return {
         used: false,
-        keepLiveByFallback,
-        removalOverrides,
       };
     }
 
-    const dateKey = formatDateKey(new Date());
-    const fallbackResult = await withRetry(
-      () => this.options.client.getFixturesByDate(dateKey),
+    const todayResult = await withRetry(
+      () =>
+        this.options.client.getFixturesByDate(
+          dateKey,
+          this.options.scoreboardTimezone,
+        ),
       {
         retries: 1,
         minDelayMs: 750,
@@ -497,59 +530,38 @@ export class LiveMatchesPollingService {
               nextDelayMs,
               dateKey,
             },
-            "Retrying fallback fixtures refresh",
+            "Retrying today fixtures refresh",
           );
         },
       },
     );
 
-    this.metrics.fallbackPollCount += 1;
-    this.lastFallbackPollAtMs = nowMs;
-    this.latestRateLimit = fallbackResult.rateLimit;
+    this.metrics.todayFixturePollCount += 1;
+    this.lastTodayFixturesPollAtMs = nowMs;
+    this.latestRateLimit = todayResult.rateLimit;
 
-    const fallbackResponseHash = fixturesResponseHash(fallbackResult.data);
+    const todayResponseHash = fixturesResponseHash(todayResult.data);
 
-    if (fallbackResponseHash === this.lastFallbackResponseHash) {
-      this.metrics.fallbackResponseDedupCount += 1;
+    if (todayResponseHash === this.lastTodayFixturesResponseHash) {
+      this.metrics.todayFixtureResponseDedupCount += 1;
     }
 
-    this.lastFallbackResponseHash = fallbackResponseHash;
+    this.lastTodayFixturesResponseHash = todayResponseHash;
+    this.todayFixturesById.clear();
 
-    for (const fixture of fallbackResult.data) {
+    for (const fixture of todayResult.data) {
       const matchId = fixture.fixture.id;
-      const tracked =
-        liveFixtureIds.has(matchId) ||
-        previousMatches.has(matchId) ||
-        this.recentSeenAt.has(matchId);
-
-      if (!tracked) {
-        continue;
-      }
-
-      const statusShort = fixture.fixture.status.short?.trim() || "UNK";
-      const statusLong = fixture.fixture.status.long?.trim() || "Unknown status";
       const fingerprint = fixtureFingerprint(fixture);
 
+      this.todayFixturesById.set(matchId, fixture);
       this.recentSeenAt.set(matchId, nowMs);
-      this.noteFreshness(matchId, "fallback", pollTimestamp, fingerprint);
-
-      if (!liveFixtureIds.has(matchId) && isLiveLikeStatus(statusShort)) {
-        keepLiveByFallback.set(matchId, fixture);
-      }
-
-      if (!liveFixtureIds.has(matchId) && previousMatches.has(matchId)) {
-        removalOverrides.set(matchId, {
-          statusShort,
-          statusLong,
-          reason: inferRemovalReason(statusShort),
-        });
-      }
+      this.noteFreshness(matchId, "today", pollTimestamp, fingerprint);
     }
+
+    this.metrics.todayFixtureCount = this.todayFixturesById.size;
 
     return {
       used: true,
-      keepLiveByFallback,
-      removalOverrides,
     };
   }
 
@@ -576,6 +588,10 @@ export class LiveMatchesPollingService {
           return null;
         }
 
+        if (!isLiveLikeStatus(match.statusShort)) {
+          return null;
+        }
+
         const scoreChanged =
           !previous ||
           previous.homeScore !== match.homeScore ||
@@ -588,7 +604,7 @@ export class LiveMatchesPollingService {
           (scoreChanged ? 3 : statusChanged ? 2 : minuteChanged ? 1 : 0) +
           transitionBoost;
 
-        if (!cache && isLiveLikeStatus(match.statusShort)) {
+        if (!cache) {
           return {
             matchId: match.matchId,
             priority: Math.max(priority, 2),
@@ -671,28 +687,28 @@ export class LiveMatchesPollingService {
 
   private noteFreshness(
     matchId: number,
-    source: "live" | "fallback",
+    source: "live" | "today",
     seenAt: string,
     fingerprint: string,
   ): void {
     const previous = this.freshness.get(matchId);
     const fingerprints =
-      source === "live" ? this.liveFingerprints : this.fallbackFingerprints;
+      source === "live" ? this.liveFingerprints : this.todayFixtureFingerprints;
     const unchanged = fingerprints.get(matchId) === fingerprint;
 
     fingerprints.set(matchId, fingerprint);
 
     const providerSource =
       previous && previous.lastSeenAt === seenAt && previous.providerSource !== source
-        ? "live+fallback"
+        ? "live+today"
         : source;
 
     this.freshness.set(matchId, {
       matchId,
       lastSeenAt: seenAt,
       lastLiveSeenAt: source === "live" ? seenAt : previous?.lastLiveSeenAt ?? null,
-      lastFallbackSeenAt:
-        source === "fallback" ? seenAt : previous?.lastFallbackSeenAt ?? null,
+      lastTodaySeenAt:
+        source === "today" ? seenAt : previous?.lastTodaySeenAt ?? null,
       lastEventsRefreshAt: previous?.lastEventsRefreshAt ?? null,
       lastProviderChangeAt: unchanged
         ? previous?.lastProviderChangeAt ?? seenAt
@@ -704,12 +720,12 @@ export class LiveMatchesPollingService {
             ? (previous?.liveUnchangedStreak ?? 0) + 1
             : 0
           : previous?.liveUnchangedStreak ?? 0,
-      fallbackUnchangedStreak:
-        source === "fallback"
+      todayUnchangedStreak:
+        source === "today"
           ? unchanged
-            ? (previous?.fallbackUnchangedStreak ?? 0) + 1
+            ? (previous?.todayUnchangedStreak ?? 0) + 1
             : 0
-          : previous?.fallbackUnchangedStreak ?? 0,
+          : previous?.todayUnchangedStreak ?? 0,
     });
   }
 
@@ -750,18 +766,34 @@ export class LiveMatchesPollingService {
       if (nowMs - seenAt > recentTtlMs) {
         this.recentSeenAt.delete(matchId);
         this.liveFingerprints.delete(matchId);
-        this.fallbackFingerprints.delete(matchId);
+        this.todayFixtureFingerprints.delete(matchId);
       }
     }
   }
 
-  private shouldRunFallbackPoll(
+  private ensureTodayDate(dateKey: string): void {
+    if (this.todayDateKey === dateKey) {
+      return;
+    }
+
+    this.todayDateKey = dateKey;
+    this.todayFixturesById.clear();
+    this.lastTodayFixturesResponseHash = null;
+    this.lastTodayFixturesPollAtMs = 0;
+    this.metrics.todayFixtureCount = 0;
+  }
+
+  private shouldRunTodayFixturesPoll(
     nowMs: number,
     liveFixtures: ProviderFixtureResponse[],
   ): boolean {
     const requestsRemaining = this.latestRateLimit?.requestsRemaining;
 
-    if (nowMs - this.lastFallbackPollAtMs < this.getFallbackIntervalMs(liveFixtures)) {
+    if (
+      this.todayFixturesById.size > 0 &&
+      nowMs - this.lastTodayFixturesPollAtMs <
+        this.getTodayFixturesIntervalMs(liveFixtures)
+    ) {
       return false;
     }
 
@@ -804,7 +836,7 @@ export class LiveMatchesPollingService {
     return this.options.maxEventRefreshesPerTick;
   }
 
-  private getFallbackIntervalMs(
+  private getTodayFixturesIntervalMs(
     liveFixtures: ProviderFixtureResponse[],
   ): number {
     const base = this.options.baseIntervalMs;
