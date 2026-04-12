@@ -593,7 +593,7 @@ input::placeholder {
 
 .league-flat-header {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 0;
   border-bottom: 1px solid var(--surface-border);
   background: var(--surface-header);
@@ -641,10 +641,52 @@ input::placeholder {
 }
 
 .favorite-toggle {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   width: 42px;
   padding: 0;
+  border-color: rgba(152, 186, 170, 0.18);
   border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(238, 248, 242, 0.055), rgba(238, 248, 242, 0.025));
+  color: rgba(214, 232, 222, 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 8px 22px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.favorite-toggle::before {
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.16), transparent 56%);
+  content: "";
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.favorite-toggle:hover::before,
+.favorite-toggle:focus-visible::before,
+.favorite-toggle.is-active::before {
+  opacity: 1;
+}
+
+.favorite-toggle.is-active {
+  border-color: rgba(73, 212, 155, 0.42);
+  background:
+    linear-gradient(180deg, rgba(73, 212, 155, 0.28), rgba(73, 212, 155, 0.1));
+  color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(73, 212, 155, 0.12),
+    0 12px 28px rgba(10, 80, 54, 0.28);
 }
 
 .league-section {
@@ -996,20 +1038,83 @@ input::placeholder {
   white-space: nowrap;
 }
 
-.match-favorite-toggle {
-  width: 38px;
+.league-favorite-toggle {
+  align-self: center;
+  width: 40px;
   height: 38px;
-  border-radius: 12px;
+  margin-right: 10px;
+  border-radius: 15px;
+}
+
+.match-favorite-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
 }
 
 .favorite-icon {
-  width: 18px;
-  height: 18px;
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  transition:
+    color 160ms ease,
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.match-favorite-toggle .favorite-icon {
+  width: 22px;
+  height: 22px;
+  color: rgba(238, 248, 242, 0.72);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.match-favorite-toggle:hover .favorite-icon,
+.match-favorite-toggle:focus-visible .favorite-icon {
+  color: rgba(255, 219, 117, 0.95);
+  transform: scale(1.08) rotate(-5deg);
+}
+
+.match-favorite-toggle.is-active {
+  border-color: rgba(255, 211, 93, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 211, 93, 0.26), rgba(255, 211, 93, 0.08));
+  color: #ffd869;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 211, 93, 0.12),
+    0 12px 30px rgba(121, 82, 12, 0.32);
+}
+
+.match-favorite-toggle.is-active .favorite-icon {
+  color: #ffd869;
+  filter:
+    drop-shadow(0 0 7px rgba(255, 216, 105, 0.46))
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.38));
+  transform: scale(1.12);
 }
 
 .league-favorite-toggle .favorite-icon {
-  width: 16px;
-  height: 18px;
+  width: 21px;
+  height: 23px;
+  color: rgba(238, 248, 242, 0.7);
+  transform: translateY(1px);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.league-favorite-toggle:hover .favorite-icon,
+.league-favorite-toggle:focus-visible .favorite-icon {
+  color: rgba(83, 229, 168, 0.96);
+  transform: translateY(1px) scale(1.08);
+}
+
+.league-favorite-toggle.is-active .favorite-icon {
+  color: #53e5a8;
+  filter:
+    drop-shadow(0 0 8px rgba(83, 229, 168, 0.42))
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.36));
+  transform: translateY(1px) scale(1.08);
 }
 
 .load-more-sentinel {
@@ -2098,14 +2203,24 @@ input::placeholder {
 
   .league-favorite-toggle,
   .match-favorite-toggle {
-    width: 32px;
-    height: 32px;
-    border-radius: 11px;
+    width: 40px;
+    height: 38px;
+    border-radius: 14px;
   }
 
-  .favorite-icon {
-    width: 16px;
-    height: 16px;
+  .match-favorite-toggle {
+    width: 42px;
+    height: 42px;
+  }
+
+  .match-favorite-toggle .favorite-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .league-favorite-toggle .favorite-icon {
+    width: 21px;
+    height: 23px;
   }
 
   .match-row-main {
