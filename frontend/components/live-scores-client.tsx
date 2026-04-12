@@ -20,7 +20,6 @@ import {
   fetchTodayMatchesPage,
   isLikelyBackendWakeup,
 } from "@/lib/api";
-import { formatLastUpdated } from "@/lib/format";
 import { clientLogger } from "@/lib/logger";
 import {
   buildVisibleGroups,
@@ -81,52 +80,6 @@ function createEmptySnapshot(): MatchesSnapshotResponse {
     total: 0,
   };
 }
-
-const FilterBar = memo(function FilterBar({
-  query,
-  liveOnly,
-  totalMatches,
-  visibleMatches,
-  onQueryChange,
-  onLiveOnlyChange,
-}: {
-  query: string;
-  liveOnly: boolean;
-  totalMatches: number;
-  visibleMatches: number;
-  onQueryChange: (value: string) => void;
-  onLiveOnlyChange: (value: boolean) => void;
-}) {
-  return (
-    <section className="filter-bar" aria-label="Scoreboard filters">
-      <label className="search-control">
-        <span>Search team</span>
-        <input
-          type="search"
-          value={query}
-          placeholder="Team, league, or country"
-          onChange={(event) => onQueryChange(event.currentTarget.value)}
-        />
-      </label>
-
-      <button
-        type="button"
-        className={`filter-toggle ${liveOnly ? "is-active" : ""}`}
-        aria-pressed={liveOnly}
-        onClick={() => onLiveOnlyChange(!liveOnly)}
-      >
-        Live only
-      </button>
-
-      <div className="filter-summary" aria-live="polite">
-        <strong>{visibleMatches}</strong>
-        <span>shown</span>
-        <span className="summary-divider">/</span>
-        <span>{totalMatches} today</span>
-      </div>
-    </section>
-  );
-});
 
 const LeagueStreamSection = memo(function LeagueStreamSection({
   store,
@@ -324,22 +277,8 @@ export function LiveScoresClient({
     () => buildVisibleGroups(structure, store.getMatch, filters),
     [filters, store, structure],
   );
-  const visibleMatchCount = useMemo(
-    () => countVisibleMatches(visibleGroups),
-    [visibleGroups],
-  );
   const loadedMatchCount = structure.orderedIds.length;
   const hasMatchesInStore = loadedMatchCount > 0;
-
-  const handleQueryChange = useCallback((value: string) => {
-    setQuery(value);
-  }, []);
-
-  const handleLiveOnlyChange = useCallback((value: boolean) => {
-    startTransition(() => {
-      setLiveOnly(value);
-    });
-  }, []);
 
   const handleToggleLeague = useCallback((groupKey: string) => {
     setExpandedLeagueKeys((current) => {
@@ -629,20 +568,6 @@ export function LiveScoresClient({
     };
   }, []);
 
-  const connectionStatusClass =
-    connectionStatus === "live"
-      ? "is-live"
-      : connectionStatus === "connecting"
-        ? "is-connecting"
-        : "is-muted";
-  const connectionStatusLabel =
-    connectionStatus === "live"
-      ? "Live socket"
-      : connectionStatus === "connecting"
-        ? "Connecting"
-        : connectionStatus === "waking"
-          ? "Backend waking"
-          : "Reconnecting";
   const lastUpdateMs = new Date(meta.generatedAt).getTime();
   const dataAgeMs = Number.isFinite(lastUpdateMs)
     ? Math.max(0, nowMs - lastUpdateMs)
@@ -654,34 +579,6 @@ export function LiveScoresClient({
 
   return (
     <main className="page-shell">
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">ScoreXP</p>
-          <h1 className="page-title">Today&apos;s football scores</h1>
-          <p className="page-subtitle">
-            Full-day fixture coverage grouped by league, with live matches
-            refreshed through compact socket diffs as the action changes.
-          </p>
-        </div>
-        <div className="hero-meta">
-          <span className={`status-pill ${connectionStatusClass}`}>
-            {connectionStatusLabel}
-          </span>
-          <span className="timestamp-label" suppressHydrationWarning>
-            Last updated {formatLastUpdated(meta.generatedAt)}
-          </span>
-        </div>
-      </section>
-
-      <FilterBar
-        query={query}
-        liveOnly={liveOnly}
-        totalMatches={meta.total}
-        visibleMatches={visibleMatchCount}
-        onQueryChange={handleQueryChange}
-        onLiveOnlyChange={handleLiveOnlyChange}
-      />
-
       {transportError ? (
         <section className="banner banner-warning">
           <p>{transportError}</p>
