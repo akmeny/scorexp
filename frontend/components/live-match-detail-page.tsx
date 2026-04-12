@@ -115,6 +115,7 @@ export function LiveMatchDetailPage({
     () => translateCountryName(match.country, match.countryFlag),
     [match.country, match.countryFlag],
   );
+  const matchStatusTone = getStatusTone(match.statusShort);
 
   useEffect(() => {
     if (!availableTabs.includes(activeTab)) {
@@ -221,7 +222,7 @@ export function LiveMatchDetailPage({
   }, [match.statusShort]);
 
   return (
-    <main className="page-shell detail-page-shell">
+    <main className={`page-shell detail-page-shell ${matchStatusTone}`}>
       <section className="hero-card compact detail-page-hero">
         <div>
           <Link href="/" className="secondary-link">

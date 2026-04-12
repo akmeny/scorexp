@@ -122,12 +122,13 @@ export const MatchRow = memo(function MatchRow({
   onToggleFavorite,
 }: MatchRowProps) {
   const showPreMatchForm = match.statusShort === "NS";
+  const statusTone = getStatusTone(match.statusShort);
 
   return (
-    <article className={`match-row ${isSelected ? "is-selected" : ""}`}>
+    <article className={`match-row ${statusTone} ${isSelected ? "is-selected" : ""}`}>
       <Link href={`/?matchId=${match.matchId}`} scroll={false} className="match-row-main">
         <div className="match-status-column">
-          <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
+          <span className={`status-pill ${statusTone}`}>
             {formatMinute(match)}
           </span>
         </div>

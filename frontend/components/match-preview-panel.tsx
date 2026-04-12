@@ -103,6 +103,7 @@ export function MatchPreviewPanel({
 }: MatchPreviewPanelProps) {
   const [statistics, setStatistics] = useState<MatchStatisticsSummary | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
+  const statusTone = match ? getStatusTone(match.statusShort) : "";
 
   useEffect(() => {
     if (!match || matchId === null) {
@@ -138,7 +139,7 @@ export function MatchPreviewPanel({
   }, [matchId, removed, match?.lastUpdatedAt]);
 
   return (
-    <section className="detail-panel match-preview-panel">
+    <section className={`detail-panel match-preview-panel ${statusTone}`}>
       <header className="preview-panel-header">
         <p className="preview-panel-title">Maç Önizleme</p>
         {matchId ? (
@@ -171,7 +172,7 @@ export function MatchPreviewPanel({
                 {translateCountryName(match.country, match.countryFlag)}
               </p>
             </div>
-            <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
+            <span className={`status-pill ${statusTone}`}>
               {formatMinute(match)}
             </span>
           </section>

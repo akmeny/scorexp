@@ -1,60 +1,65 @@
 :root {
-  --bg: #050d0a;
-  --surface: rgba(8, 18, 14, 0.9);
-  --surface-strong: #10241b;
-  --surface-soft: rgba(12, 28, 21, 0.78);
-  --surface-header: rgba(13, 31, 23, 0.94);
-  --surface-hover: rgba(17, 42, 30, 0.96);
-  --surface-border: rgba(166, 210, 190, 0.13);
-  --surface-border-strong: rgba(166, 210, 190, 0.18);
-  --text: #f3fff8;
-  --muted: #90b7a3;
-  --accent: #3ee89f;
-  --accent-strong: #74ffc3;
-  --accent-ink: #04120c;
-  --accent-soft: rgba(62, 232, 159, 0.15);
+  --bg: #030712;
+  --surface: rgba(7, 13, 26, 0.92);
+  --surface-strong: #0e1b33;
+  --surface-soft: rgba(10, 20, 39, 0.82);
+  --surface-header: rgba(9, 18, 36, 0.96);
+  --surface-hover: rgba(15, 30, 56, 0.98);
+  --surface-border: rgba(146, 170, 211, 0.16);
+  --surface-border-strong: rgba(146, 170, 211, 0.23);
+  --text: #f4f8ff;
+  --muted: #96a8c7;
+  --accent: #7dd3fc;
+  --accent-strong: #b7e8ff;
+  --accent-ink: #03101e;
+  --accent-soft: rgba(125, 211, 252, 0.15);
   --success: #35d07f;
   --success-soft: rgba(53, 208, 127, 0.16);
-  --warning: #e8b64f;
-  --warning-soft: rgba(232, 182, 79, 0.16);
-  --danger: #f05f5f;
-  --danger-soft: rgba(240, 95, 95, 0.16);
-  --gold: #ffd369;
+  --warning: #f0b95a;
+  --warning-soft: rgba(240, 185, 90, 0.16);
+  --danger: #ff5b6e;
+  --danger-soft: rgba(255, 91, 110, 0.16);
+  --live: #ff315a;
+  --live-strong: #ff6b84;
+  --live-soft: rgba(255, 49, 90, 0.17);
+  --live-border: rgba(255, 49, 90, 0.38);
+  --gold: #ffd166;
   --gold-soft: rgba(255, 211, 105, 0.14);
-  --shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.26);
+  --shadow: 0 20px 52px rgba(0, 0, 0, 0.46);
+  --shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.32);
   --page-glow:
-    radial-gradient(circle at top left, rgba(62, 232, 159, 0.18), transparent 30%),
-    radial-gradient(circle at 82% 4%, rgba(255, 211, 105, 0.07), transparent 24%);
-  --page-gradient: linear-gradient(180deg, #040b08 0%, #07120e 42%, #0e2219 100%);
+    radial-gradient(circle at top left, rgba(125, 211, 252, 0.2), transparent 31%),
+    radial-gradient(circle at 82% 4%, rgba(255, 49, 90, 0.09), transparent 24%),
+    radial-gradient(circle at 46% 100%, rgba(28, 67, 140, 0.35), transparent 38%);
+  --page-gradient: linear-gradient(180deg, #020611 0%, #061226 45%, #0b1d3a 100%);
   --pill-bg: rgba(243, 255, 248, 0.08);
   --pill-connecting-bg: rgba(243, 255, 248, 0.055);
-  --banner-warning-bg: rgba(95, 62, 12, 0.5);
-  --banner-info-bg: rgba(9, 75, 48, 0.5);
-  --field-border: rgba(166, 210, 190, 0.16);
-  --field-bg: rgba(5, 13, 10, 0.9);
-  --field-bg-soft: rgba(11, 25, 19, 0.88);
-  --focus-ring: rgba(62, 232, 159, 0.22);
-  --accent-border: rgba(62, 232, 159, 0.3);
-  --neutral-fill: rgba(243, 255, 248, 0.07);
-  --neutral-fill-strong: rgba(243, 255, 248, 0.105);
-  --flag-outline: rgba(243, 255, 248, 0.08);
-  --flag-fallback: rgba(243, 255, 248, 0.12);
-  --chevron-color: rgba(243, 255, 248, 0.52);
-  --row-bg: rgba(8, 18, 14, 0.76);
-  --row-border: rgba(166, 210, 190, 0.085);
-  --row-selected-bg: rgba(62, 232, 159, 0.12);
-  --row-fresh-end: rgba(8, 19, 14, 0.9);
-  --logo-bg: rgba(243, 255, 248, 0.08);
-  --link-divider: rgba(166, 210, 190, 0.085);
-  --loader-border: rgba(166, 210, 190, 0.16);
-  --loader-bg: rgba(8, 18, 14, 0.74);
-  --loader-success-bg: rgba(62, 232, 159, 0.1);
-  --loader-error-bg: rgba(95, 62, 12, 0.5);
-  --secondary-link-bg: rgba(62, 232, 159, 0.12);
-  --detail-box-bg: rgba(13, 31, 23, 0.9);
-  --detail-box-border: rgba(166, 210, 190, 0.085);
-  --selection-bg: rgba(62, 232, 159, 0.28);
+  --banner-warning-bg: rgba(98, 65, 18, 0.52);
+  --banner-info-bg: rgba(13, 54, 104, 0.56);
+  --field-border: rgba(146, 170, 211, 0.18);
+  --field-bg: rgba(3, 7, 18, 0.9);
+  --field-bg-soft: rgba(9, 18, 36, 0.9);
+  --focus-ring: rgba(125, 211, 252, 0.24);
+  --accent-border: rgba(125, 211, 252, 0.32);
+  --neutral-fill: rgba(244, 248, 255, 0.075);
+  --neutral-fill-strong: rgba(244, 248, 255, 0.115);
+  --flag-outline: rgba(244, 248, 255, 0.09);
+  --flag-fallback: rgba(244, 248, 255, 0.12);
+  --chevron-color: rgba(244, 248, 255, 0.55);
+  --row-bg: rgba(7, 13, 26, 0.78);
+  --row-border: rgba(146, 170, 211, 0.09);
+  --row-selected-bg: rgba(125, 211, 252, 0.13);
+  --row-fresh-end: rgba(6, 14, 29, 0.92);
+  --logo-bg: rgba(244, 248, 255, 0.085);
+  --link-divider: rgba(146, 170, 211, 0.09);
+  --loader-border: rgba(146, 170, 211, 0.17);
+  --loader-bg: rgba(7, 13, 26, 0.78);
+  --loader-success-bg: rgba(53, 208, 127, 0.1);
+  --loader-error-bg: rgba(98, 65, 18, 0.52);
+  --secondary-link-bg: rgba(125, 211, 252, 0.12);
+  --detail-box-bg: rgba(10, 20, 39, 0.92);
+  --detail-box-border: rgba(146, 170, 211, 0.1);
+  --selection-bg: rgba(125, 211, 252, 0.28);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -122,8 +127,8 @@ input::placeholder {
   border: 1px solid var(--surface-border);
   border-radius: 26px;
   background:
-    linear-gradient(135deg, rgba(5, 13, 10, 0.96), rgba(11, 29, 21, 0.9)),
-    radial-gradient(circle at 18% 0%, rgba(62, 232, 159, 0.2), transparent 36%);
+    linear-gradient(135deg, rgba(3, 7, 18, 0.96), rgba(10, 24, 48, 0.92)),
+    radial-gradient(circle at 18% 0%, rgba(125, 211, 252, 0.22), transparent 36%);
   box-shadow:
     0 22px 46px rgba(0, 0, 0, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -136,7 +141,7 @@ input::placeholder {
   z-index: -1;
   border-radius: inherit;
   background:
-    linear-gradient(90deg, rgba(62, 232, 159, 0.16), transparent 28%, rgba(255, 211, 105, 0.08));
+    linear-gradient(90deg, rgba(125, 211, 252, 0.18), transparent 28%, rgba(255, 49, 90, 0.09));
   content: "";
   pointer-events: none;
   opacity: 0.72;
@@ -146,7 +151,7 @@ input::placeholder {
 .scorexp-sport-button,
 .scorexp-profile-button {
   border: 1px solid var(--surface-border-strong);
-  background: rgba(8, 18, 14, 0.74);
+  background: rgba(7, 13, 26, 0.76);
   color: var(--text);
   font: inherit;
   cursor: pointer;
@@ -171,11 +176,11 @@ input::placeholder {
 
 .scorexp-brand-button:hover,
 .scorexp-brand-button:focus-visible {
-  border-color: rgba(62, 232, 159, 0.34);
-  background: rgba(13, 44, 30, 0.84);
+  border-color: rgba(125, 211, 252, 0.36);
+  background: rgba(14, 31, 61, 0.88);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 12px 28px rgba(10, 94, 61, 0.2);
+    0 12px 30px rgba(26, 97, 180, 0.22);
   transform: translateY(-1px);
 }
 
@@ -194,13 +199,13 @@ input::placeholder {
   height: 34px;
   border-radius: 12px;
   background:
-    linear-gradient(145deg, rgba(62, 232, 159, 0.96), rgba(23, 138, 87, 0.88));
+    linear-gradient(145deg, rgba(125, 211, 252, 0.96), rgba(37, 99, 235, 0.88));
   color: var(--accent-ink);
   font-size: 0.78rem;
   font-weight: 950;
   letter-spacing: -0.05em;
   box-shadow:
-    0 8px 22px rgba(62, 232, 159, 0.26),
+    0 8px 24px rgba(56, 139, 255, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -263,16 +268,16 @@ input::placeholder {
 }
 
 .scorexp-sport-button.is-active {
-  border-color: rgba(62, 232, 159, 0.42);
+  border-color: rgba(125, 211, 252, 0.44);
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.24), rgba(62, 232, 159, 0.09));
+    linear-gradient(180deg, rgba(125, 211, 252, 0.26), rgba(125, 211, 252, 0.09));
   color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(62, 232, 159, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.12);
 }
 
 .scorexp-sport-button:not(:disabled):hover {
-  border-color: rgba(62, 232, 159, 0.34);
-  background: rgba(13, 44, 30, 0.78);
+  border-color: rgba(125, 211, 252, 0.36);
+  background: rgba(14, 31, 61, 0.82);
   color: var(--text);
   transform: translateY(-1px);
 }
@@ -303,9 +308,9 @@ input::placeholder {
 }
 
 .scorexp-profile-button:hover {
-  border-color: rgba(62, 232, 159, 0.36);
+  border-color: rgba(125, 211, 252, 0.38);
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.2), rgba(62, 232, 159, 0.07));
+    linear-gradient(180deg, rgba(125, 211, 252, 0.22), rgba(125, 211, 252, 0.07));
   transform: translateY(-1px);
 }
 
@@ -425,8 +430,14 @@ input::placeholder {
 }
 
 .status-pill.is-live {
-  background: var(--accent-soft);
-  color: var(--accent);
+  border: 1px solid var(--live-border);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 48%),
+    var(--live-soft);
+  color: var(--live-strong);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 49, 90, 0.08),
+    0 0 18px rgba(255, 49, 90, 0.16);
 }
 
 .status-pill.is-connecting {
@@ -662,8 +673,8 @@ input::placeholder {
   border: 1px solid var(--accent-border);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.24), rgba(62, 232, 159, 0.1)),
-    rgba(5, 13, 10, 0.92);
+    linear-gradient(180deg, rgba(125, 211, 252, 0.24), rgba(125, 211, 252, 0.1)),
+    rgba(3, 7, 18, 0.92);
   box-shadow: var(--shadow-soft);
   color: var(--text);
   font: inherit;
@@ -688,10 +699,10 @@ input::placeholder {
 }
 
 .scroll-top-button:hover {
-  border-color: rgba(62, 232, 159, 0.42);
+  border-color: rgba(125, 211, 252, 0.44);
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.32), rgba(62, 232, 159, 0.14)),
-    rgba(5, 13, 10, 0.96);
+    linear-gradient(180deg, rgba(125, 211, 252, 0.32), rgba(125, 211, 252, 0.14)),
+    rgba(3, 7, 18, 0.96);
 }
 
 .scroll-top-button:focus-visible {
@@ -768,7 +779,7 @@ input::placeholder {
   border-color: var(--accent-border);
   background: var(--accent-soft);
   color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(62, 232, 159, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.1);
 }
 
 .scoreboard-nav-button:focus-visible,
@@ -805,7 +816,7 @@ input::placeholder {
 }
 
 .scoreboard-nav-button.is-active .scoreboard-nav-count {
-  background: rgba(62, 232, 159, 0.22);
+  background: rgba(125, 211, 252, 0.22);
 }
 
 .scoreboard-nav-date {
@@ -960,14 +971,14 @@ input::placeholder {
 }
 
 .favorite-toggle.is-active {
-  border-color: rgba(62, 232, 159, 0.42);
+  border-color: rgba(125, 211, 252, 0.44);
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.28), rgba(62, 232, 159, 0.1));
+    linear-gradient(180deg, rgba(125, 211, 252, 0.28), rgba(125, 211, 252, 0.1));
   color: var(--accent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(62, 232, 159, 0.12),
-    0 12px 28px rgba(10, 94, 61, 0.3);
+    inset 0 0 0 1px rgba(125, 211, 252, 0.12),
+    0 12px 30px rgba(26, 97, 180, 0.3);
 }
 
 .league-section {
@@ -1079,6 +1090,21 @@ input::placeholder {
   background: var(--row-selected-bg);
 }
 
+.match-row.is-live {
+  background:
+    linear-gradient(90deg, rgba(255, 49, 90, 0.14), rgba(7, 13, 26, 0.82) 34%),
+    var(--row-bg);
+  box-shadow:
+    inset 3px 0 0 var(--live),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.match-row.is-live.is-selected {
+  background:
+    linear-gradient(90deg, rgba(255, 49, 90, 0.2), rgba(15, 30, 56, 0.9) 42%),
+    var(--row-selected-bg);
+}
+
 .match-row:hover,
 .match-row:focus-within {
   z-index: 2;
@@ -1125,6 +1151,11 @@ input::placeholder {
   font-size: 1.32rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+.match-row.is-live .match-score-column {
+  color: var(--live-strong);
+  text-shadow: 0 0 14px rgba(255, 49, 90, 0.34);
 }
 
 .match-teams-column {
@@ -1215,7 +1246,7 @@ input::placeholder {
   padding: 7px 10px;
   border: 1px solid var(--surface-border-strong);
   border-radius: 10px;
-  background: rgba(5, 13, 10, 0.96);
+  background: rgba(3, 7, 18, 0.96);
   box-shadow: var(--shadow-soft);
   color: var(--text);
   font-size: 0.72rem;
@@ -1239,7 +1270,7 @@ input::placeholder {
   height: 8px;
   border-right: 1px solid var(--surface-border-strong);
   border-bottom: 1px solid var(--surface-border-strong);
-  background: rgba(5, 13, 10, 0.96);
+  background: rgba(3, 7, 18, 0.96);
   transform: translateX(-50%) rotate(45deg);
 }
 
@@ -1261,13 +1292,13 @@ input::placeholder {
 }
 
 .team-form-chip.is-d {
-  border-color: rgba(232, 182, 79, 0.26);
+  border-color: rgba(240, 185, 90, 0.26);
   background: var(--warning-soft);
   color: var(--warning);
 }
 
 .team-form-chip.is-l {
-  border-color: rgba(240, 95, 95, 0.28);
+  border-color: rgba(255, 91, 110, 0.28);
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -1393,7 +1424,7 @@ input::placeholder {
 .league-favorite-toggle.is-active .favorite-icon {
   color: var(--accent-strong);
   filter:
-    drop-shadow(0 0 8px rgba(62, 232, 159, 0.44))
+    drop-shadow(0 0 8px rgba(125, 211, 252, 0.46))
     drop-shadow(0 2px 3px rgba(0, 0, 0, 0.36));
   transform: translateY(1px) scale(1.08);
 }
@@ -1490,8 +1521,8 @@ input::placeholder {
   border: 1px dashed var(--field-border);
   border-radius: var(--radius-md);
   background:
-    radial-gradient(circle at 50% 0%, rgba(62, 232, 159, 0.14), transparent 42%),
-    rgba(5, 13, 10, 0.58);
+    radial-gradient(circle at 50% 0%, rgba(125, 211, 252, 0.14), transparent 42%),
+    rgba(3, 7, 18, 0.58);
   text-align: center;
 }
 
@@ -1508,10 +1539,10 @@ input::placeholder {
   border-radius: 999px;
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.72), transparent 18%),
-    linear-gradient(145deg, rgba(62, 232, 159, 0.96), rgba(18, 116, 72, 0.8));
+    linear-gradient(145deg, rgba(125, 211, 252, 0.96), rgba(37, 99, 235, 0.82));
   box-shadow:
-    0 0 0 10px rgba(62, 232, 159, 0.08),
-    0 16px 36px rgba(10, 94, 61, 0.34);
+    0 0 0 10px rgba(125, 211, 252, 0.08),
+    0 16px 36px rgba(26, 97, 180, 0.34);
 }
 
 .match-drawer.is-empty {
@@ -1615,8 +1646,8 @@ input::placeholder {
   border-radius: 24px;
   border: 1px solid var(--detail-box-border);
   background:
-    radial-gradient(circle at top, rgba(62, 232, 159, 0.14), transparent 58%),
-    rgba(13, 31, 23, 0.92);
+    radial-gradient(circle at top, rgba(125, 211, 252, 0.16), transparent 58%),
+    rgba(9, 18, 36, 0.94);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
@@ -1639,6 +1670,19 @@ input::placeholder {
   font-variant-numeric: tabular-nums;
 }
 
+.match-preview-panel.is-live .preview-score-cluster,
+.detail-page-shell.is-live .match-detail-main-score,
+.detail-panel:has(.status-pill.is-live) .detail-score {
+  color: var(--live-strong);
+  text-shadow: 0 0 22px rgba(255, 49, 90, 0.3);
+}
+
+.match-preview-panel.is-live .score-separator,
+.detail-page-shell.is-live .score-separator,
+.detail-panel:has(.status-pill.is-live) .score-separator {
+  color: rgba(255, 107, 132, 0.72);
+}
+
 .preview-detail-link {
   display: inline-flex;
   align-items: center;
@@ -1648,7 +1692,7 @@ input::placeholder {
   border: 1px solid var(--accent-border);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.18), rgba(62, 232, 159, 0.08));
+    linear-gradient(180deg, rgba(125, 211, 252, 0.18), rgba(125, 211, 252, 0.08));
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 800;
@@ -1662,9 +1706,9 @@ input::placeholder {
 
 .preview-detail-link:hover {
   transform: translateY(-1px);
-  border-color: rgba(62, 232, 159, 0.4);
+  border-color: rgba(125, 211, 252, 0.42);
   background:
-    linear-gradient(180deg, rgba(62, 232, 159, 0.24), rgba(62, 232, 159, 0.1));
+    linear-gradient(180deg, rgba(125, 211, 252, 0.26), rgba(125, 211, 252, 0.1));
 }
 
 .preview-detail-link:focus-visible {
@@ -1761,11 +1805,11 @@ input::placeholder {
 }
 
 .preview-stat-half.is-home span {
-  background: linear-gradient(90deg, rgba(53, 208, 127, 0.32), var(--success));
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.28), var(--accent));
 }
 
 .preview-stat-half.is-away span {
-  background: linear-gradient(90deg, rgba(232, 182, 79, 0.96), rgba(232, 182, 79, 0.34));
+  background: linear-gradient(90deg, rgba(240, 185, 90, 0.96), rgba(240, 185, 90, 0.34));
 }
 
 .pressure-card {
@@ -1797,7 +1841,7 @@ input::placeholder {
 
 .pressure-lane.is-home span {
   background:
-    linear-gradient(90deg, rgba(62, 232, 159, 0.12), rgba(62, 232, 159, 0.9)),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.12), rgba(125, 211, 252, 0.9)),
     repeating-linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.06) 0,
@@ -1809,7 +1853,7 @@ input::placeholder {
 
 .pressure-lane.is-away span {
   background:
-    linear-gradient(90deg, rgba(232, 182, 79, 0.9), rgba(232, 182, 79, 0.12)),
+    linear-gradient(90deg, rgba(240, 185, 90, 0.9), rgba(240, 185, 90, 0.12)),
     repeating-linear-gradient(
       45deg,
       rgba(255, 255, 255, 0.06) 0,
@@ -2262,11 +2306,11 @@ input::placeholder {
 }
 
 .match-stat-bar.is-home span {
-  background: linear-gradient(90deg, rgba(53, 208, 127, 0.24), var(--success));
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.24), var(--accent));
 }
 
 .match-stat-bar.is-away span {
-  background: linear-gradient(90deg, rgba(232, 182, 79, 0.96), rgba(232, 182, 79, 0.28));
+  background: linear-gradient(90deg, rgba(240, 185, 90, 0.96), rgba(240, 185, 90, 0.28));
 }
 
 .timeline-card {
@@ -2396,7 +2440,7 @@ input::placeholder {
 
 .standings-row.is-highlight {
   border-color: var(--accent-border);
-  background: rgba(62, 232, 159, 0.08);
+  background: rgba(125, 211, 252, 0.08);
 }
 
 .standings-team-cell {
