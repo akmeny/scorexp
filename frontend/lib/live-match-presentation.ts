@@ -17,6 +17,7 @@ export interface MatchPresentationSnapshot {
   awayNotice: MatchNotice | null;
   isScoreStripeActive: boolean;
   isLiveIntroActive: boolean;
+  isGoalFlashActive: boolean;
 }
 
 type Listener = () => void;
@@ -29,6 +30,7 @@ interface PresentationState extends MatchPresentationSnapshot {
   latestEventKey: string | null;
   scoreStripeUntil: number;
   liveIntroUntil: number;
+  goalFlashUntil: number;
   homeNoticeUntil: number;
   awayNoticeUntil: number;
   goalTimer: ReturnType<typeof setTimeout> | null;
@@ -49,6 +51,7 @@ const emptySnapshot: MatchPresentationSnapshot = {
   awayNotice: null,
   isScoreStripeActive: false,
   isLiveIntroActive: false,
+  isGoalFlashActive: false,
 };
 
 function createState(): PresentationState {
@@ -61,6 +64,7 @@ function createState(): PresentationState {
     latestEventKey: null,
     scoreStripeUntil: 0,
     liveIntroUntil: 0,
+    goalFlashUntil: 0,
     homeNoticeUntil: 0,
     awayNoticeUntil: 0,
     goalTimer: null,
@@ -339,6 +343,7 @@ class MatchPresentationManager {
       awayNotice: state.awayNotice,
       isScoreStripeActive: state.scoreStripeUntil > Date.now(),
       isLiveIntroActive: state.liveIntroUntil > Date.now(),
+      isGoalFlashActive: state.goalFlashUntil > Date.now(),
     };
   }
 
@@ -398,6 +403,8 @@ class MatchPresentationManager {
       state.goalTimer = null;
       state.displayHomeScore = state.actualHomeScore;
       state.displayAwayScore = state.actualAwayScore;
+      state.goalFlashUntil = Math.max(state.goalFlashUntil, Date.now() + 10_000);
+      this.scheduleExpiry(matchId, state.goalFlashUntil);
       this.setNotice(matchId, side, {
         label: "Gol",
         tone: "goal",
@@ -456,6 +463,10 @@ class MatchPresentationManager {
 
     if (state.liveIntroUntil <= now) {
       state.liveIntroUntil = 0;
+    }
+
+    if (state.goalFlashUntil <= now) {
+      state.goalFlashUntil = 0;
     }
 
     if (state.homeNotice && state.homeNoticeUntil <= now) {

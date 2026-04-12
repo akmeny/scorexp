@@ -129,6 +129,7 @@ export const MatchRow = memo(function MatchRow({
   const rowStateClass = [
     presentation.isScoreStripeActive ? "has-score-stripe" : "",
     presentation.isLiveIntroActive ? "is-live-intro" : "",
+    presentation.isGoalFlashActive ? "is-goal-flash" : "",
   ].filter(Boolean).join(" ");
 
   return (

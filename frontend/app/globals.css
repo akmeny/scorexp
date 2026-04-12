@@ -596,7 +596,6 @@ input::placeholder {
     linear-gradient(90deg, rgba(225, 29, 72, 0.12), rgba(255, 255, 255, 0.92) 38%),
     var(--row-bg);
   box-shadow:
-    inset 3px 0 0 var(--live),
     inset 0 1px 0 rgba(255, 255, 255, 0.74);
 }
 
@@ -912,6 +911,23 @@ input::placeholder {
   50% {
     transform: translateY(-1px);
     filter: brightness(1.18);
+  }
+}
+
+@keyframes dangerBlink {
+  0% {
+    opacity: 0.18;
+    filter: brightness(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.25);
+  }
+
+  100% {
+    opacity: 0.18;
+    filter: brightness(0.9);
   }
 }
 
@@ -1410,7 +1426,6 @@ input::placeholder {
     linear-gradient(90deg, rgba(255, 49, 90, 0.14), rgba(7, 13, 26, 0.82) 34%),
     var(--row-bg);
   box-shadow:
-    inset 3px 0 0 var(--live),
     inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
@@ -1425,8 +1440,14 @@ input::placeholder {
     linear-gradient(90deg, rgba(255, 49, 90, 0.28), rgba(255, 49, 90, 0.08) 46%),
     var(--row-bg);
   box-shadow:
-    inset 3px 0 0 var(--live),
     0 0 0 1px rgba(255, 49, 90, 0.16);
+}
+
+.match-row.is-goal-flash {
+  background:
+    linear-gradient(180deg, rgba(255, 49, 90, 0.55), rgba(255, 49, 90, 0.25)),
+    var(--row-bg);
+  box-shadow: 0 0 0 1px rgba(255, 49, 90, 0.32);
 }
 
 .match-row.has-score-stripe::after {
@@ -1437,9 +1458,9 @@ input::placeholder {
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 49, 90, 0.08) 18%,
-      rgba(255, 49, 90, 0.5) 48%,
-      rgba(255, 49, 90, 0.08) 78%,
+      rgba(255, 49, 90, 0.2) 18%,
+      rgba(255, 49, 90, 0.75) 48%,
+      rgba(255, 49, 90, 0.2) 78%,
       transparent 100%
     );
   content: "";
@@ -1577,6 +1598,10 @@ input::placeholder {
 .team-live-notice.is-danger,
 .team-live-notice.is-penalty {
   animation: liveNoticePulse 920ms ease-in-out infinite;
+}
+
+.team-live-notice.is-danger {
+  animation: dangerBlink 820ms steps(2, start) infinite;
 }
 
 .team-live-notice.is-goal {
@@ -3400,6 +3425,21 @@ input::placeholder {
 }
 
 @media (max-width: 860px) {
+  html,
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
   .page-shell.scoreboard-page-shell {
     width: calc(100% - 14px);
     padding-top: 8px;
@@ -3575,8 +3615,8 @@ input::placeholder {
   }
 
   .match-favorite-toggle .favorite-icon {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
   }
 
   .league-toggle-main {
@@ -3606,8 +3646,8 @@ input::placeholder {
   }
 
   .league-favorite-toggle .favorite-icon {
-    width: 18px;
-    height: 20px;
+    width: 14px;
+    height: 16px;
   }
 
   .country-flag {

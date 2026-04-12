@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
+import { MobileGuard } from "@/components/mobile-guard";
 
 export const metadata: Metadata = {
   title: "ScoreXP",
   description: "API-Sports destekli günlük futbol skorları ve canlı güncellemeler.",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -33,6 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <MobileGuard />
         {children}
       </body>
     </html>
