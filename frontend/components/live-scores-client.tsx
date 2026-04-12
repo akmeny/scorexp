@@ -88,9 +88,18 @@ function countVisibleMatches(groups: readonly LeagueGroup[]): number {
 
 function buildAutoOpenLeagueKeys(
   groups: readonly LeagueGroup[],
+  mode: ScoreboardMode,
   activeFavoriteLeagueKeys: ReadonlySet<string>,
 ): Set<string> {
   const keys = new Set<string>();
+
+  if (mode === "live" || mode === "favorites") {
+    for (const group of groups) {
+      keys.add(group.key);
+    }
+
+    return keys;
+  }
 
   for (const group of groups) {
     if (activeFavoriteLeagueKeys.has(group.key)) {
@@ -533,8 +542,8 @@ export function LiveScoresClient({
   const hasMatchesInStore = loadedMatchCount > 0;
   const favoritesCount = favoriteMatchIds.size;
   const autoOpenLeagueKeys = useMemo(
-    () => buildAutoOpenLeagueKeys(visibleGroups, activeFavoriteLeagueKeys),
-    [activeFavoriteLeagueKeys, visibleGroups],
+    () => buildAutoOpenLeagueKeys(visibleGroups, mode, activeFavoriteLeagueKeys),
+    [activeFavoriteLeagueKeys, mode, visibleGroups],
   );
   const effectiveExpandedLeagueKeys = useMemo(() => {
     const next = new Set(expandedLeagueKeys);
@@ -960,6 +969,11 @@ export function LiveScoresClient({
   }, [liveOnly, selectedDate, store]);
 
   useEffect(() => {
+    setExpandedLeagueKeys(new Set());
+    setCollapsedLeagueKeys(new Set());
+  }, [mode, selectedDate]);
+
+  useEffect(() => {
     if (activeMatchId === null) {
       return;
     }
@@ -972,6 +986,10 @@ export function LiveScoresClient({
       return;
     }
 
+    if (mode === "all" && !activeFavoriteLeagueKeys.has(selectedGroup.key)) {
+      return;
+    }
+
     setExpandedLeagueKeys((current) => {
       if (current.has(selectedGroup.key)) {
         return current;
@@ -981,7 +999,7 @@ export function LiveScoresClient({
       next.add(selectedGroup.key);
       return next;
     });
-  }, [activeMatchId, visibleGroups]);
+  }, [activeFavoriteLeagueKeys, activeMatchId, mode, visibleGroups]);
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
