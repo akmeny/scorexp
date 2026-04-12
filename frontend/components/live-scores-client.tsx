@@ -14,6 +14,7 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatDrawer } from "@/components/chat-drawer";
+import { AndroidApkBanner } from "@/components/android-apk-banner";
 import { LeagueFavoriteIcon } from "@/components/favorite-icons";
 import { MatchDrawer } from "@/components/match-drawer";
 import { MatchRowById } from "@/components/match-row";
@@ -1302,6 +1303,8 @@ export function LiveScoresClient({
   return (
     <main className="page-shell scoreboard-page-shell">
       <ScoreXPHeader onHome={handleHeaderHome} />
+
+      <AndroidApkBanner />
 
       {transportError ? (
         <section className="banner banner-warning">

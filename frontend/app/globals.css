@@ -763,6 +763,33 @@ input::placeholder {
   font-size: 0.86rem;
 }
 
+.apk-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.apk-banner-copy {
+  min-width: 0;
+}
+
+.apk-banner-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.apk-banner-link,
+.apk-banner-dismiss {
+  min-height: 40px;
+  border: 1px solid var(--surface-border);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
 .filter-bar {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) auto auto;
@@ -2074,9 +2101,9 @@ input::placeholder {
 
 .preview-team-slot,
 .match-detail-team-media {
-  display: inline-grid;
-  justify-items: center;
-  gap: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .preview-score-stack {
@@ -3433,6 +3460,17 @@ input::placeholder {
     overscroll-behavior: none;
     overscroll-behavior-y: contain;
     touch-action: pan-y;
+  }
+
+  .apk-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .apk-banner-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   input,

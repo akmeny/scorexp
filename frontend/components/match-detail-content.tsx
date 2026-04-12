@@ -158,7 +158,7 @@ function SummaryTab({ match, detail }: { match: LiveMatch; detail: MatchFullDeta
     <section className="match-detail-stack">
       <section className="match-detail-summary-card">
         <div className="match-detail-team-card">
-          <div className="match-detail-team-media">
+          <div className="match-detail-team-media is-home">
             <TeamLogo logo={match.homeTeam.logo} name={match.homeTeam.name} className="match-detail-team-logo" size={68} />
             <RedCardBadge count={match.homeRedCards} className="is-large" />
           </div>
@@ -178,9 +178,9 @@ function SummaryTab({ match, detail }: { match: LiveMatch; detail: MatchFullDeta
         </div>
 
         <div className="match-detail-team-card is-away">
-          <div className="match-detail-team-media">
-            <TeamLogo logo={match.awayTeam.logo} name={match.awayTeam.name} className="match-detail-team-logo" size={68} />
+          <div className="match-detail-team-media is-away">
             <RedCardBadge count={match.awayRedCards} className="is-large" />
+            <TeamLogo logo={match.awayTeam.logo} name={match.awayTeam.name} className="match-detail-team-logo" size={68} />
           </div>
           <div>
             <p className="match-detail-team-label">Deplasman</p>

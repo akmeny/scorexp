@@ -181,7 +181,7 @@ export function MatchPreviewPanel({
           </section>
 
           <section className="preview-scoreboard">
-            <div className="preview-team-slot">
+            <div className="preview-team-slot is-home">
               <div className="preview-logo-shell">
                 {match.homeTeam.logo ? (
                   <img
@@ -211,7 +211,8 @@ export function MatchPreviewPanel({
               </Link>
             </div>
 
-            <div className="preview-team-slot">
+            <div className="preview-team-slot is-away">
+              <RedCardBadge count={match.awayRedCards} className="is-large" />
               <div className="preview-logo-shell">
                 {match.awayTeam.logo ? (
                   <img
@@ -227,7 +228,6 @@ export function MatchPreviewPanel({
                   <span className="preview-team-logo team-logo-fallback" />
                 )}
               </div>
-              <RedCardBadge count={match.awayRedCards} className="is-large" />
             </div>
           </section>
 

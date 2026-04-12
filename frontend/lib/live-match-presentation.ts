@@ -109,7 +109,19 @@ function classifyEvent(
     return null;
   }
 
-  const text = `${event.type} ${event.detail}`.toLowerCase();
+  const text = `${event.type ?? ""} ${event.detail ?? ""}`.toLowerCase();
+  const cancelMarkers = [
+    "cancel",
+    "cancelled",
+    "canceled",
+    "disallow",
+    "disallowed",
+    "no goal",
+    "goal annulled",
+    "annulled",
+    "overturned",
+    "offside",
+  ];
   const side = getEventSide(match, event);
   const isPenaltyText = text.includes("penalty");
 
@@ -126,7 +138,7 @@ function classifyEvent(
 
   if (
     text.includes("goal") &&
-    (text.includes("cancel") || text.includes("disallow") || text.includes("var"))
+    cancelMarkers.some((marker) => text.includes(marker))
   ) {
     return {
       key,
