@@ -154,6 +154,34 @@ export function buildVisibleGroups(
   return visibleGroups;
 }
 
+export function buildFavoriteGroups(
+  groups: readonly LeagueGroup[],
+  favoriteLeagueKeys: ReadonlySet<string>,
+  favoriteMatchIds: ReadonlySet<number>,
+): LeagueGroup[] {
+  const favoriteGroups: LeagueGroup[] = [];
+
+  for (const group of groups) {
+    if (favoriteLeagueKeys.has(group.key)) {
+      favoriteGroups.push(group);
+      continue;
+    }
+
+    const matchIds = group.matchIds.filter((matchId) => favoriteMatchIds.has(matchId));
+
+    if (matchIds.length === 0) {
+      continue;
+    }
+
+    favoriteGroups.push({
+      ...group,
+      matchIds,
+    });
+  }
+
+  return favoriteGroups;
+}
+
 export function flattenGroups(groups: readonly LeagueGroup[]): FlatListItem[] {
   const items: FlatListItem[] = [];
 

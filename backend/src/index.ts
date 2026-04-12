@@ -28,6 +28,11 @@ async function buildServer() {
   });
 
   const store = new MatchStore();
+  const apiSportsClient = new ApiSportsClient({
+    apiKey: env.apiSportsKey,
+    baseUrl: env.apiSportsBaseUrl,
+    requestTimeoutMs: env.requestTimeoutMs,
+  });
   const socketHub = new SocketHub(
     app.server,
     env.frontendOrigins,
@@ -39,11 +44,7 @@ async function buildServer() {
   );
 
   const pollingService = new LiveMatchesPollingService({
-    client: new ApiSportsClient({
-      apiKey: env.apiSportsKey,
-      baseUrl: env.apiSportsBaseUrl,
-      requestTimeoutMs: env.requestTimeoutMs,
-    }),
+    client: apiSportsClient,
     store,
     socketHub,
     logger: app.log.child({
@@ -63,7 +64,11 @@ async function buildServer() {
     methods: ["GET", "HEAD", "OPTIONS"],
   });
 
-  await registerMatchesRoutes(app, store);
+  await registerMatchesRoutes(app, store, {
+    client: apiSportsClient,
+    scoreboardTimezone: env.apiSportsTimezone,
+    providerEnabled: isApiSportsConfigured,
+  });
 
   app.get("/health", async () => {
     const pollingStatus = pollingService.getStatus();

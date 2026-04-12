@@ -81,25 +81,21 @@ export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotRespon
 }
 
 export async function fetchTodayMatchesPage({
+  date,
   offset,
   limit,
-  query,
   liveOnly,
 }: {
+  date: string;
   offset: number;
   limit: number;
-  query: string;
   liveOnly: boolean;
 }): Promise<MatchesPageResponse> {
   const params = new URLSearchParams({
+    date,
     offset: String(offset),
     limit: String(limit),
   });
-  const trimmedQuery = query.trim();
-
-  if (trimmedQuery) {
-    params.set("q", trimmedQuery);
-  }
 
   if (liveOnly) {
     params.set("liveOnly", "true");

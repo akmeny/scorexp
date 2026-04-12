@@ -1,5 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import type { ApiSportsClient } from "./apiSportsClient.js";
 import type { MatchStore } from "./matchStore.js";
+import { normalizeFixture } from "./normalizer.js";
+import { compareMatches, type NormalizedMatch } from "./types.js";
 
 interface MatchIdParams {
   id: string;
@@ -10,9 +13,24 @@ interface MatchesQuery {
   limit?: string;
   q?: string;
   liveOnly?: string;
+  date?: string;
 }
 
 const liveStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
+const customDateCacheTtlMs = 5 * 60 * 1000;
+const customDateCacheMaxEntries = 10;
+
+interface MatchesRouteOptions {
+  client: ApiSportsClient;
+  scoreboardTimezone: string;
+  providerEnabled: boolean;
+}
+
+interface CachedDateSnapshot {
+  generatedAt: string;
+  matches: NormalizedMatch[];
+  expiresAt: number;
+}
 
 function parsePositiveInteger(
   value: string | undefined,
@@ -36,10 +54,130 @@ function parseBoolean(value: string | undefined): boolean {
   return value === "true" || value === "1";
 }
 
+function isValidDateKey(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function formatDateKey(date: Date, timeZone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const lookup = new Map(parts.map((part) => [part.type, part.value]));
+    const year = lookup.get("year");
+    const month = lookup.get("month");
+    const day = lookup.get("day");
+
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Fall back to UTC below if the configured timezone is invalid.
+  }
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function filterMatches(
+  matches: NormalizedMatch[],
+  query: string,
+  liveOnly: boolean,
+): NormalizedMatch[] {
+  return matches.filter((match) => {
+    if (liveOnly && !liveStatuses.has(match.statusShort)) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    return (
+      match.homeTeam.name.toLowerCase().includes(query) ||
+      match.awayTeam.name.toLowerCase().includes(query) ||
+      match.leagueName.toLowerCase().includes(query) ||
+      match.country.toLowerCase().includes(query)
+    );
+  });
+}
+
 export async function registerMatchesRoutes(
   app: FastifyInstance,
   store: MatchStore,
+  options: MatchesRouteOptions,
 ): Promise<void> {
+  const customDateCache = new Map<string, CachedDateSnapshot>();
+
+  const getMatchesForDate = async (
+    dateKey: string,
+  ): Promise<{
+    generatedAt: string;
+    matches: NormalizedMatch[];
+  }> => {
+    const todayDateKey = formatDateKey(new Date(), options.scoreboardTimezone);
+
+    if (dateKey === todayDateKey) {
+      return {
+        generatedAt: new Date().toISOString(),
+        matches: store.getAll(),
+      };
+    }
+
+    const cached = customDateCache.get(dateKey);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return {
+        generatedAt: cached.generatedAt,
+        matches: cached.matches,
+      };
+    }
+
+    if (!options.providerEnabled) {
+      return {
+        generatedAt: new Date().toISOString(),
+        matches: [],
+      };
+    }
+
+    const result = await options.client.getFixturesByDate(
+      dateKey,
+      options.scoreboardTimezone,
+    );
+    const generatedAt = new Date().toISOString();
+    const matches = result.data
+      .map((fixture) => ({
+        ...normalizeFixture(fixture, null),
+        lastUpdatedAt: generatedAt,
+      }))
+      .sort(compareMatches);
+
+    customDateCache.set(dateKey, {
+      generatedAt,
+      matches,
+      expiresAt: Date.now() + customDateCacheTtlMs,
+    });
+
+    if (customDateCache.size > customDateCacheMaxEntries) {
+      const oldestKey = customDateCache.keys().next().value;
+
+      if (oldestKey) {
+        customDateCache.delete(oldestKey);
+      }
+    }
+
+    return {
+      generatedAt,
+      matches,
+    };
+  };
+
   const getSnapshot = async (request: { query: MatchesQuery }) => {
     const offset = parsePositiveInteger(request.query.offset, 0, 100_000);
     const hasExplicitLimit = typeof request.query.limit === "string";
@@ -48,23 +186,21 @@ export async function registerMatchesRoutes(
       : null;
     const query = request.query.q?.trim().toLowerCase() ?? "";
     const liveOnly = parseBoolean(request.query.liveOnly);
-    const allMatches = store.getAll();
-    const filteredMatches = allMatches.filter((match) => {
-      if (liveOnly && !liveStatuses.has(match.statusShort)) {
-        return false;
-      }
+    const dateKey =
+      typeof request.query.date === "string" && request.query.date.trim().length > 0
+        ? request.query.date.trim()
+        : formatDateKey(new Date(), options.scoreboardTimezone);
 
-      if (!query) {
-        return true;
-      }
+    if (!isValidDateKey(dateKey)) {
+      const error = new Error("Invalid date format") as Error & {
+        statusCode?: number;
+      };
+      error.statusCode = 400;
+      throw error;
+    }
 
-      return (
-        match.homeTeam.name.toLowerCase().includes(query) ||
-        match.awayTeam.name.toLowerCase().includes(query) ||
-        match.leagueName.toLowerCase().includes(query) ||
-        match.country.toLowerCase().includes(query)
-      );
-    });
+    const snapshot = await getMatchesForDate(dateKey);
+    const filteredMatches = filterMatches(snapshot.matches, query, liveOnly);
     const pagedMatches =
       limit === null
         ? filteredMatches
@@ -76,7 +212,7 @@ export async function registerMatchesRoutes(
 
     return {
       matches: pagedMatches,
-      generatedAt: new Date().toISOString(),
+      generatedAt: snapshot.generatedAt,
       total: filteredMatches.length,
       offset,
       limit: limit ?? filteredMatches.length,

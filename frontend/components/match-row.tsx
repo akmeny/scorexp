@@ -20,11 +20,15 @@ interface MatchRowByIdProps {
   store: LiveMatchStore;
   matchId: number;
   isSelected: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: (matchId: number) => void;
 }
 
 interface MatchRowProps {
   match: LiveMatch;
   isSelected: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: (matchId: number) => void;
 }
 
 function formatScore(score: number | null): string {
@@ -35,6 +39,8 @@ export const MatchRowById = memo(function MatchRowById({
   store,
   matchId,
   isSelected,
+  isFavorite,
+  onToggleFavorite,
 }: MatchRowByIdProps) {
   const match = useLiveMatch(store, matchId);
 
@@ -42,12 +48,21 @@ export const MatchRowById = memo(function MatchRowById({
     return null;
   }
 
-  return <MatchRow match={match} isSelected={isSelected} />;
+  return (
+    <MatchRow
+      match={match}
+      isSelected={isSelected}
+      isFavorite={isFavorite}
+      onToggleFavorite={onToggleFavorite}
+    />
+  );
 });
 
 export const MatchRow = memo(function MatchRow({
   match,
   isSelected,
+  isFavorite,
+  onToggleFavorite,
 }: MatchRowProps) {
   const latestEvent = match.eventsSummary?.latest ?? null;
   const latestEventLabel = latestEvent
@@ -146,9 +161,21 @@ export const MatchRow = memo(function MatchRow({
         </div>
       </Link>
 
-      <Link href={`/match/${match.matchId}`} className="detail-link">
-        Page
-      </Link>
+      <div className="match-row-actions">
+        <button
+          type="button"
+          className={`favorite-toggle match-favorite-toggle ${
+            isFavorite ? "is-active" : ""
+          }`}
+          aria-pressed={isFavorite}
+          onClick={() => onToggleFavorite(match.matchId)}
+        >
+          {isFavorite ? "Saved" : "Save"}
+        </button>
+        <Link href={`/match/${match.matchId}`} className="detail-link">
+          Page
+        </Link>
+      </div>
     </article>
   );
 });

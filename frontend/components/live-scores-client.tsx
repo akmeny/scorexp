@@ -4,12 +4,12 @@ import {
   memo,
   startTransition,
   useCallback,
-  useDeferredValue,
   useEffect,
   useEffectEvent,
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type RefObject,
 } from "react";
 import { useSearchParams } from "next/navigation";
@@ -20,17 +20,26 @@ import {
   fetchTodayMatchesPage,
   isLikelyBackendWakeup,
 } from "@/lib/api";
-import { clientLogger } from "@/lib/logger";
 import {
-  buildVisibleGroups,
-  type LeagueGroup,
-  type MatchFilters,
-} from "@/lib/matches";
+  formatDateLabel,
+  getScoreboardDateKey,
+  isTodayDateKey,
+  isValidDateKey,
+  offsetDateKey,
+} from "@/lib/date";
+import { loadFavorites, saveFavorites } from "@/lib/favorites";
 import {
   LiveMatchStore,
   useLiveMatchStoreMeta,
   useLiveMatchStructure,
 } from "@/lib/live-match-store";
+import { clientLogger } from "@/lib/logger";
+import {
+  buildFavoriteGroups,
+  buildVisibleGroups,
+  type LeagueGroup,
+  type MatchFilters,
+} from "@/lib/matches";
 import { getSocket } from "@/lib/socket";
 import type {
   MatchesDiffResponse,
@@ -40,6 +49,7 @@ import type {
 } from "@/lib/types";
 
 type ConnectionStatus = "connecting" | "waking" | "live" | "reconnecting";
+type ScoreboardMode = "all" | "live" | "favorites";
 
 interface WakeRetryState {
   active: boolean;
@@ -81,18 +91,125 @@ function createEmptySnapshot(): MatchesSnapshotResponse {
   };
 }
 
+const ScoreboardNavigation = memo(function ScoreboardNavigation({
+  mode,
+  selectedDate,
+  favoriteCount,
+  onShowToday,
+  onShowLive,
+  onShowFavorites,
+  onShiftDate,
+  onOpenDatePicker,
+  onDateChange,
+  dateInputRef,
+}: {
+  mode: ScoreboardMode;
+  selectedDate: string;
+  favoriteCount: number;
+  onShowToday: () => void;
+  onShowLive: () => void;
+  onShowFavorites: () => void;
+  onShiftDate: (direction: -1 | 1) => void;
+  onOpenDatePicker: () => void;
+  onDateChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  dateInputRef: RefObject<HTMLInputElement | null>;
+}) {
+  const isToday = isTodayDateKey(selectedDate);
+
+  return (
+    <section className="scoreboard-nav" aria-label="Scoreboard navigation">
+      <div className="scoreboard-nav-modes">
+        <button
+          type="button"
+          className={`scoreboard-nav-button ${
+            mode === "all" && isToday ? "is-active" : ""
+          }`}
+          aria-pressed={mode === "all" && isToday}
+          onClick={onShowToday}
+        >
+          {"Bug\u00FCn"}
+        </button>
+        <button
+          type="button"
+          className={`scoreboard-nav-button ${mode === "live" ? "is-active" : ""}`}
+          aria-pressed={mode === "live"}
+          onClick={onShowLive}
+        >
+          {"Canl\u0131"}
+        </button>
+        <button
+          type="button"
+          className={`scoreboard-nav-button ${
+            mode === "favorites" ? "is-active" : ""
+          }`}
+          aria-pressed={mode === "favorites"}
+          onClick={onShowFavorites}
+        >
+          Favoriler
+          {favoriteCount > 0 ? (
+            <span className="scoreboard-nav-count">{favoriteCount}</span>
+          ) : null}
+        </button>
+      </div>
+
+      <div className="scoreboard-nav-date">
+        <button
+          type="button"
+          className="scoreboard-date-arrow"
+          aria-label="Previous day"
+          onClick={() => onShiftDate(-1)}
+        >
+          &lt;
+        </button>
+        <button
+          type="button"
+          className="scoreboard-date-button"
+          onClick={onOpenDatePicker}
+        >
+          {formatDateLabel(selectedDate)}
+        </button>
+        <button
+          type="button"
+          className="scoreboard-date-arrow"
+          aria-label="Next day"
+          onClick={() => onShiftDate(1)}
+        >
+          &gt;
+        </button>
+        <input
+          ref={dateInputRef}
+          type="date"
+          value={selectedDate}
+          onChange={onDateChange}
+          className="scoreboard-date-native"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      </div>
+    </section>
+  );
+});
+
 const LeagueStreamSection = memo(function LeagueStreamSection({
   store,
   group,
   isOpen,
+  isFavorite,
+  favoriteMatchIds,
   selectedMatchId,
   onToggle,
+  onToggleFavorite,
+  onToggleFavoriteMatch,
 }: {
   store: LiveMatchStore;
   group: LeagueGroup;
   isOpen: boolean;
+  isFavorite: boolean;
+  favoriteMatchIds: ReadonlySet<number>;
   selectedMatchId: number | null;
   onToggle: (groupKey: string) => void;
+  onToggleFavorite: (groupKey: string) => void;
+  onToggleFavoriteMatch: (matchId: number) => void;
 }) {
   const panelId = createLeaguePanelId(group.key);
 
@@ -100,41 +217,53 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
     <section
       className={`league-stream-section ${isOpen ? "is-open" : "is-collapsed"}`}
     >
-      <button
-        type="button"
-        className="league-flat-header league-toggle"
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        onClick={() => onToggle(group.key)}
-      >
-        <div>
-          <div className="league-primary-line">
-            {group.countryFlag ? (
-              <img
-                src={group.countryFlag}
-                alt=""
-                width={18}
-                height={13}
-                loading="lazy"
-                decoding="async"
-                fetchPriority="low"
-                className="country-flag"
-              />
-            ) : (
-              <span className="country-flag country-flag-fallback" />
-            )}
-            <h2 className="league-title">{group.country}</h2>
+      <div className="league-flat-header">
+        <button
+          type="button"
+          className="league-toggle-main"
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          onClick={() => onToggle(group.key)}
+        >
+          <div>
+            <div className="league-primary-line">
+              {group.countryFlag ? (
+                <img
+                  src={group.countryFlag}
+                  alt=""
+                  width={18}
+                  height={13}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
+                  className="country-flag"
+                />
+              ) : (
+                <span className="country-flag country-flag-fallback" />
+              )}
+              <h2 className="league-title">{group.country}</h2>
+            </div>
+            <p className="league-country">{group.leagueName}</p>
           </div>
-          <p className="league-country">{group.leagueName}</p>
-        </div>
-        <div className="league-toggle-trailing">
-          <span className="league-count">{group.matchIds.length}</span>
-          <span
-            aria-hidden="true"
-            className={`league-chevron ${isOpen ? "is-open" : ""}`}
-          />
-        </div>
-      </button>
+          <div className="league-toggle-meta">
+            <span className="league-count">{group.matchIds.length}</span>
+            <span
+              aria-hidden="true"
+              className={`league-chevron ${isOpen ? "is-open" : ""}`}
+            />
+          </div>
+        </button>
+        <button
+          type="button"
+          className={`favorite-toggle league-favorite-toggle ${
+            isFavorite ? "is-active" : ""
+          }`}
+          aria-pressed={isFavorite}
+          onClick={() => onToggleFavorite(group.key)}
+        >
+          {isFavorite ? "Saved" : "Save"}
+        </button>
+      </div>
 
       {isOpen ? (
         <div id={panelId} className="league-stream-matches">
@@ -144,6 +273,8 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
               store={store}
               matchId={matchId}
               isSelected={selectedMatchId === matchId}
+              isFavorite={favoriteMatchIds.has(matchId)}
+              onToggleFavorite={onToggleFavoriteMatch}
             />
           ))}
         </div>
@@ -156,33 +287,63 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
   store,
   groups,
   expandedLeagueKeys,
+  favoriteLeagueKeys,
+  favoriteMatchIds,
   selectedMatchId,
   loadedMatches,
+  visibleMatchCount,
   totalMatches,
   pagination,
   loadMoreRef,
+  mode,
+  emptyState,
   onToggleLeague,
+  onToggleFavoriteLeague,
+  onToggleFavoriteMatch,
 }: {
   store: LiveMatchStore;
   groups: readonly LeagueGroup[];
   expandedLeagueKeys: ReadonlySet<string>;
+  favoriteLeagueKeys: ReadonlySet<string>;
+  favoriteMatchIds: ReadonlySet<number>;
   selectedMatchId: number | null;
   loadedMatches: number;
+  visibleMatchCount: number;
   totalMatches: number;
   pagination: PaginationState;
   loadMoreRef: RefObject<HTMLDivElement | null>;
+  mode: ScoreboardMode;
+  emptyState: string | null;
   onToggleLeague: (groupKey: string) => void;
+  onToggleFavoriteLeague: (groupKey: string) => void;
+  onToggleFavoriteMatch: (matchId: number) => void;
 }) {
+  const showInlineEmpty =
+    groups.length === 0 &&
+    !pagination.loading &&
+    !pagination.hasMore &&
+    Boolean(emptyState);
+
   return (
-    <section className="scoreboard-stream" aria-label="Today scores">
+    <section className="scoreboard-stream" aria-label="Football scores">
+      {showInlineEmpty ? (
+        <section className="empty-card scoreboard-inline-empty">
+          <p>{emptyState}</p>
+        </section>
+      ) : null}
+
       {groups.map((group) => (
         <LeagueStreamSection
           key={group.key}
           store={store}
           group={group}
           isOpen={expandedLeagueKeys.has(group.key)}
+          isFavorite={favoriteLeagueKeys.has(group.key)}
+          favoriteMatchIds={favoriteMatchIds}
           selectedMatchId={selectedMatchId}
           onToggle={onToggleLeague}
+          onToggleFavorite={onToggleFavoriteLeague}
+          onToggleFavoriteMatch={onToggleFavoriteMatch}
         />
       ))}
 
@@ -198,13 +359,21 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
           </div>
         ) : pagination.hasMore ? (
           <div className="progressive-loader">
-            <span>{loadedMatches} loaded</span>
+            <span>
+              {mode === "favorites"
+                ? `${visibleMatchCount} favorite matches visible`
+                : `${loadedMatches} loaded`}
+            </span>
             <span>Scroll for more</span>
           </div>
         ) : (
           <div className="progressive-loader is-complete">
             <span>
-              All {totalMatches} matches loaded for this view.
+              {mode === "favorites"
+                ? visibleMatchCount === 0
+                  ? "No favorite matches on this date."
+                  : `Showing ${visibleMatchCount} favorite matches on this date.`
+                : `All ${totalMatches} matches loaded for this view.`}
             </span>
           </div>
         )}
@@ -237,9 +406,15 @@ export function LiveScoresClient({
     error: null,
   });
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [query, setQuery] = useState("");
-  const [liveOnly, setLiveOnly] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => getScoreboardDateKey());
+  const [mode, setMode] = useState<ScoreboardMode>("all");
   const [expandedLeagueKeys, setExpandedLeagueKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [favoriteLeagueKeys, setFavoriteLeagueKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [favoriteMatchIds, setFavoriteMatchIds] = useState<Set<number>>(
     () => new Set(),
   );
   const paginationRef = useRef<PaginationState>({
@@ -250,7 +425,7 @@ export function LiveScoresClient({
   });
   const retryTimerRef = useRef<number | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const deferredQuery = useDeferredValue(query);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const structure = useLiveMatchStructure(store);
   const meta = useLiveMatchStoreMeta(store);
   const searchParams = useSearchParams();
@@ -265,20 +440,62 @@ export function LiveScoresClient({
     setPagination(next);
   });
 
+  const todayDateKey = useMemo(
+    () => getScoreboardDateKey(new Date(nowMs)),
+    [nowMs],
+  );
+  const selectedDateLabel = useMemo(
+    () => formatDateLabel(selectedDate),
+    [selectedDate],
+  );
+  const liveOnly = mode === "live";
+  const favoritesCount = favoriteLeagueKeys.size + favoriteMatchIds.size;
+  const isRealtimeDate = selectedDate === todayDateKey;
+
   const filters: MatchFilters = useMemo(
     () => ({
-      query: deferredQuery,
+      query: "",
       liveOnly,
     }),
-    [deferredQuery, liveOnly],
+    [liveOnly],
   );
 
-  const visibleGroups = useMemo(
+  const baseVisibleGroups = useMemo(
     () => buildVisibleGroups(structure, store.getMatch, filters),
     [filters, store, structure],
   );
+  const visibleGroups = useMemo(() => {
+    if (mode !== "favorites") {
+      return baseVisibleGroups;
+    }
+
+    return buildFavoriteGroups(
+      baseVisibleGroups,
+      favoriteLeagueKeys,
+      favoriteMatchIds,
+    );
+  }, [baseVisibleGroups, favoriteLeagueKeys, favoriteMatchIds, mode]);
   const loadedMatchCount = structure.orderedIds.length;
+  const visibleMatchCount = useMemo(
+    () => countVisibleMatches(visibleGroups),
+    [visibleGroups],
+  );
   const hasMatchesInStore = loadedMatchCount > 0;
+  const emptyState = useMemo(() => {
+    if (mode === "favorites") {
+      if (favoritesCount === 0) {
+        return "No favorite leagues or matches yet. Save items to build this view.";
+      }
+
+      return `No favorites land on ${selectedDateLabel}.`;
+    }
+
+    if (mode === "live") {
+      return `No live matches found for ${selectedDateLabel}.`;
+    }
+
+    return `No matches found for ${selectedDateLabel}.`;
+  }, [favoritesCount, mode, selectedDateLabel]);
 
   const handleToggleLeague = useCallback((groupKey: string) => {
     setExpandedLeagueKeys((current) => {
@@ -293,6 +510,101 @@ export function LiveScoresClient({
       return next;
     });
   }, []);
+
+  const handleToggleFavoriteLeague = useCallback((groupKey: string) => {
+    setFavoriteLeagueKeys((current) => {
+      const next = new Set(current);
+
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+
+      return next;
+    });
+  }, []);
+
+  const handleToggleFavoriteMatch = useCallback((matchId: number) => {
+    setFavoriteMatchIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(matchId)) {
+        next.delete(matchId);
+      } else {
+        next.add(matchId);
+      }
+
+      return next;
+    });
+  }, []);
+
+  const handleShowToday = useCallback(() => {
+    startTransition(() => {
+      setMode("all");
+      setSelectedDate(todayDateKey);
+    });
+  }, [todayDateKey]);
+
+  const handleShowLive = useCallback(() => {
+    startTransition(() => {
+      setMode("live");
+      setSelectedDate(todayDateKey);
+    });
+  }, [todayDateKey]);
+
+  const handleShowFavorites = useCallback(() => {
+    startTransition(() => {
+      setMode("favorites");
+    });
+  }, []);
+
+  const handleSetSelectedDate = useCallback(
+    (nextDate: string) => {
+      if (!isValidDateKey(nextDate)) {
+        return;
+      }
+
+      startTransition(() => {
+        setSelectedDate(nextDate);
+
+        if (mode === "live") {
+          setMode("all");
+        }
+      });
+    },
+    [mode],
+  );
+
+  const handleShiftDate = useCallback(
+    (direction: -1 | 1) => {
+      handleSetSelectedDate(offsetDateKey(selectedDate, direction));
+    },
+    [handleSetSelectedDate, selectedDate],
+  );
+
+  const handleOpenDatePicker = useCallback(() => {
+    const input = dateInputRef.current;
+
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
+  }, []);
+
+  const handleDateInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      handleSetSelectedDate(event.currentTarget.value);
+    },
+    [handleSetSelectedDate],
+  );
 
   const loadMatchesPage = useEffectEvent(async (reset: boolean) => {
     const current = paginationRef.current;
@@ -316,9 +628,9 @@ export function LiveScoresClient({
 
     try {
       const page: MatchesPageResponse = await fetchTodayMatchesPage({
+        date: selectedDate,
         offset,
         limit: pageSize,
-        query: deferredQuery,
         liveOnly,
       });
 
@@ -356,9 +668,11 @@ export function LiveScoresClient({
         nextOffset: offset,
         error: message,
       });
-      clientLogger.warn("Today page fetch failed", {
+      clientLogger.warn("Matches page fetch failed", {
         offset,
         reset,
+        date: selectedDate,
+        liveOnly,
         likelyWakeup,
         message,
       });
@@ -389,6 +703,10 @@ export function LiveScoresClient({
   });
 
   const handleSnapshot = useEffectEvent((snapshot: MatchesSnapshotResponse) => {
+    if (!isRealtimeDate) {
+      return;
+    }
+
     setTransportError(null);
     setWakeRetry({
       active: false,
@@ -402,6 +720,10 @@ export function LiveScoresClient({
   });
 
   const handleDiff = useEffectEvent((diff: MatchesDiffResponse) => {
+    if (!isRealtimeDate) {
+      return;
+    }
+
     setTransportError(null);
     setWakeRetry((current) => ({
       ...current,
@@ -413,6 +735,20 @@ export function LiveScoresClient({
       store.applyDiff(diff);
     });
   });
+
+  useEffect(() => {
+    const favorites = loadFavorites();
+
+    setFavoriteLeagueKeys(new Set(favorites.leagueKeys));
+    setFavoriteMatchIds(new Set(favorites.matchIds));
+  }, []);
+
+  useEffect(() => {
+    saveFavorites({
+      leagueKeys: [...favoriteLeagueKeys],
+      matchIds: [...favoriteMatchIds],
+    });
+  }, [favoriteLeagueKeys, favoriteMatchIds]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -448,7 +784,7 @@ export function LiveScoresClient({
       store.applySnapshot(createEmptySnapshot());
     });
     void loadMatchesPage(true);
-  }, [deferredQuery, liveOnly, store]);
+  }, [liveOnly, selectedDate, store]);
 
   useEffect(() => {
     if (activeMatchId === null) {
@@ -498,14 +834,16 @@ export function LiveScoresClient({
     return () => {
       observer.disconnect();
     };
-  }, [
-    hasMatchesInStore,
-    pagination.hasMore,
-    visibleGroups.length,
-  ]);
+  }, [hasMatchesInStore, pagination.hasMore, pagination.loading, visibleGroups.length]);
 
   useEffect(() => {
     const socket = getSocket();
+
+    if (!isRealtimeDate) {
+      socket.disconnect();
+      setConnectionStatus("connecting");
+      return;
+    }
 
     const onConnect = () => {
       setConnectionStatus("live");
@@ -566,13 +904,14 @@ export function LiveScoresClient({
       socket.io.off("reconnect_attempt", onReconnectAttempt);
       socket.disconnect();
     };
-  }, []);
+  }, [handleDiff, handleSnapshot, isRealtimeDate, store]);
 
   const lastUpdateMs = new Date(meta.generatedAt).getTime();
   const dataAgeMs = Number.isFinite(lastUpdateMs)
     ? Math.max(0, nowMs - lastUpdateMs)
     : 0;
   const dataDelayed =
+    isRealtimeDate &&
     hasMatchesInStore &&
     connectionStatus !== "live" &&
     dataAgeMs >= delayedDataThresholdMs;
@@ -606,49 +945,58 @@ export function LiveScoresClient({
       {!hasMatchesInStore && pagination.loading ? (
         <section className="empty-card wake-card">
           <span className="wake-pulse" />
-          <p>Loading today&apos;s football board.</p>
+          <p>Loading matches for {selectedDateLabel}.</p>
           <p className="empty-subtext">
             Pulling only the first screenful now. More matches and logos load as
             you scroll.
           </p>
         </section>
-      ) : !hasMatchesInStore ? (
-        <section className={`empty-card ${wakeRetry.active ? "wake-card" : ""}`}>
-          {wakeRetry.active ? <span className="wake-pulse" /> : null}
-          <p>
-            {wakeRetry.active
-              ? "Backend is waking up."
-              : "No football matches are in today's store right now."}
-          </p>
+      ) : !hasMatchesInStore && wakeRetry.active ? (
+        <section className="empty-card wake-card">
+          <span className="wake-pulse" />
+          <p>Backend is waking up.</p>
           <p className="empty-subtext">
-            {wakeRetry.active
-              ? "Render free services can sleep after inactivity. ScoreXP is retrying with safe backoff and will hydrate the live list automatically."
-              : "Once API-Sports returns today's fixtures, they will appear here automatically."}
+            ScoreXP is retrying with safe backoff and will hydrate matches for{" "}
+            {selectedDateLabel} automatically.
           </p>
-          {wakeRetry.active && wakeRetry.lastError ? (
+          {wakeRetry.lastError ? (
             <p className="empty-subtext">{wakeRetry.lastError}</p>
           ) : null}
         </section>
-      ) : visibleGroups.length === 0 ? (
-        <section className="empty-card">
-          <p>No matches pass the current filters.</p>
-          <p className="empty-subtext">
-            Clear search or turn off live-only mode to widen the list.
-          </p>
-        </section>
       ) : (
         <section className="scoreboard-grid">
-          <ProgressiveScoreboardList
-            store={store}
-            groups={visibleGroups}
-            expandedLeagueKeys={expandedLeagueKeys}
-            selectedMatchId={activeMatchId}
-            loadedMatches={loadedMatchCount}
-            totalMatches={meta.total}
-            pagination={pagination}
-            loadMoreRef={loadMoreRef}
-            onToggleLeague={handleToggleLeague}
-          />
+          <div className="scoreboard-column">
+            <ScoreboardNavigation
+              mode={mode}
+              selectedDate={selectedDate}
+              favoriteCount={favoritesCount}
+              onShowToday={handleShowToday}
+              onShowLive={handleShowLive}
+              onShowFavorites={handleShowFavorites}
+              onShiftDate={handleShiftDate}
+              onOpenDatePicker={handleOpenDatePicker}
+              onDateChange={handleDateInputChange}
+              dateInputRef={dateInputRef}
+            />
+            <ProgressiveScoreboardList
+              store={store}
+              groups={visibleGroups}
+              expandedLeagueKeys={expandedLeagueKeys}
+              favoriteLeagueKeys={favoriteLeagueKeys}
+              favoriteMatchIds={favoriteMatchIds}
+              selectedMatchId={activeMatchId}
+              loadedMatches={loadedMatchCount}
+              visibleMatchCount={visibleMatchCount}
+              totalMatches={meta.total}
+              pagination={pagination}
+              loadMoreRef={loadMoreRef}
+              mode={mode}
+              emptyState={emptyState}
+              onToggleLeague={handleToggleLeague}
+              onToggleFavoriteLeague={handleToggleFavoriteLeague}
+              onToggleFavoriteMatch={handleToggleFavoriteMatch}
+            />
+          </div>
           <MatchDrawer store={store} selectedMatchId={activeMatchId} />
         </section>
       )}
