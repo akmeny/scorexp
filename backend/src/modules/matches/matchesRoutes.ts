@@ -1,8 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import type { ApiSportsClient } from "./apiSportsClient.js";
 import type { MatchStore } from "./matchStore.js";
-import { normalizeFixture } from "./normalizer.js";
-import { compareMatches, type NormalizedMatch } from "./types.js";
+import { normalizeFixture, summarizeStatistics } from "./normalizer.js";
+import {
+  compareMatches,
+  type MatchStatisticsSummary,
+  type NormalizedMatch,
+} from "./types.js";
 
 interface MatchIdParams {
   id: string;
@@ -29,6 +33,11 @@ interface MatchesRouteOptions {
 interface CachedDateSnapshot {
   generatedAt: string;
   matches: NormalizedMatch[];
+  expiresAt: number;
+}
+
+interface CachedMatchStatistics {
+  statistics: MatchStatisticsSummary | null;
   expiresAt: number;
 }
 
@@ -114,6 +123,50 @@ export async function registerMatchesRoutes(
   options: MatchesRouteOptions,
 ): Promise<void> {
   const customDateCache = new Map<string, CachedDateSnapshot>();
+  const matchStatisticsCache = new Map<number, CachedMatchStatistics>();
+
+  const getStatisticsTtlMs = (match: NormalizedMatch): number =>
+    liveStatuses.has(match.statusShort) ? 45_000 : 10 * 60 * 1000;
+
+  const getMatchStatistics = async (
+    match: NormalizedMatch,
+  ): Promise<MatchStatisticsSummary | null> => {
+    const cached = matchStatisticsCache.get(match.matchId);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.statistics;
+    }
+
+    if (!options.providerEnabled) {
+      return null;
+    }
+
+    try {
+      const result = await options.client.getFixtureStatistics(match.matchId);
+      const statistics = summarizeStatistics(
+        result.data,
+        match.homeTeam.id,
+        match.awayTeam.id,
+      );
+
+      matchStatisticsCache.set(match.matchId, {
+        statistics,
+        expiresAt: Date.now() + getStatisticsTtlMs(match),
+      });
+
+      return statistics;
+    } catch (error) {
+      app.log.warn(
+        {
+          error,
+          matchId: match.matchId,
+        },
+        "Failed to fetch match statistics",
+      );
+
+      return cached?.statistics ?? null;
+    }
+  };
 
   const getMatchesForDate = async (
     dateKey: string,
@@ -241,8 +294,11 @@ export async function registerMatchesRoutes(
       });
     }
 
+    const statistics = await getMatchStatistics(match);
+
     return {
       match,
+      statistics,
       freshness: store.getFreshness(matchId),
     };
   });

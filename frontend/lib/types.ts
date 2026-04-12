@@ -22,6 +22,19 @@ export interface MatchEventsSummary {
   recent: MatchEventSummaryItem[];
 }
 
+export interface MatchStatisticPair {
+  home: number | null;
+  away: number | null;
+  unit: "%" | "count";
+}
+
+export interface MatchStatisticsSummary {
+  possession: MatchStatisticPair;
+  shots: MatchStatisticPair;
+  corners: MatchStatisticPair;
+  updatedAt: string;
+}
+
 export interface LiveMatch {
   matchId: number;
   leagueId: number;
@@ -101,4 +114,5 @@ export type MatchUpdateEvent =
 
 export interface MatchDetailResponse {
   match: LiveMatch;
+  statistics: MatchStatisticsSummary | null;
 }

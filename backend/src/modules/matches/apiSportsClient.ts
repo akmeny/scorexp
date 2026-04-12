@@ -1,6 +1,7 @@
 import type {
   ProviderApiEnvelope,
   ProviderFixtureEventResponse,
+  ProviderFixtureStatisticsResponse,
   ProviderFixtureResponse,
 } from "../../types/provider.js";
 
@@ -22,6 +23,7 @@ export interface ApiSportsClientMetrics {
   liveRequests: number;
   todayFixtureRequests: number;
   eventRequests: number;
+  statisticsRequests: number;
   lastRequestAt: string | null;
 }
 
@@ -31,7 +33,7 @@ interface ApiSportsClientOptions {
   requestTimeoutMs: number;
 }
 
-type RequestKind = "live" | "today" | "events";
+type RequestKind = "live" | "today" | "events" | "statistics";
 
 export class ApiSportsError extends Error {
   readonly status: number;
@@ -114,6 +116,7 @@ export class ApiSportsClient {
     liveRequests: 0,
     todayFixtureRequests: 0,
     eventRequests: 0,
+    statisticsRequests: 0,
     lastRequestAt: null,
   };
 
@@ -143,6 +146,18 @@ export class ApiSportsClient {
     });
   }
 
+  async getFixtureStatistics(
+    fixtureId: number,
+  ): Promise<ApiSportsRequestResult<ProviderFixtureStatisticsResponse>> {
+    return this.request<ProviderFixtureStatisticsResponse>(
+      "statistics",
+      "fixtures/statistics",
+      {
+        fixture: fixtureId,
+      },
+    );
+  }
+
   getMetrics(): ApiSportsClientMetrics {
     return {
       ...this.metrics,
@@ -161,8 +176,10 @@ export class ApiSportsClient {
       this.metrics.liveRequests += 1;
     } else if (kind === "today") {
       this.metrics.todayFixtureRequests += 1;
-    } else {
+    } else if (kind === "events") {
       this.metrics.eventRequests += 1;
+    } else {
+      this.metrics.statisticsRequests += 1;
     }
 
     const url = new URL(path, `${this.options.baseUrl}/`);

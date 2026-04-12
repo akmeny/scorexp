@@ -1,11 +1,13 @@
 import type {
   ProviderFixtureEventResponse,
+  ProviderFixtureStatisticsResponse,
   ProviderFixtureResponse,
 } from "../../types/provider.js";
 import type {
   MatchEventSummaryItem,
   MatchEventsSummary,
   NormalizedMatchInput,
+  MatchStatisticsSummary,
 } from "./types.js";
 
 function normalizeTimestamp(fixture: ProviderFixtureResponse["fixture"]): string {
@@ -93,4 +95,118 @@ export function summarizeEvents(
     latest: recent[0] ?? null,
     recent,
   };
+}
+
+function normalizeStatisticKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function parseStatisticValue(
+  value: string | number | null | undefined,
+): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized || normalized.toLowerCase() === "null") {
+    return null;
+  }
+
+  const numeric = Number(normalized.replace("%", "").trim());
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function getTeamStatisticValue(
+  statistics: ProviderFixtureStatisticsResponse | null | undefined,
+  possibleKeys: string[],
+): number | null {
+  if (!statistics?.statistics?.length) {
+    return null;
+  }
+
+  const lookup = new Map(
+    statistics.statistics.map((entry) => [
+      normalizeStatisticKey(entry.type ?? ""),
+      parseStatisticValue(entry.value),
+    ]),
+  );
+
+  for (const key of possibleKeys) {
+    const value = lookup.get(key);
+
+    if (typeof value === "number") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function findStatisticsByTeamId(
+  statistics: ProviderFixtureStatisticsResponse[],
+  teamId: number,
+): ProviderFixtureStatisticsResponse | null {
+  return (
+    statistics.find((entry) => (entry.team?.id ?? null) === teamId) ?? null
+  );
+}
+
+export function summarizeStatistics(
+  statistics: ProviderFixtureStatisticsResponse[],
+  homeTeamId: number,
+  awayTeamId: number,
+): MatchStatisticsSummary | null {
+  if (statistics.length === 0) {
+    return null;
+  }
+
+  const homeStatistics =
+    findStatisticsByTeamId(statistics, homeTeamId) ?? statistics[0] ?? null;
+  const awayStatistics =
+    findStatisticsByTeamId(statistics, awayTeamId) ?? statistics[1] ?? null;
+
+  const summary: MatchStatisticsSummary = {
+    possession: {
+      home: getTeamStatisticValue(homeStatistics, ["ball-possession"]),
+      away: getTeamStatisticValue(awayStatistics, ["ball-possession"]),
+      unit: "%",
+    },
+    shots: {
+      home: getTeamStatisticValue(homeStatistics, [
+        "total-shots",
+        "shots-on-goal",
+      ]),
+      away: getTeamStatisticValue(awayStatistics, [
+        "total-shots",
+        "shots-on-goal",
+      ]),
+      unit: "count",
+    },
+    corners: {
+      home: getTeamStatisticValue(homeStatistics, ["corner-kicks"]),
+      away: getTeamStatisticValue(awayStatistics, ["corner-kicks"]),
+      unit: "count",
+    },
+    updatedAt: new Date().toISOString(),
+  };
+
+  const hasAnyValue =
+    summary.possession.home !== null ||
+    summary.possession.away !== null ||
+    summary.shots.home !== null ||
+    summary.shots.away !== null ||
+    summary.corners.home !== null ||
+    summary.corners.away !== null;
+
+  return hasAnyValue ? summary : null;
 }

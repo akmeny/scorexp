@@ -68,3 +68,17 @@ export interface ProviderFixtureEventResponse {
   detail?: string | null;
   comments?: string | null;
 }
+
+export interface ProviderFixtureStatisticValue {
+  type?: string | null;
+  value?: string | number | null;
+}
+
+export interface ProviderFixtureStatisticsResponse {
+  team?: {
+    id?: number | null;
+    name?: string | null;
+    logo?: string | null;
+  };
+  statistics?: ProviderFixtureStatisticValue[] | null;
+}
