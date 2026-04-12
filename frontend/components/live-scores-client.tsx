@@ -152,7 +152,8 @@ const ScoreXPHeader = memo(function ScoreXPHeader({
         onClick={onHome}
       >
         <span className="scorexp-brand-mark" aria-hidden="true">
-          SX
+          <span className="scorexp-brand-mark-desktop">SX</span>
+          <span className="scorexp-brand-mark-mobile">Sxp</span>
         </span>
         <span className="scorexp-brand-copy">
           <span className="scorexp-brand-name">ScoreXP</span>

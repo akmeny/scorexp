@@ -195,6 +195,10 @@ input::placeholder {
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
+.scorexp-brand-mark-mobile {
+  display: none;
+}
+
 .scorexp-brand-copy {
   display: grid;
   gap: 1px;
@@ -2887,34 +2891,123 @@ input::placeholder {
 }
 
 @media (max-width: 860px) {
+  .page-shell.scoreboard-page-shell {
+    width: calc(100% - 14px);
+    padding-top: 8px;
+    font-size: 0.84rem;
+  }
+
   .scorexp-site-header {
     position: static;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
-    min-height: 0;
-    padding: 10px;
-    border-radius: 20px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 16px;
   }
 
   .scorexp-brand-button {
-    min-width: 0;
-    width: 100%;
+    width: 36px;
+    min-width: 36px;
+    height: 34px;
+    padding: 0;
+    border-radius: 12px;
+  }
+
+  .scorexp-brand-copy,
+  .scorexp-brand-mark-desktop {
+    display: none;
+  }
+
+  .scorexp-brand-mark-mobile {
+    display: inline;
+  }
+
+  .scorexp-brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 0.62rem;
+    letter-spacing: -0.08em;
   }
 
   .scorexp-sports-nav {
-    grid-column: 1 / -1;
-    order: 3;
-    padding-bottom: 2px;
+    grid-column: auto;
+    order: initial;
+    gap: 4px;
+    padding-bottom: 0;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    white-space: nowrap;
+  }
+
+  .scorexp-sport-button {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 0.66rem;
+    scroll-snap-align: start;
   }
 
   .scorexp-profile-button {
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .scorexp-profile-icon {
+    width: 17px;
+    height: 17px;
   }
 
   .scoreboard-nav {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 15px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .scoreboard-nav-modes,
+  .scoreboard-nav-date {
+    width: auto;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .scoreboard-nav-modes {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+  }
+
+  .scoreboard-nav-date {
+    flex: 1 1 118px;
+    justify-content: flex-end;
+  }
+
+  .scoreboard-nav-button,
+  .scoreboard-date-arrow,
+  .scoreboard-date-button {
+    height: 28px;
+    padding: 0 7px;
+    font-size: 0.62rem;
+  }
+
+  .scoreboard-date-arrow {
+    width: 24px;
+    padding: 0;
+  }
+
+  .scoreboard-date-button {
+    flex: 0 1 82px;
+    min-width: 78px;
+    padding: 0 6px;
+    letter-spacing: -0.04em;
+  }
+
+  .scoreboard-nav-count {
+    display: none;
   }
 
   .scoreboard-grid {
@@ -2931,9 +3024,9 @@ input::placeholder {
   }
 
   .match-row-main {
-    grid-template-columns: minmax(48px, max-content) minmax(0, 1fr) 34px;
-    gap: 8px;
-    padding: 8px 10px;
+    grid-template-columns: minmax(40px, max-content) minmax(0, 1fr) 30px;
+    gap: 7px;
+    padding: 7px 9px;
   }
 
   .match-row-actions {
@@ -2945,8 +3038,93 @@ input::placeholder {
   }
 
   .match-favorite-toggle {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .match-favorite-toggle .favorite-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .league-toggle-main {
+    padding: 7px 10px;
+  }
+
+  .league-title {
+    font-size: 0.78rem;
+  }
+
+  .league-inline-separator,
+  .league-name-inline {
+    font-size: 0.72rem;
+  }
+
+  .league-count {
+    min-width: 24px;
+    height: 24px;
+    font-size: 0.64rem;
+  }
+
+  .league-favorite-toggle {
+    width: 34px;
+    height: 32px;
+    margin-right: 8px;
+    border-radius: 12px;
+  }
+
+  .league-favorite-toggle .favorite-icon {
+    width: 18px;
+    height: 20px;
+  }
+
+  .country-flag {
+    width: 15px;
+    height: 11px;
+  }
+
+  .team-logo,
+  .team-logo-fallback {
+    width: 17px;
+    height: 17px;
+  }
+
+  .team-line {
+    gap: 7px;
+  }
+
+  .team-line-content {
+    gap: 6px;
+  }
+
+  .team-name {
+    font-size: 0.8rem;
+    line-height: 1.08;
+  }
+
+  .team-form-strip {
+    gap: 3px;
+  }
+
+  .team-form-chip {
+    width: 15px;
+    height: 15px;
+    font-size: 0.58rem;
+  }
+
+  .match-teams-column {
+    gap: 7px;
+  }
+
+  .match-score-column {
+    gap: 3px;
+    font-size: 0.92rem;
+  }
+
+  .match-status-column .status-pill {
+    padding: 6px 7px;
+    font-size: 0.58rem;
   }
 
   .match-drawer:not(.is-empty) {
@@ -3163,39 +3341,52 @@ input::placeholder {
   }
 
   .scoreboard-page-shell {
-    width: calc(100% - 20px);
+    width: calc(100% - 10px);
+    padding-top: 6px;
+    font-size: 0.8rem;
   }
 
   .scorexp-site-header {
-    padding: 8px;
-    border-radius: 18px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 5px;
+    border-radius: 15px;
   }
 
   .scorexp-brand-button {
-    height: 44px;
-    gap: 9px;
-    padding: 0 10px 0 7px;
+    width: 34px;
+    min-width: 34px;
+    height: 32px;
+    gap: 0;
+    padding: 0;
   }
 
   .scorexp-brand-mark {
-    width: 30px;
-    height: 30px;
+    width: 27px;
+    height: 27px;
     border-radius: 10px;
-    font-size: 0.7rem;
-  }
-
-  .scorexp-brand-name {
-    font-size: 1rem;
-  }
-
-  .scorexp-brand-subtitle {
     font-size: 0.58rem;
   }
 
+  .scorexp-sports-nav {
+    gap: 3px;
+  }
+
   .scorexp-sport-button {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 0.6rem;
+  }
+
+  .scorexp-profile-button {
+    width: 34px;
     height: 32px;
-    padding: 0 10px;
-    font-size: 0.72rem;
+    border-radius: 11px;
+  }
+
+  .scorexp-profile-icon {
+    width: 16px;
+    height: 16px;
   }
 
   .scroll-top-button {
@@ -3222,6 +3413,11 @@ input::placeholder {
     padding-right: 16px;
   }
 
+  .league-flat-header {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .preview-insight-card,
   .preview-meta-card {
     padding: 16px;
@@ -3235,29 +3431,83 @@ input::placeholder {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .match-row-main {
+    grid-template-columns: minmax(38px, max-content) minmax(0, 1fr) 28px;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
   .match-row-actions {
     align-items: center;
     justify-content: center;
-    padding: 0 8px;
+    padding: 0 7px;
     border-top: none;
     border-left: 1px solid var(--link-divider);
   }
 
+  .match-favorite-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+  }
+
   .scoreboard-nav {
-    padding: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    padding: 5px;
+    border-radius: 14px;
   }
 
   .scoreboard-nav-modes,
   .scoreboard-nav-date {
-    width: 100%;
+    width: auto;
+    gap: 3px;
+  }
+
+  .scoreboard-nav-modes {
+    flex-wrap: nowrap;
+    flex: 0 1 auto;
   }
 
   .scoreboard-nav-date {
-    justify-content: space-between;
+    flex: 1 1 110px;
+    justify-content: flex-end;
+  }
+
+  .scoreboard-nav-button,
+  .scoreboard-date-arrow,
+  .scoreboard-date-button {
+    height: 26px;
+    font-size: 0.58rem;
+  }
+
+  .scoreboard-nav-button {
+    padding: 0 6px;
+  }
+
+  .scoreboard-date-arrow {
+    width: 22px;
+    padding: 0;
   }
 
   .scoreboard-date-button {
-    flex: 1;
+    flex: 0 1 74px;
+    min-width: 72px;
+    padding: 0 4px;
+  }
+
+  .team-name {
+    font-size: 0.76rem;
+  }
+
+  .match-score-column {
+    font-size: 0.86rem;
+  }
+
+  .match-status-column .status-pill {
+    padding: 5px 6px;
+    font-size: 0.54rem;
   }
 
   .detail-link {
@@ -3289,5 +3539,95 @@ input::placeholder {
     padding: 9px 10px;
     gap: 6px;
     font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .scoreboard-page-shell {
+    width: calc(100% - 8px);
+    font-size: 0.76rem;
+  }
+
+  .scorexp-site-header {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .scorexp-brand-button,
+  .scorexp-profile-button {
+    width: 31px;
+    min-width: 31px;
+    height: 30px;
+  }
+
+  .scorexp-brand-mark {
+    width: 25px;
+    height: 25px;
+    font-size: 0.54rem;
+  }
+
+  .scorexp-profile-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .scorexp-sport-button {
+    height: 26px;
+    padding: 0 7px;
+    font-size: 0.56rem;
+  }
+
+  .scoreboard-nav {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .scoreboard-nav-modes,
+  .scoreboard-nav-date {
+    gap: 2px;
+  }
+
+  .scoreboard-nav-date {
+    flex-basis: 100px;
+  }
+
+  .scoreboard-nav-button,
+  .scoreboard-date-arrow,
+  .scoreboard-date-button {
+    height: 24px;
+    font-size: 0.52rem;
+  }
+
+  .scoreboard-nav-button {
+    padding: 0 5px;
+  }
+
+  .scoreboard-date-arrow {
+    width: 20px;
+  }
+
+  .scoreboard-date-button {
+    flex-basis: 66px;
+    min-width: 66px;
+    padding: 0 3px;
+  }
+
+  .match-row-main {
+    grid-template-columns: minmax(34px, max-content) minmax(0, 1fr) 26px;
+    gap: 5px;
+    padding: 6px 7px;
+  }
+
+  .team-name {
+    font-size: 0.72rem;
+  }
+
+  .match-score-column {
+    font-size: 0.82rem;
+  }
+
+  .match-status-column .status-pill {
+    padding: 5px;
+    font-size: 0.5rem;
   }
 }
