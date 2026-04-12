@@ -44,8 +44,16 @@ export interface MatchStatisticRow {
 
 export type MatchFormResult = "W" | "D" | "L" | "U";
 
+export interface MatchFormEntry {
+  result: MatchFormResult;
+  opponentName: string;
+  isHome: boolean;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+}
+
 export interface MatchFormSnapshot {
-  last5: MatchFormResult[];
+  last5: MatchFormEntry[];
   updatedAt: string;
 }
 

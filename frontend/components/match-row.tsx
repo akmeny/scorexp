@@ -5,7 +5,12 @@ import { memo } from "react";
 import { MatchFavoriteIcon } from "@/components/favorite-icons";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { LiveMatchStore, useLiveMatch } from "@/lib/live-match-store";
-import type { LiveMatch, MatchFormResult, MatchFormSnapshot } from "@/lib/types";
+import type {
+  LiveMatch,
+  MatchFormEntry,
+  MatchFormResult,
+  MatchFormSnapshot,
+} from "@/lib/types";
 
 interface MatchRowByIdProps {
   store: LiveMatchStore;
@@ -28,18 +33,25 @@ function formatScore(score: number | null): string {
 
 function getFormArrow(result: MatchFormResult): string {
   if (result === "W") {
-    return "↑";
+    return "\u2191";
   }
 
   if (result === "D") {
-    return "↔";
+    return "\u2194";
   }
 
   if (result === "L") {
-    return "↓";
+    return "\u2193";
   }
 
-  return "•";
+  return "\u2022";
+}
+
+function formatFormTooltip(entry: MatchFormEntry): string {
+  const homeScore = entry.isHome ? entry.goalsFor : entry.goalsAgainst;
+  const awayScore = entry.isHome ? entry.goalsAgainst : entry.goalsFor;
+
+  return `${homeScore ?? "-"}-${awayScore ?? "-"} ${entry.opponentName}`;
 }
 
 const TeamFormStrip = memo(function TeamFormStrip({
@@ -59,13 +71,21 @@ const TeamFormStrip = memo(function TeamFormStrip({
       aria-label={`${teamName} son 5 maç formu`}
       title={`${teamName} son 5 maç formu`}
     >
-      {form.last5.map((result, index) => (
+      {form.last5.map((entry, index) => (
         <span
-          key={`${teamName}-${index}-${result}`}
-          className={`team-form-chip is-${result.toLowerCase()}`}
-          aria-hidden="true"
+          key={`${teamName}-${index}-${entry.result}-${entry.opponentName}`}
+          className="team-form-chip-shell"
         >
-          {getFormArrow(result)}
+          <span
+            className={`team-form-chip is-${entry.result.toLowerCase()}`}
+            aria-label={`${teamName} form maçı: ${formatFormTooltip(entry)}`}
+            title={formatFormTooltip(entry)}
+          >
+            {getFormArrow(entry.result)}
+          </span>
+          <span className="team-form-tooltip" role="tooltip">
+            {formatFormTooltip(entry)}
+          </span>
         </span>
       ))}
     </div>

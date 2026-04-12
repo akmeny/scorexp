@@ -9,6 +9,7 @@ import {
 } from "./normalizer.js";
 import {
   compareMatches,
+  type MatchFormEntry,
   type MatchStatisticsSummary,
   type NormalizedMatch,
 } from "./types.js";
@@ -46,10 +47,8 @@ interface CachedMatchStatistics {
   expiresAt: number;
 }
 
-type MatchFormResult = "W" | "D" | "L" | "U";
-
 interface MatchFormSnapshot {
-  last5: MatchFormResult[];
+  last5: MatchFormEntry[];
   updatedAt: string;
 }
 
@@ -214,40 +213,22 @@ function filterMatches(
   });
 }
 
-function normalizePredictionForm(
-  form: string | null | undefined,
-): MatchFormResult[] | null {
-  if (!form) {
-    return null;
-  }
-
-  const entries = [...form.trim().toUpperCase()]
-    .map((value) => {
-      if (value === "W" || value === "D" || value === "L") {
-        return value;
-      }
-
-      return "U";
-    })
-    .filter((value) => value !== "U");
-
+function createFormSnapshot(
+  entries: Array<{
+    result: MatchFormEntry["result"];
+    opponentName: string;
+    isHome: boolean;
+    goalsFor: number | null;
+    goalsAgainst: number | null;
+  }>,
+  updatedAt: string,
+): MatchFormSnapshot | null {
   if (entries.length === 0) {
     return null;
   }
 
-  return entries.slice(-5) as MatchFormResult[];
-}
-
-function createFormSnapshot(
-  last5: MatchFormResult[] | null,
-  updatedAt: string,
-): MatchFormSnapshot | null {
-  if (!last5 || last5.length === 0) {
-    return null;
-  }
-
   return {
-    last5,
+    last5: entries.slice(0, 5),
     updatedAt,
   };
 }
@@ -480,7 +461,13 @@ export async function registerMatchesRoutes(
       const result = await options.client.getRecentFixturesForTeam(teamId, 5);
       const last5 = normalizeRecentForm(result.data, teamId)
         .slice(0, 5)
-        .map((entry) => entry.result)
+        .map((entry) => ({
+          result: entry.result,
+          opponentName: entry.opponentName,
+          isHome: entry.isHome,
+          goalsFor: entry.goalsFor,
+          goalsAgainst: entry.goalsAgainst,
+        }))
         .reverse();
       const form = createFormSnapshot(last5, new Date().toISOString());
 
@@ -530,39 +517,10 @@ export async function registerMatchesRoutes(
       };
     }
 
-    let homeForm: MatchFormSnapshot | null = null;
-    let awayForm: MatchFormSnapshot | null = null;
-
-    try {
-      const predictionResult = await options.client.getPredictions(match.matchId);
-      const prediction = predictionResult.data[0];
-      const updatedAt = new Date().toISOString();
-
-      homeForm = createFormSnapshot(
-        normalizePredictionForm(prediction?.teams?.home?.last_5?.form),
-        updatedAt,
-      );
-      awayForm = createFormSnapshot(
-        normalizePredictionForm(prediction?.teams?.away?.last_5?.form),
-        updatedAt,
-      );
-    } catch (error) {
-      app.log.warn(
-        {
-          error,
-          matchId: match.matchId,
-        },
-        "Failed to fetch pre-match prediction form",
-      );
-    }
-
-    if (!homeForm) {
-      homeForm = await getTeamRecentForm(match.homeTeam.id);
-    }
-
-    if (!awayForm) {
-      awayForm = await getTeamRecentForm(match.awayTeam.id);
-    }
+    const [homeForm, awayForm] = await Promise.all([
+      getTeamRecentForm(match.homeTeam.id),
+      getTeamRecentForm(match.awayTeam.id),
+    ]);
 
     matchFormCache.set(match.matchId, {
       homeForm,
