@@ -136,10 +136,12 @@ const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
 
 const preMatchStatuses = new Set(["NS", "TBD"]);
 const matchFormCacheTtlMs = 6 * 60 * 60 * 1000;
-const emptyFormCacheTtlMs = 15 * 60 * 1000;
+const emptyFormCacheTtlMs = 2 * 60 * 1000;
 const errorFormCacheTtlMs = 2 * 60 * 1000;
-const formFetchConcurrency = 2;
 const partialMatchFormCacheTtlMs = 2 * 60 * 1000;
+const inlineTeamFormFetchBudget = 4;
+const queuedTeamFormRefreshIntervalMs = 2 * 60 * 1000;
+const queuedTeamFormRefreshBudget = 18;
 
 function parsePositiveInteger(
   value: string | undefined,
@@ -406,6 +408,9 @@ export async function registerMatchesRoutes(
   const matchFormCache = new Map<number, CachedMatchForm>();
   const teamFormCache = new Map<number, CachedTeamForm>();
   const teamFormInFlight = new Map<number, Promise<MatchFormSnapshot | null>>();
+  const queuedTeamFormIds = new Set<number>();
+  const queuedTeamFormOrder: number[] = [];
+  let queuedTeamRefreshInFlight = false;
   const matchDetailService = new MatchDetailService(
     options.client,
     app.log.child({
@@ -557,78 +562,82 @@ export async function registerMatchesRoutes(
     }
   };
 
-  const getMatchForm = async (
-    match: NormalizedMatch,
-  ): Promise<{
-    homeForm: MatchFormSnapshot | null;
-    awayForm: MatchFormSnapshot | null;
-  }> => {
-    const cached = matchFormCache.get(match.matchId);
-
-    if (cached && cached.expiresAt > Date.now()) {
-      return {
-        homeForm: cached.homeForm,
-        awayForm: cached.awayForm,
-      };
+  const enqueueMissingTeamForm = (teamId: number): void => {
+    if (queuedTeamFormIds.has(teamId) || teamFormInFlight.has(teamId)) {
+      return;
     }
 
-    if (!options.providerEnabled || !isPreMatchStatus(match.statusShort)) {
-      return {
-        homeForm: null,
-        awayForm: null,
-      };
-    }
-
-    const homeForm = await getTeamRecentForm(match.homeTeam.id);
-    const awayForm = await getTeamRecentForm(match.awayTeam.id);
-    const hasCompleteForm = Boolean(homeForm) && Boolean(awayForm);
-    const hasPartialForm = Boolean(homeForm) !== Boolean(awayForm);
-
-    matchFormCache.set(match.matchId, {
-      homeForm,
-      awayForm,
-      expiresAt:
-        Date.now() +
-        (hasCompleteForm
-          ? matchFormCacheTtlMs
-          : hasPartialForm
-            ? partialMatchFormCacheTtlMs
-            : emptyFormCacheTtlMs),
-    });
-
-    return {
-      homeForm,
-      awayForm,
-    };
+    queuedTeamFormIds.add(teamId);
+    queuedTeamFormOrder.push(teamId);
   };
 
-  const mapWithConcurrency = async <T, R>(
-    items: readonly T[],
-    concurrency: number,
-    mapper: (item: T) => Promise<R>,
-  ): Promise<R[]> => {
-    const results = new Array<R>(items.length);
-    let index = 0;
+  const getCachedTeamForm = (teamId: number): MatchFormSnapshot | null => {
+    const cached = teamFormCache.get(teamId);
 
-    const worker = async (): Promise<void> => {
-      while (index < items.length) {
-        const currentIndex = index;
-        index += 1;
-        results[currentIndex] = await mapper(items[currentIndex] as T);
+    if (!cached || cached.expiresAt <= Date.now()) {
+      return null;
+    }
+
+    return cached.form;
+  };
+
+  const refreshQueuedTeamForms = async (): Promise<void> => {
+    if (
+      queuedTeamRefreshInFlight ||
+      !options.providerEnabled ||
+      queuedTeamFormOrder.length === 0
+    ) {
+      return;
+    }
+
+    queuedTeamRefreshInFlight = true;
+
+    try {
+      let processed = 0;
+
+      while (
+        processed < queuedTeamFormRefreshBudget &&
+        queuedTeamFormOrder.length > 0
+      ) {
+        const teamId = queuedTeamFormOrder.shift();
+
+        if (typeof teamId !== "number") {
+          continue;
+        }
+
+        queuedTeamFormIds.delete(teamId);
+
+        const cached = getCachedTeamForm(teamId);
+
+        if (cached) {
+          continue;
+        }
+
+        await getTeamRecentForm(teamId);
+        processed += 1;
       }
-    };
 
-    await Promise.all(
-      Array.from(
-        {
-          length: Math.min(concurrency, items.length),
-        },
-        () => worker(),
-      ),
-    );
-
-    return results;
+      if (processed > 0) {
+        app.log.info(
+          {
+            processed,
+            queuedRemaining: queuedTeamFormOrder.length,
+          },
+          "Refreshed queued missing team forms",
+        );
+      }
+    } finally {
+      queuedTeamRefreshInFlight = false;
+    }
   };
+
+  const queuedTeamRefreshTimer = setInterval(() => {
+    void refreshQueuedTeamForms();
+  }, queuedTeamFormRefreshIntervalMs);
+
+  app.addHook("onClose", async () => {
+    clearInterval(queuedTeamRefreshTimer);
+  });
 
   const enrichMatchesWithForm = async (
     matches: NormalizedMatch[],
@@ -640,35 +649,81 @@ export async function registerMatchesRoutes(
       }
     >
   > => {
-    const indexedMatches = matches.map((match, index) => ({
-      match,
-      index,
-    }));
     const nextMatches = [...matches];
-    const candidates = indexedMatches.filter(({ match }) =>
-      isPreMatchStatus(match.statusShort),
-    );
+    const visibleTeamForms = new Map<number, MatchFormSnapshot | null>();
+    let remainingInlineBudget = inlineTeamFormFetchBudget;
 
-    const enriched = await mapWithConcurrency(
-      candidates,
-      formFetchConcurrency,
-      async ({ match, index }) => ({
-        index,
-        forms: await getMatchForm(match),
-      }),
-    );
+    const getVisibleTeamForm = async (
+      teamId: number,
+    ): Promise<MatchFormSnapshot | null> => {
+      if (visibleTeamForms.has(teamId)) {
+        return visibleTeamForms.get(teamId) ?? null;
+      }
 
-    for (const entry of enriched) {
-      const match = matches[entry.index];
+      const cached = getCachedTeamForm(teamId);
 
-      if (!match) {
+      if (cached) {
+        visibleTeamForms.set(teamId, cached);
+        return cached;
+      }
+
+      enqueueMissingTeamForm(teamId);
+
+      if (remainingInlineBudget <= 0) {
+        visibleTeamForms.set(teamId, null);
+        return null;
+      }
+
+      remainingInlineBudget -= 1;
+      const form = await getTeamRecentForm(teamId);
+      visibleTeamForms.set(teamId, form);
+
+      if (!form) {
+        enqueueMissingTeamForm(teamId);
+      }
+
+      return form;
+    };
+
+    for (let index = 0; index < matches.length; index += 1) {
+      const match = matches[index];
+
+      if (!match || !isPreMatchStatus(match.statusShort)) {
         continue;
       }
 
-      nextMatches[entry.index] = {
+      const cachedMatch = matchFormCache.get(match.matchId);
+
+      if (cachedMatch && cachedMatch.expiresAt > Date.now()) {
+        nextMatches[index] = {
+          ...match,
+          homeForm: cachedMatch.homeForm,
+          awayForm: cachedMatch.awayForm,
+        };
+        continue;
+      }
+
+      const homeForm = await getVisibleTeamForm(match.homeTeam.id);
+      const awayForm = await getVisibleTeamForm(match.awayTeam.id);
+      const hasCompleteForm = Boolean(homeForm) && Boolean(awayForm);
+      const hasPartialForm = Boolean(homeForm) !== Boolean(awayForm);
+
+      matchFormCache.set(match.matchId, {
+        homeForm,
+        awayForm,
+        expiresAt:
+          Date.now() +
+          (hasCompleteForm
+            ? matchFormCacheTtlMs
+            : hasPartialForm
+              ? partialMatchFormCacheTtlMs
+              : emptyFormCacheTtlMs),
+      });
+
+      nextMatches[index] = {
         ...match,
-        homeForm: entry.forms.homeForm,
-        awayForm: entry.forms.awayForm,
+        homeForm,
+        awayForm,
       };
     }
 
