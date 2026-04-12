@@ -1,4 +1,5 @@
 import type {
+  MatchDetailPageResponse,
   MatchDetailResponse,
   MatchesPageResponse,
   MatchesSnapshotResponse,
@@ -36,9 +37,7 @@ async function fetchJson<T>(path: string): Promise<T> {
     });
   } catch (error) {
     throw new BackendRequestError(
-      error instanceof Error
-        ? error.message
-        : "Sunucuya ulaşılamıyor",
+      error instanceof Error ? error.message : "Sunucuya ulaşılamıyor",
       null,
     );
   }
@@ -131,6 +130,16 @@ export async function fetchMatchById(
 ): Promise<MatchDetailResponse | null> {
   try {
     return await fetchJson<MatchDetailResponse>(`/api/matches/${matchId}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchMatchDetailPageData(
+  matchId: number,
+): Promise<MatchDetailPageResponse | null> {
+  try {
+    return await fetchJson<MatchDetailPageResponse>(`/api/matches/${matchId}/detail`);
   } catch {
     return null;
   }

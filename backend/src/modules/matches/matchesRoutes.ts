@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { ApiSportsClient } from "./apiSportsClient.js";
+import { MatchDetailService } from "./matchDetailService.js";
 import type { MatchStore } from "./matchStore.js";
 import { normalizeFixture, summarizeStatistics } from "./normalizer.js";
 import {
@@ -124,6 +125,13 @@ export async function registerMatchesRoutes(
 ): Promise<void> {
   const customDateCache = new Map<string, CachedDateSnapshot>();
   const matchStatisticsCache = new Map<number, CachedMatchStatistics>();
+  const matchDetailService = new MatchDetailService(
+    options.client,
+    app.log.child({
+      module: "match-detail",
+    }),
+    options.providerEnabled,
+  );
 
   const getStatisticsTtlMs = (match: NormalizedMatch): number =>
     liveStatuses.has(match.statusShort) ? 45_000 : 10 * 60 * 1000;
@@ -302,4 +310,33 @@ export async function registerMatchesRoutes(
       freshness: store.getFreshness(matchId),
     };
   });
+
+  app.get<{ Params: MatchIdParams }>(
+    "/api/matches/:id/detail",
+    async (request, reply) => {
+      const matchId = Number(request.params.id);
+
+      if (!Number.isInteger(matchId) || matchId <= 0) {
+        return reply.code(400).send({
+          error: "Invalid match id",
+        });
+      }
+
+      const match = store.getById(matchId);
+
+      if (!match) {
+        return reply.code(404).send({
+          error: "Match not found",
+        });
+      }
+
+      const detail = await matchDetailService.getDetail(match);
+
+      return {
+        match,
+        detail,
+        freshness: store.getFreshness(matchId),
+      };
+    },
+  );
 }

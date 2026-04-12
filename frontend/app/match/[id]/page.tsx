@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LiveMatchDetailPage } from "@/components/live-match-detail-page";
-import { fetchMatchById } from "@/lib/api";
+import { fetchMatchDetailPageData } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +27,13 @@ export default async function MatchPage({ params }: MatchPageProps) {
     );
   }
 
-  const payload = await fetchMatchById(matchId);
+  const payload = await fetchMatchDetailPageData(matchId);
 
   if (!payload?.match) {
     return (
       <main className="page-shell">
         <section className="empty-card">
-          <p>Bu canlı maç şu anda kullanılamıyor.</p>
+          <p>Bu maç şu anda kullanılamıyor.</p>
           <Link href="/" className="secondary-link">
             Canlı skorlara dön
           </Link>
@@ -42,10 +42,5 @@ export default async function MatchPage({ params }: MatchPageProps) {
     );
   }
 
-  return (
-    <LiveMatchDetailPage
-      initialMatch={payload.match}
-      initialRemoved={false}
-    />
-  );
+  return <LiveMatchDetailPage initialPayload={payload} />;
 }

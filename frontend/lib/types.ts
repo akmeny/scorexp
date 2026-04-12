@@ -35,6 +35,264 @@ export interface MatchStatisticsSummary {
   updatedAt: string;
 }
 
+export interface MatchStatisticRow {
+  key: string;
+  label: string;
+  home: string | null;
+  away: string | null;
+}
+
+export interface MatchFixtureDetails {
+  referee: string | null;
+  venueName: string | null;
+  venueCity: string | null;
+  timezone: string | null;
+  season: number | null;
+  round: string | null;
+  leagueLogo: string | null;
+  leagueType: string | null;
+  homeWinner: boolean | null;
+  awayWinner: boolean | null;
+  score: {
+    halftime: {
+      home: number | null;
+      away: number | null;
+    };
+    fulltime: {
+      home: number | null;
+      away: number | null;
+    };
+    extratime: {
+      home: number | null;
+      away: number | null;
+    };
+    penalty: {
+      home: number | null;
+      away: number | null;
+    };
+  };
+}
+
+export interface MatchTimelineEvent {
+  minute: number | null;
+  extraMinute: number | null;
+  teamId: number | null;
+  teamName: string | null;
+  playerName: string | null;
+  assistName: string | null;
+  type: string;
+  detail: string;
+  comments: string | null;
+}
+
+export interface MatchLineupPlayer {
+  id: number | null;
+  name: string;
+  number: number | null;
+  position: string | null;
+  grid: string | null;
+}
+
+export interface MatchLineupTeam {
+  teamId: number | null;
+  teamName: string;
+  teamLogo: string;
+  formation: string | null;
+  coachName: string | null;
+  coachPhoto: string | null;
+  startXI: MatchLineupPlayer[];
+  substitutes: MatchLineupPlayer[];
+}
+
+export interface MatchPlayerPerformance {
+  playerId: number | null;
+  name: string;
+  photo: string | null;
+  number: number | null;
+  position: string | null;
+  grid: string | null;
+  minutes: number | null;
+  rating: string | null;
+  captain: boolean;
+  substitute: boolean;
+  goals: number | null;
+  assists: number | null;
+  shotsTotal: number | null;
+  shotsOn: number | null;
+  passesTotal: number | null;
+  passesKey: number | null;
+  passesAccuracy: string | null;
+  tackles: number | null;
+  duelsWon: number | null;
+  dribblesSuccess: number | null;
+  foulsDrawn: number | null;
+  foulsCommitted: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  penaltyScored: number | null;
+  penaltyMissed: number | null;
+}
+
+export interface MatchPlayerTeamSection {
+  teamId: number | null;
+  teamName: string;
+  teamLogo: string;
+  updatedAt: string | null;
+  players: MatchPlayerPerformance[];
+}
+
+export interface MatchHeadToHeadItem {
+  matchId: number;
+  date: string;
+  leagueName: string;
+  country: string;
+  round: string | null;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  statusShort: string;
+  statusLong: string;
+}
+
+export interface MatchRecentFormItem {
+  matchId: number;
+  date: string;
+  leagueName: string;
+  isHome: boolean;
+  opponentName: string;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  result: "W" | "D" | "L" | "U";
+}
+
+export interface MatchTeamSeasonStats {
+  form: string | null;
+  played: number | null;
+  wins: number | null;
+  draws: number | null;
+  losses: number | null;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  cleanSheets: number | null;
+  failedToScore: number | null;
+  biggestWin: string | null;
+  biggestLoss: string | null;
+  streakWins: number | null;
+  streakDraws: number | null;
+  streakLosses: number | null;
+}
+
+export interface MatchFormTeamSummary {
+  teamId: number;
+  teamName: string;
+  teamLogo: string;
+  last5: MatchRecentFormItem[];
+  last10: MatchRecentFormItem[];
+  seasonStats: MatchTeamSeasonStats | null;
+}
+
+export interface MatchFormSummary {
+  home: MatchFormTeamSummary;
+  away: MatchFormTeamSummary;
+}
+
+export interface MatchStandingsRow {
+  rank: number | null;
+  teamId: number | null;
+  teamName: string;
+  teamLogo: string;
+  points: number | null;
+  goalsDiff: number | null;
+  form: string | null;
+  status: string | null;
+  description: string | null;
+  group: string | null;
+  played: number | null;
+  wins: number | null;
+  draws: number | null;
+  losses: number | null;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  isCurrentMatchTeam: boolean;
+}
+
+export interface MatchStandingsGroup {
+  name: string;
+  rows: MatchStandingsRow[];
+}
+
+export interface MatchStandingsSummary {
+  leagueId: number | null;
+  leagueName: string | null;
+  country: string | null;
+  season: number | null;
+  groups: MatchStandingsGroup[];
+  homeTeamDescription: string | null;
+  awayTeamDescription: string | null;
+}
+
+export interface MatchPredictionSummary {
+  advice: string | null;
+  underOver: string | null;
+  winnerTeamId: number | null;
+  winnerName: string | null;
+  winnerComment: string | null;
+  winOrDraw: boolean | null;
+  goalsHome: string | null;
+  goalsAway: string | null;
+  percentHome: string | null;
+  percentDraw: string | null;
+  percentAway: string | null;
+  comparison: Record<string, string | null>;
+  homeLast5Form: string | null;
+  awayLast5Form: string | null;
+  homeLeagueForm: string | null;
+  awayLeagueForm: string | null;
+}
+
+export interface MatchTournamentSummary {
+  leagueType: string | null;
+  season: number | null;
+  round: string | null;
+  venueName: string | null;
+  venueCity: string | null;
+  referee: string | null;
+  timezone: string | null;
+  score: MatchFixtureDetails["score"];
+  homeWinner: boolean | null;
+  awayWinner: boolean | null;
+  homeStandingDescription: string | null;
+  awayStandingDescription: string | null;
+}
+
+export type MatchDetailTabKey =
+  | "summary"
+  | "statistics"
+  | "events"
+  | "lineups"
+  | "players"
+  | "h2h"
+  | "form"
+  | "standings"
+  | "tournament"
+  | "predictions";
+
+export interface MatchFullDetail {
+  fixture: MatchFixtureDetails | null;
+  statistics: MatchStatisticRow[];
+  events: MatchTimelineEvent[];
+  lineups: MatchLineupTeam[];
+  players: MatchPlayerTeamSection[];
+  headToHead: MatchHeadToHeadItem[];
+  form: MatchFormSummary | null;
+  standings: MatchStandingsSummary | null;
+  predictions: MatchPredictionSummary | null;
+  tournament: MatchTournamentSummary | null;
+  availableTabs: MatchDetailTabKey[];
+  generatedAt: string;
+}
+
 export interface LiveMatch {
   matchId: number;
   leagueId: number;
@@ -115,4 +373,9 @@ export type MatchUpdateEvent =
 export interface MatchDetailResponse {
   match: LiveMatch;
   statistics: MatchStatisticsSummary | null;
+}
+
+export interface MatchDetailPageResponse {
+  match: LiveMatch;
+  detail: MatchFullDetail;
 }
