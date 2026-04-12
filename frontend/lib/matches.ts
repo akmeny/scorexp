@@ -190,8 +190,15 @@ export function sortGroupsByFavoritePriority(
   return indexedGroups.map((entry) => entry.group);
 }
 
-export function isLiveStatus(statusShort: string): boolean {
-  return liveStatuses.has(statusShort);
+export function isLiveStatus(
+  statusShort: string,
+  liveRetainUntil: string | null = null,
+): boolean {
+  if (liveStatuses.has(statusShort)) {
+    return true;
+  }
+
+  return liveRetainUntil !== null && Date.parse(liveRetainUntil) > Date.now();
 }
 
 export function compareMatchesForStructure(
@@ -285,7 +292,7 @@ export function buildVisibleGroups(
         continue;
       }
 
-      if (filters.liveOnly && !isLiveStatus(match.statusShort)) {
+      if (filters.liveOnly && !isLiveStatus(match.statusShort, match.liveRetainUntil)) {
         continue;
       }
 
@@ -362,6 +369,7 @@ export function patchAffectsStructure(changes: MatchPatchChanges): boolean {
     "countryFlag" in changes ||
     "startTime" in changes ||
     "statusShort" in changes ||
+    "liveRetainUntil" in changes ||
     "homeTeam" in changes ||
     "awayTeam" in changes
   );

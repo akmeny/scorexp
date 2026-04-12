@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { RedCardBadge } from "@/components/match-live-badges";
 import { fetchMatchById } from "@/lib/api";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { translateCountryName } from "@/lib/i18n";
+import { useMatchPresentation } from "@/lib/live-match-presentation";
 import type {
   LiveMatch,
   MatchStatisticPair,
@@ -104,6 +106,7 @@ export function MatchPreviewPanel({
   const [statistics, setStatistics] = useState<MatchStatisticsSummary | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
   const statusTone = match ? getStatusTone(match.statusShort) : "";
+  const presentation = useMatchPresentation(match);
 
   useEffect(() => {
     if (!match || matchId === null) {
@@ -178,47 +181,53 @@ export function MatchPreviewPanel({
           </section>
 
           <section className="preview-scoreboard">
-            <div className="preview-logo-shell">
-              {match.homeTeam.logo ? (
-                <img
-                  src={match.homeTeam.logo}
-                  alt=""
-                  width={60}
-                  height={60}
-                  loading="lazy"
-                  decoding="async"
-                  className="preview-team-logo"
-                />
-              ) : (
-                <span className="preview-team-logo team-logo-fallback" />
-              )}
+            <div className="preview-team-slot">
+              <div className="preview-logo-shell">
+                {match.homeTeam.logo ? (
+                  <img
+                    src={match.homeTeam.logo}
+                    alt=""
+                    width={60}
+                    height={60}
+                    loading="lazy"
+                    decoding="async"
+                    className="preview-team-logo"
+                  />
+                ) : (
+                  <span className="preview-team-logo team-logo-fallback" />
+                )}
+              </div>
+              <RedCardBadge count={match.homeRedCards} className="is-large" />
             </div>
 
             <div className="preview-score-stack">
               <div className="preview-score-cluster" aria-label="Güncel skor">
-                <span>{formatScore(match.homeScore)}</span>
+                <span>{formatScore(presentation.displayHomeScore)}</span>
                 <span className="score-separator">:</span>
-                <span>{formatScore(match.awayScore)}</span>
+                <span>{formatScore(presentation.displayAwayScore)}</span>
               </div>
               <Link href={`/match/${match.matchId}`} className="preview-detail-link">
                 Maç Detayına Git
               </Link>
             </div>
 
-            <div className="preview-logo-shell">
-              {match.awayTeam.logo ? (
-                <img
-                  src={match.awayTeam.logo}
-                  alt=""
-                  width={60}
-                  height={60}
-                  loading="lazy"
-                  decoding="async"
-                  className="preview-team-logo"
-                />
-              ) : (
-                <span className="preview-team-logo team-logo-fallback" />
-              )}
+            <div className="preview-team-slot">
+              <div className="preview-logo-shell">
+                {match.awayTeam.logo ? (
+                  <img
+                    src={match.awayTeam.logo}
+                    alt=""
+                    width={60}
+                    height={60}
+                    loading="lazy"
+                    decoding="async"
+                    className="preview-team-logo"
+                  />
+                ) : (
+                  <span className="preview-team-logo team-logo-fallback" />
+                )}
+              </div>
+              <RedCardBadge count={match.awayRedCards} className="is-large" />
             </div>
           </section>
 

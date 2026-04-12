@@ -32,6 +32,8 @@ const finalStatuses = new Set([
   "WO",
   "CANC",
 ]);
+const liveLikeStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
+const liveRetainAfterFinishedMs = 60_000;
 
 function sameTeam(left: TeamSummary, right: TeamSummary): boolean {
   return (
@@ -71,7 +73,9 @@ function sameEventSummary(
   if (
     left.total !== right.total ||
     left.goals !== right.goals ||
-    left.cards !== right.cards
+    left.cards !== right.cards ||
+    left.homeRedCards !== right.homeRedCards ||
+    left.awayRedCards !== right.awayRedCards
   ) {
     return false;
   }
@@ -118,12 +122,54 @@ function sameMatch(
     sameTeam(previous.awayTeam, next.awayTeam) &&
     previous.homeScore === next.homeScore &&
     previous.awayScore === next.awayScore &&
+    previous.homeRedCards === next.homeRedCards &&
+    previous.awayRedCards === next.awayRedCards &&
+    previous.liveRetainUntil === next.liveRetainUntil &&
     sameEventSummary(previous.eventsSummary, next.eventsSummary)
   );
 }
 
 function inferRemovalReason(statusShort: string): RemovedMatch["reason"] {
   return finalStatuses.has(statusShort) ? "finished" : "no-longer-live";
+}
+
+function isLiveLikeStatus(statusShort: string): boolean {
+  return liveLikeStatuses.has(statusShort);
+}
+
+function isFinalStatus(statusShort: string): boolean {
+  return finalStatuses.has(statusShort);
+}
+
+function resolveLiveRetainUntil(
+  previous: NormalizedMatch | null,
+  nextStatusShort: string,
+  generatedAt: string,
+): string | null {
+  const generatedAtMs = Date.parse(generatedAt);
+  const existingRetainUntil = previous?.liveRetainUntil ?? null;
+  const existingRetainUntilMs = existingRetainUntil
+    ? Date.parse(existingRetainUntil)
+    : Number.NaN;
+
+  if (
+    existingRetainUntil &&
+    Number.isFinite(existingRetainUntilMs) &&
+    existingRetainUntilMs > generatedAtMs &&
+    isFinalStatus(nextStatusShort)
+  ) {
+    return existingRetainUntil;
+  }
+
+  if (
+    previous &&
+    isLiveLikeStatus(previous.statusShort) &&
+    isFinalStatus(nextStatusShort)
+  ) {
+    return new Date(generatedAtMs + liveRetainAfterFinishedMs).toISOString();
+  }
+
+  return null;
 }
 
 function createMatchPatch(
@@ -180,6 +226,18 @@ function createMatchPatch(
     changes.awayScore = next.awayScore;
   }
 
+  if (previous.homeRedCards !== next.homeRedCards) {
+    changes.homeRedCards = next.homeRedCards;
+  }
+
+  if (previous.awayRedCards !== next.awayRedCards) {
+    changes.awayRedCards = next.awayRedCards;
+  }
+
+  if (previous.liveRetainUntil !== next.liveRetainUntil) {
+    changes.liveRetainUntil = next.liveRetainUntil;
+  }
+
   if (!sameEventSummary(previous.eventsSummary, next.eventsSummary)) {
     changes.eventsSummary = next.eventsSummary;
   }
@@ -210,10 +268,16 @@ export function reconcileMatches(
     latestById.set(input.matchId, input);
 
     const previous = previousMatches.get(input.matchId);
+    const liveRetainUntil = resolveLiveRetainUntil(
+      previous ?? null,
+      input.statusShort,
+      generatedAt,
+    );
 
     if (!previous) {
       const addedMatch: NormalizedMatch = {
         ...input,
+        liveRetainUntil,
         lastUpdatedAt: generatedAt,
       };
       nextMatches.set(input.matchId, addedMatch);
@@ -221,13 +285,19 @@ export function reconcileMatches(
       continue;
     }
 
-    if (sameMatch(previous, input)) {
+    const candidateMatch: NormalizedMatch = {
+      ...input,
+      liveRetainUntil,
+      lastUpdatedAt: previous.lastUpdatedAt,
+    };
+
+    if (sameMatch(previous, candidateMatch)) {
       nextMatches.set(input.matchId, previous);
       continue;
     }
 
     const updatedMatch: NormalizedMatch = {
-      ...input,
+      ...candidateMatch,
       lastUpdatedAt: generatedAt,
     };
     nextMatches.set(input.matchId, updatedMatch);

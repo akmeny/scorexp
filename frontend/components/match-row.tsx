@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { memo } from "react";
 import { MatchFavoriteIcon } from "@/components/favorite-icons";
+import { RedCardBadge, TeamNoticeBadge } from "@/components/match-live-badges";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { LiveMatchStore, useLiveMatch } from "@/lib/live-match-store";
+import { useMatchPresentation } from "@/lib/live-match-presentation";
 import type {
   LiveMatch,
   MatchFormEntry,
@@ -123,9 +125,14 @@ export const MatchRow = memo(function MatchRow({
 }: MatchRowProps) {
   const showPreMatchForm = match.statusShort === "NS";
   const statusTone = getStatusTone(match.statusShort);
+  const presentation = useMatchPresentation(match);
+  const rowStateClass = [
+    presentation.isScoreStripeActive ? "has-score-stripe" : "",
+    presentation.isLiveIntroActive ? "is-live-intro" : "",
+  ].filter(Boolean).join(" ");
 
   return (
-    <article className={`match-row ${statusTone} ${isSelected ? "is-selected" : ""}`}>
+    <article className={`match-row ${statusTone} ${isSelected ? "is-selected" : ""} ${rowStateClass}`}>
       <Link href={`/?matchId=${match.matchId}`} scroll={false} className="match-row-main">
         <div className="match-status-column">
           <span className={`status-pill ${statusTone}`}>
@@ -151,6 +158,8 @@ export const MatchRow = memo(function MatchRow({
             )}
             <div className="team-line-content">
               <span className="team-name">{match.homeTeam.name}</span>
+              <RedCardBadge count={match.homeRedCards} />
+              <TeamNoticeBadge notice={presentation.homeNotice} />
               {showPreMatchForm ? (
                 <TeamFormStrip form={match.homeForm} teamName={match.homeTeam.name} />
               ) : null}
@@ -173,6 +182,8 @@ export const MatchRow = memo(function MatchRow({
             )}
             <div className="team-line-content">
               <span className="team-name">{match.awayTeam.name}</span>
+              <RedCardBadge count={match.awayRedCards} />
+              <TeamNoticeBadge notice={presentation.awayNotice} />
               {showPreMatchForm ? (
                 <TeamFormStrip form={match.awayForm} teamName={match.awayTeam.name} />
               ) : null}
@@ -181,8 +192,8 @@ export const MatchRow = memo(function MatchRow({
         </div>
 
         <div className="match-score-column" aria-label="Current score">
-          <span>{formatScore(match.homeScore)}</span>
-          <span>{formatScore(match.awayScore)}</span>
+          <span>{formatScore(presentation.displayHomeScore)}</span>
+          <span>{formatScore(presentation.displayAwayScore)}</span>
         </div>
       </Link>
 

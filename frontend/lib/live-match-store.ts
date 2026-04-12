@@ -6,6 +6,7 @@ import {
   patchAffectsStructure,
   type MatchStructureSnapshot,
 } from "@/lib/matches";
+import { markMatchEnteredLive } from "@/lib/live-match-presentation";
 import type {
   LiveMatch,
   MatchesDiffResponse,
@@ -19,6 +20,11 @@ interface StoreMetaSnapshot {
 }
 
 type Listener = () => void;
+const livePresentationStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
+
+function isPresentationLiveStatus(statusShort: string): boolean {
+  return livePresentationStatuses.has(statusShort);
+}
 
 export class LiveMatchStore {
   private matches = new Map<number, LiveMatch>();
@@ -156,6 +162,10 @@ export class LiveMatchStore {
       this.matches.set(match.matchId, match);
       changedMatchIds.add(match.matchId);
       structureChanged = true;
+
+      if (isPresentationLiveStatus(match.statusShort)) {
+        markMatchEnteredLive(match.matchId);
+      }
     }
 
     for (const patch of diff.updated) {
@@ -165,11 +175,20 @@ export class LiveMatchStore {
         continue;
       }
 
-      this.matches.set(patch.matchId, {
+      const nextMatch = {
         ...previous,
         ...patch.changes,
-      });
+      };
+
+      this.matches.set(patch.matchId, nextMatch);
       changedMatchIds.add(patch.matchId);
+
+      if (
+        !isPresentationLiveStatus(previous.statusShort) &&
+        isPresentationLiveStatus(nextMatch.statusShort)
+      ) {
+        markMatchEnteredLive(patch.matchId);
+      }
 
       if (patchAffectsStructure(patch.changes)) {
         structureChanged = true;

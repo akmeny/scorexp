@@ -398,7 +398,11 @@ export class LiveMatchesPollingService {
         previousMatches,
       );
 
-      await this.refreshEvents(eventRefreshCandidates, pollTimestamp);
+      await this.refreshEvents(
+        eventRefreshCandidates,
+        pollTimestamp,
+        effectiveFixtures,
+      );
 
       const latestInputs = [...effectiveFixtures.values()].map((fixture) =>
         normalizeFixture(
@@ -635,6 +639,7 @@ export class LiveMatchesPollingService {
   private async refreshEvents(
     matchIds: number[],
     pollTimestamp: string,
+    fixturesById: Map<number, ProviderFixtureResponse>,
   ): Promise<void> {
     for (const matchId of matchIds) {
       try {
@@ -661,7 +666,16 @@ export class LiveMatchesPollingService {
 
         this.latestRateLimit = result.rateLimit;
 
-        const summary = summarizeEvents(result.data);
+        const fixture = fixturesById.get(matchId);
+        const summary = summarizeEvents(
+          result.data,
+          fixture
+            ? {
+                homeTeamId: fixture.teams.home.id,
+                awayTeamId: fixture.teams.away.id,
+              }
+            : undefined,
+        );
         const fingerprint = eventsFingerprint(summary);
         const previous = this.eventsCache.get(matchId);
 

@@ -18,6 +18,8 @@ export interface MatchEventsSummary {
   total: number;
   goals: number;
   cards: number;
+  homeRedCards: number;
+  awayRedCards: number;
   latest: MatchEventSummaryItem | null;
   recent: MatchEventSummaryItem[];
 }
@@ -322,6 +324,9 @@ export interface LiveMatch {
   awayTeam: TeamSummary;
   homeScore: number | null;
   awayScore: number | null;
+  homeRedCards: number;
+  awayRedCards: number;
+  liveRetainUntil: string | null;
   eventsSummary: MatchEventsSummary | null;
   homeForm?: MatchFormSnapshot | null;
   awayForm?: MatchFormSnapshot | null;

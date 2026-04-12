@@ -201,8 +201,13 @@ function filterMatches(
   query: string,
   liveOnly: boolean,
 ): NormalizedMatch[] {
+  const now = Date.now();
+
   return matches.filter((match) => {
-    if (liveOnly && !liveStatuses.has(match.statusShort)) {
+    const retainedInLive =
+      match.liveRetainUntil !== null && Date.parse(match.liveRetainUntil) > now;
+
+    if (liveOnly && !liveStatuses.has(match.statusShort) && !retainedInLive) {
       return false;
     }
 

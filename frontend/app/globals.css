@@ -886,6 +886,35 @@ input::placeholder {
   }
 }
 
+@keyframes scoreStripeSweep {
+  from {
+    opacity: 0;
+    transform: translateX(-105%);
+  }
+
+  14% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(105%);
+  }
+}
+
+@keyframes liveNoticePulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: translateY(-1px);
+    filter: brightness(1.18);
+  }
+}
+
 @keyframes mobilePreviewBackdropIn {
   from {
     background-color: rgba(1, 8, 5, 0);
@@ -924,6 +953,11 @@ input::placeholder {
 
 @media (prefers-reduced-motion: reduce) {
   .wake-pulse {
+    animation: none;
+  }
+
+  .match-row.has-score-stripe::after,
+  .team-live-notice {
     animation: none;
   }
 
@@ -1386,6 +1420,39 @@ input::placeholder {
     var(--row-selected-bg);
 }
 
+.match-row.is-live-intro {
+  background:
+    linear-gradient(90deg, rgba(255, 49, 90, 0.28), rgba(255, 49, 90, 0.08) 46%),
+    var(--row-bg);
+  box-shadow:
+    inset 3px 0 0 var(--live),
+    0 0 0 1px rgba(255, 49, 90, 0.16);
+}
+
+.match-row.has-score-stripe::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 49, 90, 0.08) 18%,
+      rgba(255, 49, 90, 0.5) 48%,
+      rgba(255, 49, 90, 0.08) 78%,
+      transparent 100%
+    );
+  content: "";
+  pointer-events: none;
+  animation: scoreStripeSweep 3s ease-out forwards;
+}
+
+.match-row-main,
+.match-row-actions {
+  position: relative;
+  z-index: 2;
+}
+
 .match-row:hover,
 .match-row:focus-within {
   z-index: 2;
@@ -1457,6 +1524,73 @@ input::placeholder {
   gap: 10px;
   min-width: 0;
   flex: 1;
+}
+
+.red-card-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 19px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background:
+    linear-gradient(145deg, #ff304f, #b50724);
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow:
+    0 6px 14px rgba(255, 49, 90, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: rotate(-3deg);
+  flex-shrink: 0;
+}
+
+.red-card-badge.is-large {
+  width: 20px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  box-shadow:
+    0 10px 20px rgba(255, 49, 90, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.team-live-notice {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 2px 7px;
+  border: 1px solid var(--live-border);
+  border-radius: 999px;
+  background: var(--live-soft);
+  color: var(--live-strong);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 0 16px rgba(255, 49, 90, 0.16);
+}
+
+.team-live-notice.is-danger,
+.team-live-notice.is-penalty {
+  animation: liveNoticePulse 920ms ease-in-out infinite;
+}
+
+.team-live-notice.is-goal {
+  border-color: var(--live-border);
+  background:
+    linear-gradient(180deg, rgba(255, 49, 90, 0.22), rgba(255, 49, 90, 0.08));
+}
+
+.team-live-notice.is-cancelled,
+.team-live-notice.is-missed {
+  border-color: rgba(240, 185, 90, 0.32);
+  background: var(--warning-soft);
+  color: var(--warning);
+  box-shadow: 0 0 16px rgba(240, 185, 90, 0.12);
 }
 
 .team-logo,
@@ -1911,6 +2045,13 @@ input::placeholder {
   grid-template-columns: 84px minmax(0, 1fr) 84px;
   align-items: center;
   gap: 18px;
+}
+
+.preview-team-slot,
+.match-detail-team-media {
+  display: inline-grid;
+  justify-items: center;
+  gap: 7px;
 }
 
 .preview-score-stack {

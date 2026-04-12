@@ -1,5 +1,6 @@
 "use client";
 
+import { RedCardBadge } from "@/components/match-live-badges";
 import { formatKickoff, formatMinute, getStatusTone } from "@/lib/format";
 import {
   translateCountryName,
@@ -9,6 +10,7 @@ import {
   translateProviderText,
   translateStatisticLabel,
 } from "@/lib/i18n";
+import { useMatchPresentation } from "@/lib/live-match-presentation";
 import type {
   MatchFormTeamSummary,
   LiveMatch,
@@ -130,6 +132,7 @@ function InfoCard({ label, value }: { label: string; value: string }) {
 }
 
 function SummaryTab({ match, detail }: { match: LiveMatch; detail: MatchFullDetail }) {
+  const presentation = useMatchPresentation(match);
   const infoCards: Array<{ label: string; value: string | null }> = [
     { label: "Başlangıç", value: formatKickoff(match.startTime) },
     { label: "Durum", value: translateMatchStatus(match) },
@@ -155,7 +158,10 @@ function SummaryTab({ match, detail }: { match: LiveMatch; detail: MatchFullDeta
     <section className="match-detail-stack">
       <section className="match-detail-summary-card">
         <div className="match-detail-team-card">
-          <TeamLogo logo={match.homeTeam.logo} name={match.homeTeam.name} className="match-detail-team-logo" size={68} />
+          <div className="match-detail-team-media">
+            <TeamLogo logo={match.homeTeam.logo} name={match.homeTeam.name} className="match-detail-team-logo" size={68} />
+            <RedCardBadge count={match.homeRedCards} className="is-large" />
+          </div>
           <div>
             <p className="match-detail-team-label">Ev sahibi</p>
             <h2>{match.homeTeam.name}</h2>
@@ -164,15 +170,18 @@ function SummaryTab({ match, detail }: { match: LiveMatch; detail: MatchFullDeta
 
         <div className="match-detail-score-card">
           <div className="match-detail-main-score">
-            <span>{formatScore(match.homeScore)}</span>
+            <span>{formatScore(presentation.displayHomeScore)}</span>
             <span className="score-separator">:</span>
-            <span>{formatScore(match.awayScore)}</span>
+            <span>{formatScore(presentation.displayAwayScore)}</span>
           </div>
           <span className={`status-pill ${getStatusTone(match.statusShort)}`}>{formatMinute(match)}</span>
         </div>
 
         <div className="match-detail-team-card is-away">
-          <TeamLogo logo={match.awayTeam.logo} name={match.awayTeam.name} className="match-detail-team-logo" size={68} />
+          <div className="match-detail-team-media">
+            <TeamLogo logo={match.awayTeam.logo} name={match.awayTeam.name} className="match-detail-team-logo" size={68} />
+            <RedCardBadge count={match.awayRedCards} className="is-large" />
+          </div>
           <div>
             <p className="match-detail-team-label">Deplasman</p>
             <h2>{match.awayTeam.name}</h2>

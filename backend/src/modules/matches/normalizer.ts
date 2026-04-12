@@ -126,6 +126,16 @@ function normalizeEvent(
   };
 }
 
+function isRedCardEvent(event: ProviderFixtureEventResponse): boolean {
+  if (event.type?.toLowerCase() !== "card") {
+    return false;
+  }
+
+  const detail = `${event.detail ?? ""} ${event.comments ?? ""}`.toLowerCase();
+
+  return detail.includes("red") || detail.includes("second yellow");
+}
+
 export function normalizeTimelineEvent(
   event: ProviderFixtureEventResponse,
 ): MatchTimelineEvent {
@@ -231,12 +241,19 @@ export function normalizeFixture(
     },
     homeScore: scoreOrNull(fixture.goals.home),
     awayScore: scoreOrNull(fixture.goals.away),
+    homeRedCards: eventSummary?.homeRedCards ?? 0,
+    awayRedCards: eventSummary?.awayRedCards ?? 0,
+    liveRetainUntil: null,
     eventsSummary: eventSummary,
   };
 }
 
 export function summarizeEvents(
   events: ProviderFixtureEventResponse[],
+  teams?: {
+    homeTeamId: number;
+    awayTeamId: number;
+  },
 ): MatchEventsSummary | null {
   if (events.length === 0) {
     return null;
@@ -246,11 +263,18 @@ export function summarizeEvents(
     .sort((left, right) => eventSortValue(right) - eventSortValue(left))
     .slice(0, 5)
     .map(normalizeEvent);
+  const redCardEvents = events.filter(isRedCardEvent);
 
   return {
     total: events.length,
     goals: events.filter((event) => event.type === "Goal").length,
     cards: events.filter((event) => event.type === "Card").length,
+    homeRedCards: teams
+      ? redCardEvents.filter((event) => event.team?.id === teams.homeTeamId).length
+      : 0,
+    awayRedCards: teams
+      ? redCardEvents.filter((event) => event.team?.id === teams.awayTeamId).length
+      : 0,
     latest: recent[0] ?? null,
     recent,
   };
