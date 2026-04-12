@@ -578,7 +578,7 @@ export function LiveScoresClient({
           <span className={`status-pill ${connectionStatusClass}`}>
             {connectionStatusLabel}
           </span>
-          <span className="timestamp-label">
+          <span className="timestamp-label" suppressHydrationWarning>
             Last updated {formatLastUpdated(meta.generatedAt)}
           </span>
         </div>
