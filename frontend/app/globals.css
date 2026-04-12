@@ -1995,6 +1995,326 @@ input::placeholder {
   }
 }
 
+@media (min-width: 1081px) and (max-width: 1500px),
+  (min-width: 1081px) and (max-height: 860px) {
+  .page-shell.scoreboard-page-shell {
+    width: calc(100% - 20px);
+    padding-top: 16px;
+    padding-bottom: 28px;
+    font-size: 0.9rem;
+  }
+
+  .scoreboard-grid {
+    grid-template-columns: minmax(390px, 4fr) minmax(290px, 3fr) minmax(290px, 3fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .scoreboard-column {
+    gap: 8px;
+  }
+
+  .scoreboard-stream {
+    gap: 5px;
+  }
+
+  .scoreboard-nav {
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 18px;
+  }
+
+  .scoreboard-nav-modes,
+  .scoreboard-nav-date {
+    gap: 6px;
+  }
+
+  .scoreboard-nav-button,
+  .scoreboard-date-arrow,
+  .scoreboard-date-button,
+  .favorite-toggle {
+    height: 32px;
+    padding: 0 11px;
+    font-size: 0.78rem;
+  }
+
+  .scoreboard-date-arrow {
+    width: 32px;
+    padding: 0;
+  }
+
+  .scoreboard-date-button {
+    min-width: 120px;
+  }
+
+  .league-stream-section,
+  .match-drawer,
+  .detail-panel,
+  .chat-drawer {
+    border-radius: 18px;
+  }
+
+  .league-toggle-main {
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .league-primary-line,
+  .team-line {
+    gap: 8px;
+  }
+
+  .league-title {
+    font-size: 0.88rem;
+  }
+
+  .league-inline-separator,
+  .league-name-inline {
+    font-size: 0.82rem;
+  }
+
+  .league-count {
+    min-width: 26px;
+    height: 26px;
+    font-size: 0.72rem;
+  }
+
+  .league-favorite-toggle,
+  .match-favorite-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+  }
+
+  .favorite-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .match-row-main {
+    grid-template-columns: minmax(54px, max-content) minmax(140px, 1fr) 38px;
+    gap: 10px;
+    padding: 7px 12px;
+  }
+
+  .match-row-actions {
+    padding: 0 8px;
+  }
+
+  .match-status-column .status-pill {
+    padding: 6px 8px;
+    font-size: 0.66rem;
+  }
+
+  .match-teams-column {
+    gap: 7px;
+  }
+
+  .team-logo {
+    width: 18px;
+    height: 18px;
+  }
+
+  .team-logo-fallback {
+    width: 18px;
+    height: 18px;
+  }
+
+  .team-line-content {
+    gap: 8px;
+  }
+
+  .team-form-strip {
+    gap: 3px;
+  }
+
+  .team-form-chip {
+    width: 16px;
+    height: 16px;
+    font-size: 0.66rem;
+  }
+
+  .match-score-column {
+    gap: 3px;
+    font-size: 1.08rem;
+  }
+
+  .match-drawer,
+  .chat-drawer {
+    top: 12px;
+  }
+
+  .match-drawer.is-empty,
+  .chat-drawer,
+  .chat-panel {
+    min-height: 360px;
+  }
+
+  .chat-panel-body {
+    min-height: 260px;
+    padding: 22px 18px;
+  }
+
+  .drawer-header,
+  .detail-header {
+    padding: 14px 16px;
+  }
+
+  .drawer-title,
+  .detail-title {
+    font-size: 1rem;
+  }
+
+  .detail-empty {
+    padding: 22px 18px;
+  }
+
+  .match-preview-panel {
+    gap: 14px;
+    padding: 14px 16px 16px;
+  }
+
+  .preview-meta-card,
+  .preview-insight-card {
+    padding: 14px;
+  }
+
+  .preview-scoreboard {
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
+    gap: 12px;
+  }
+
+  .preview-logo-shell {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+  }
+
+  .preview-team-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .preview-score-stack {
+    gap: 10px;
+  }
+
+  .preview-score-cluster {
+    gap: 9px;
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+  }
+
+  .preview-detail-link {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 0.78rem;
+  }
+
+  .preview-section-heading {
+    margin-bottom: 12px;
+  }
+
+  .preview-stat-list {
+    gap: 12px;
+  }
+
+  .preview-stat-row {
+    gap: 6px;
+  }
+
+  .pressure-meter {
+    gap: 9px;
+  }
+
+  .pressure-center-pill {
+    padding: 7px 10px;
+    font-size: 0.68rem;
+  }
+
+  .load-more-sentinel {
+    min-height: 70px;
+  }
+
+  .progressive-loader {
+    min-height: 58px;
+    font-size: 0.78rem;
+  }
+
+  .scroll-top-button {
+    right: 18px;
+    bottom: 18px;
+    width: 46px;
+    height: 46px;
+    font-size: 1.18rem;
+  }
+}
+
+@media (min-width: 1081px) and (max-height: 760px) {
+  .page-shell.scoreboard-page-shell {
+    width: calc(100% - 16px);
+    padding-top: 10px;
+    padding-bottom: 22px;
+    font-size: 0.84rem;
+  }
+
+  .scoreboard-grid {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .scoreboard-nav {
+    padding: 7px 9px;
+  }
+
+  .scoreboard-nav-button,
+  .scoreboard-date-arrow,
+  .scoreboard-date-button,
+  .favorite-toggle {
+    height: 30px;
+    font-size: 0.74rem;
+  }
+
+  .match-row-main {
+    grid-template-columns: minmax(50px, max-content) minmax(130px, 1fr) 34px;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .match-teams-column {
+    gap: 6px;
+  }
+
+  .match-score-column {
+    font-size: 1rem;
+  }
+
+  .match-preview-panel {
+    gap: 12px;
+    padding: 12px 14px 14px;
+  }
+
+  .preview-scoreboard {
+    grid-template-columns: 58px minmax(0, 1fr) 58px;
+    gap: 10px;
+  }
+
+  .preview-logo-shell {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+  }
+
+  .preview-team-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .preview-score-cluster {
+    font-size: clamp(2rem, 3.4vw, 3rem);
+  }
+}
+
 @media (max-width: 860px) {
   .scoreboard-nav {
     flex-direction: column;
