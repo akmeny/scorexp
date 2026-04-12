@@ -39,6 +39,8 @@ import { clientLogger } from "@/lib/logger";
 import {
   buildFavoriteGroups,
   buildVisibleGroups,
+  getDefaultLeagueFavoriteKeys,
+  sortGroupsByFavoritePriority,
   type LeagueGroup,
   type MatchFilters,
 } from "@/lib/matches";
@@ -300,7 +302,7 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
   store,
   groups,
   expandedLeagueKeys,
-  favoriteLeagueKeys,
+  activeFavoriteLeagueKeys,
   favoriteMatchIds,
   selectedMatchId,
   loadedMatches,
@@ -317,7 +319,7 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
   store: LiveMatchStore;
   groups: readonly LeagueGroup[];
   expandedLeagueKeys: ReadonlySet<string>;
-  favoriteLeagueKeys: ReadonlySet<string>;
+  activeFavoriteLeagueKeys: ReadonlySet<string>;
   favoriteMatchIds: ReadonlySet<number>;
   selectedMatchId: number | null;
   loadedMatches: number;
@@ -351,7 +353,7 @@ const ProgressiveScoreboardList = memo(function ProgressiveScoreboardList({
           store={store}
           group={group}
           isOpen={expandedLeagueKeys.has(group.key)}
-          isFavorite={favoriteLeagueKeys.has(group.key)}
+          isFavorite={activeFavoriteLeagueKeys.has(group.key)}
           favoriteMatchIds={favoriteMatchIds}
           selectedMatchId={selectedMatchId}
           onToggle={onToggleLeague}
@@ -424,7 +426,10 @@ export function LiveScoresClient({
   const [expandedLeagueKeys, setExpandedLeagueKeys] = useState<Set<string>>(
     () => new Set(),
   );
-  const [favoriteLeagueKeys, setFavoriteLeagueKeys] = useState<Set<string>>(
+  const [manualFavoriteLeagueKeys, setManualFavoriteLeagueKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [disabledDefaultLeagueKeys, setDisabledDefaultLeagueKeys] = useState<Set<string>>(
     () => new Set(),
   );
   const [favoriteMatchIds, setFavoriteMatchIds] = useState<Set<number>>(
@@ -462,7 +467,6 @@ export function LiveScoresClient({
     [selectedDate],
   );
   const liveOnly = mode === "live";
-  const favoritesCount = favoriteLeagueKeys.size + favoriteMatchIds.size;
   const isRealtimeDate = selectedDate === todayDateKey;
 
   const filters: MatchFilters = useMemo(
@@ -477,23 +481,45 @@ export function LiveScoresClient({
     () => buildVisibleGroups(structure, store.getMatch, filters),
     [filters, store, structure],
   );
-  const visibleGroups = useMemo(() => {
-    if (mode !== "favorites") {
-      return baseVisibleGroups;
+  const defaultFavoriteLeagueKeys = useMemo(
+    () => getDefaultLeagueFavoriteKeys(structure.groups),
+    [structure.groups],
+  );
+  const activeFavoriteLeagueKeys = useMemo(() => {
+    const next = new Set(manualFavoriteLeagueKeys);
+
+    for (const groupKey of defaultFavoriteLeagueKeys) {
+      if (!disabledDefaultLeagueKeys.has(groupKey)) {
+        next.add(groupKey);
+      }
     }
 
-    return buildFavoriteGroups(
-      baseVisibleGroups,
-      favoriteLeagueKeys,
-      favoriteMatchIds,
-    );
-  }, [baseVisibleGroups, favoriteLeagueKeys, favoriteMatchIds, mode]);
+    return next;
+  }, [
+    defaultFavoriteLeagueKeys,
+    disabledDefaultLeagueKeys,
+    manualFavoriteLeagueKeys,
+  ]);
+  const visibleGroups = useMemo(() => {
+    const groups =
+      mode === "favorites"
+        ? buildFavoriteGroups(
+            baseVisibleGroups,
+            activeFavoriteLeagueKeys,
+            favoriteMatchIds,
+          )
+        : baseVisibleGroups;
+
+    return sortGroupsByFavoritePriority(groups, activeFavoriteLeagueKeys);
+  }, [activeFavoriteLeagueKeys, baseVisibleGroups, favoriteMatchIds, mode]);
   const loadedMatchCount = structure.orderedIds.length;
   const visibleMatchCount = useMemo(
     () => countVisibleMatches(visibleGroups),
     [visibleGroups],
   );
   const hasMatchesInStore = loadedMatchCount > 0;
+  const favoriteLeagueCount = activeFavoriteLeagueKeys.size;
+  const favoritesCount = favoriteLeagueCount + favoriteMatchIds.size;
   const emptyState = useMemo(() => {
     if (mode === "favorites") {
       if (favoritesCount === 0) {
@@ -524,19 +550,42 @@ export function LiveScoresClient({
     });
   }, []);
 
-  const handleToggleFavoriteLeague = useCallback((groupKey: string) => {
-    setFavoriteLeagueKeys((current) => {
-      const next = new Set(current);
+  const handleToggleFavoriteLeague = useCallback(
+    (groupKey: string) => {
+      if (defaultFavoriteLeagueKeys.has(groupKey)) {
+        setDisabledDefaultLeagueKeys((current) => {
+          const next = new Set(current);
 
-      if (next.has(groupKey)) {
-        next.delete(groupKey);
-      } else {
-        next.add(groupKey);
+          if (next.has(groupKey)) {
+            next.delete(groupKey);
+          } else {
+            next.add(groupKey);
+          }
+
+          return next;
+        });
+        setManualFavoriteLeagueKeys((current) => {
+          const next = new Set(current);
+          next.delete(groupKey);
+          return next;
+        });
+        return;
       }
 
-      return next;
-    });
-  }, []);
+      setManualFavoriteLeagueKeys((current) => {
+        const next = new Set(current);
+
+        if (next.has(groupKey)) {
+          next.delete(groupKey);
+        } else {
+          next.add(groupKey);
+        }
+
+        return next;
+      });
+    },
+    [defaultFavoriteLeagueKeys],
+  );
 
   const handleToggleFavoriteMatch = useCallback((matchId: number) => {
     setFavoriteMatchIds((current) => {
@@ -802,16 +851,18 @@ export function LiveScoresClient({
   useEffect(() => {
     const favorites = loadFavorites();
 
-    setFavoriteLeagueKeys(new Set(favorites.leagueKeys));
+    setManualFavoriteLeagueKeys(new Set(favorites.leagueKeys));
     setFavoriteMatchIds(new Set(favorites.matchIds));
+    setDisabledDefaultLeagueKeys(new Set(favorites.disabledDefaultLeagueKeys));
   }, []);
 
   useEffect(() => {
     saveFavorites({
-      leagueKeys: [...favoriteLeagueKeys],
+      leagueKeys: [...manualFavoriteLeagueKeys],
       matchIds: [...favoriteMatchIds],
+      disabledDefaultLeagueKeys: [...disabledDefaultLeagueKeys],
     });
-  }, [favoriteLeagueKeys, favoriteMatchIds]);
+  }, [disabledDefaultLeagueKeys, favoriteMatchIds, manualFavoriteLeagueKeys]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -1036,7 +1087,7 @@ export function LiveScoresClient({
         store={store}
         groups={visibleGroups}
         expandedLeagueKeys={expandedLeagueKeys}
-        favoriteLeagueKeys={favoriteLeagueKeys}
+        activeFavoriteLeagueKeys={activeFavoriteLeagueKeys}
         favoriteMatchIds={favoriteMatchIds}
         selectedMatchId={activeMatchId}
         loadedMatches={loadedMatchCount}

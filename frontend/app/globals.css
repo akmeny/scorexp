@@ -687,15 +687,6 @@ input::placeholder {
   background: var(--row-selected-bg);
 }
 
-.match-row.is-fresh {
-  background: linear-gradient(
-    90deg,
-    var(--accent-soft),
-    var(--row-fresh-end)
-  );
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
 .match-row-main {
   display: grid;
   grid-template-columns: minmax(68px, max-content) minmax(170px, 1fr) 48px;

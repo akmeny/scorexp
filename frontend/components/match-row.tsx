@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
 import { MatchFavoriteIcon } from "@/components/favorite-icons";
-import {
-  formatMinute,
-  getStatusTone,
-} from "@/lib/format";
-import {
-  LiveMatchStore,
-  useLiveMatch,
-} from "@/lib/live-match-store";
+import { formatMinute, getStatusTone } from "@/lib/format";
+import { LiveMatchStore, useLiveMatch } from "@/lib/live-match-store";
 import type { LiveMatch } from "@/lib/types";
 
 interface MatchRowByIdProps {
@@ -61,37 +55,9 @@ export const MatchRow = memo(function MatchRow({
   isFavorite,
   onToggleFavorite,
 }: MatchRowProps) {
-  const previousUpdatedAtRef = useRef(match.lastUpdatedAt);
-  const [isFresh, setIsFresh] = useState(false);
-
-  useEffect(() => {
-    if (previousUpdatedAtRef.current === match.lastUpdatedAt) {
-      return;
-    }
-
-    previousUpdatedAtRef.current = match.lastUpdatedAt;
-    setIsFresh(true);
-
-    const timer = window.setTimeout(() => {
-      setIsFresh(false);
-    }, 1400);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [match.lastUpdatedAt]);
-
   return (
-    <article
-      className={`match-row ${isSelected ? "is-selected" : ""} ${
-        isFresh ? "is-fresh" : ""
-      }`}
-    >
-      <Link
-        href={`/?matchId=${match.matchId}`}
-        scroll={false}
-        className="match-row-main"
-      >
+    <article className={`match-row ${isSelected ? "is-selected" : ""}`}>
+      <Link href={`/?matchId=${match.matchId}`} scroll={false} className="match-row-main">
         <div className="match-status-column">
           <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
             {formatMinute(match)}
@@ -144,15 +110,9 @@ export const MatchRow = memo(function MatchRow({
       <div className="match-row-actions">
         <button
           type="button"
-          className={`favorite-toggle match-favorite-toggle ${
-            isFavorite ? "is-active" : ""
-          }`}
+          className={`favorite-toggle match-favorite-toggle ${isFavorite ? "is-active" : ""}`}
           aria-pressed={isFavorite}
-          aria-label={
-            isFavorite
-              ? "Maçı favorilerden çıkar"
-              : "Maçı favorilere ekle"
-          }
+          aria-label={isFavorite ? "Maçı favorilerden çıkar" : "Maçı favorilere ekle"}
           onClick={() => onToggleFavorite(match.matchId)}
         >
           <MatchFavoriteIcon active={isFavorite} />

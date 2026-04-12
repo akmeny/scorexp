@@ -33,7 +33,148 @@ export type FlatListItem =
       leagueKey: string;
     };
 
+interface LeagueFavoriteRule {
+  country?: string | RegExp;
+  league: RegExp;
+}
+
 const liveStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
+
+const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
+  { country: "turkey", league: /^super-lig$/ },
+  { country: "turkey", league: /^1-lig$/ },
+  { country: "turkey", league: /^(?:ziraat-turkiye-kupasi|turkiye-kupasi|cup)$/ },
+  { country: "turkey", league: /^super-cup$/ },
+  { country: "europe", league: /uefa-champions-league(?!-women)/ },
+  { country: "europe", league: /uefa-europa-league/ },
+  { country: "europe", league: /uefa-europa-conference-league|uefa-conference-league/ },
+  { country: "europe", league: /uefa-super-cup/ },
+  { country: "world", league: /fifa-club-world-cup|club-world-cup/ },
+  { country: "world", league: /world-cup(?!-u)/ },
+  { country: "europe", league: /uefa-european-championship|euro-championship|european-championship/ },
+  { country: "europe", league: /uefa-nations-league|nations-league/ },
+  { country: "south-america", league: /copa-america/ },
+  { country: "asia", league: /asian-cup/ },
+  { country: "africa", league: /africa-cup-of-nations/ },
+  { country: "north-america", league: /concacaf-gold-cup/ },
+  { country: "south-america", league: /copa-libertadores|conmebol-libertadores/ },
+  { country: "south-america", league: /copa-sudamericana|conmebol-sudamericana/ },
+  { country: "north-america", league: /concacaf-champions-cup|concacaf-champions-league/ },
+  { country: "asia", league: /afc-champions-league/ },
+  { country: "africa", league: /caf-champions-league/ },
+  { country: "england", league: /^premier-league$/ },
+  { country: "germany", league: /^bundesliga$/ },
+  { country: "spain", league: /^la-liga$/ },
+  { country: "germany", league: /^2-bundesliga$/ },
+  { country: "italy", league: /^serie-a$/ },
+  { country: "france", league: /^ligue-1$/ },
+  { country: "netherlands", league: /^eredivisie$/ },
+  { country: "portugal", league: /^primeira-liga$/ },
+  { country: "belgium", league: /pro-league|jupiler-pro-league/ },
+  { country: "scotland", league: /premiership$/ },
+  { country: "switzerland", league: /^super-league$/ },
+  { country: "austria", league: /^bundesliga$/ },
+  { country: "norway", league: /^eliteserien$/ },
+  { country: "sweden", league: /^allsvenskan$/ },
+  { country: "czech-republic", league: /^czech-liga$|^first-league$/ },
+  { country: "brazil", league: /^serie-a$/ },
+  { country: /united-states|usa/, league: /^major-league-soccer$/ },
+  { country: "argentina", league: /liga-profesional-argentina|primera-division/ },
+  { country: "mexico", league: /^liga-mx$/ },
+  { country: "colombia", league: /primera-a/ },
+  { country: "china", league: /^super-league$/ },
+  { country: "saudi-arabia", league: /^pro-league$/ },
+  { country: "azerbaijan", league: /premyer-liqa|premier-league/ },
+];
+
+function normalizeLeagueValue(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function matchesCountryRule(
+  normalizedCountry: string,
+  countryRule: LeagueFavoriteRule["country"],
+): boolean {
+  if (!countryRule) {
+    return true;
+  }
+
+  if (typeof countryRule === "string") {
+    return normalizedCountry === countryRule;
+  }
+
+  return countryRule.test(normalizedCountry);
+}
+
+export function getDefaultLeagueFavoritePriority(group: Pick<LeagueGroup, "country" | "leagueName">): number | null {
+  const normalizedCountry = normalizeLeagueValue(group.country);
+  const normalizedLeague = normalizeLeagueValue(group.leagueName);
+
+  for (const [index, rule] of defaultFavoriteRules.entries()) {
+    if (!matchesCountryRule(normalizedCountry, rule.country)) {
+      continue;
+    }
+
+    if (rule.league.test(normalizedLeague)) {
+      return index;
+    }
+  }
+
+  return null;
+}
+
+export function getDefaultLeagueFavoriteKeys(
+  groups: readonly LeagueGroup[],
+): Set<string> {
+  const keys = new Set<string>();
+
+  for (const group of groups) {
+    if (getDefaultLeagueFavoritePriority(group) !== null) {
+      keys.add(group.key);
+    }
+  }
+
+  return keys;
+}
+
+export function sortGroupsByFavoritePriority(
+  groups: readonly LeagueGroup[],
+  favoriteLeagueKeys: ReadonlySet<string>,
+): LeagueGroup[] {
+  const indexedGroups = groups.map((group, index) => ({
+    group,
+    index,
+    isFavorite: favoriteLeagueKeys.has(group.key),
+    priority: getDefaultLeagueFavoritePriority(group),
+  }));
+
+  indexedGroups.sort((left, right) => {
+    if (left.isFavorite !== right.isFavorite) {
+      return left.isFavorite ? -1 : 1;
+    }
+
+    if (left.isFavorite && right.isFavorite) {
+      const leftPriority = left.priority ?? Number.POSITIVE_INFINITY;
+      const rightPriority = right.priority ?? Number.POSITIVE_INFINITY;
+
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+    }
+
+    return left.index - right.index;
+  });
+
+  return indexedGroups.map((entry) => entry.group);
+}
 
 export function isLiveStatus(statusShort: string): boolean {
   return liveStatuses.has(statusShort);

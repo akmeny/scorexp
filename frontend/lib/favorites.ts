@@ -1,26 +1,29 @@
 export interface FavoriteSnapshot {
   leagueKeys: string[];
   matchIds: number[];
+  disabledDefaultLeagueKeys: string[];
 }
 
 const favoritesStorageKey = "scorexp-favorites";
 
+function createEmptyFavoriteSnapshot(): FavoriteSnapshot {
+  return {
+    leagueKeys: [],
+    matchIds: [],
+    disabledDefaultLeagueKeys: [],
+  };
+}
+
 export function loadFavorites(): FavoriteSnapshot {
   if (typeof window === "undefined") {
-    return {
-      leagueKeys: [],
-      matchIds: [],
-    };
+    return createEmptyFavoriteSnapshot();
   }
 
   try {
     const raw = window.localStorage.getItem(favoritesStorageKey);
 
     if (!raw) {
-      return {
-        leagueKeys: [],
-        matchIds: [],
-      };
+      return createEmptyFavoriteSnapshot();
     }
 
     const parsed = JSON.parse(raw) as Partial<FavoriteSnapshot>;
@@ -32,12 +35,14 @@ export function loadFavorites(): FavoriteSnapshot {
       matchIds: Array.isArray(parsed.matchIds)
         ? parsed.matchIds.filter((value): value is number => Number.isInteger(value))
         : [],
+      disabledDefaultLeagueKeys: Array.isArray(parsed.disabledDefaultLeagueKeys)
+        ? parsed.disabledDefaultLeagueKeys.filter(
+            (value): value is string => typeof value === "string",
+          )
+        : [],
     };
   } catch {
-    return {
-      leagueKeys: [],
-      matchIds: [],
-    };
+    return createEmptyFavoriteSnapshot();
   }
 }
 
