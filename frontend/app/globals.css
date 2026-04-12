@@ -100,6 +100,232 @@ input::placeholder {
   max-width: none;
 }
 
+.scorexp-site-header {
+  position: sticky;
+  top: 12px;
+  z-index: 45;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid rgba(152, 186, 170, 0.13);
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, rgba(7, 17, 13, 0.94), rgba(12, 30, 24, 0.88)),
+    radial-gradient(circle at 18% 0%, rgba(73, 212, 155, 0.18), transparent 36%);
+  box-shadow:
+    0 22px 46px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(22px);
+}
+
+.scorexp-site-header::before {
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(73, 212, 155, 0.16), transparent 28%, rgba(255, 216, 105, 0.08));
+  content: "";
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.scorexp-brand-button,
+.scorexp-sport-button,
+.scorexp-profile-button {
+  border: 1px solid rgba(152, 186, 170, 0.15);
+  background: rgba(10, 20, 17, 0.72);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.scorexp-brand-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 196px;
+  height: 48px;
+  padding: 0 14px 0 8px;
+  border-radius: 18px;
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scorexp-brand-button:hover,
+.scorexp-brand-button:focus-visible {
+  border-color: rgba(73, 212, 155, 0.32);
+  background: rgba(15, 42, 31, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 28px rgba(10, 80, 54, 0.18);
+  transform: translateY(-1px);
+}
+
+.scorexp-brand-button:focus-visible,
+.scorexp-sport-button:focus-visible,
+.scorexp-profile-button:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.scorexp-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(73, 212, 155, 0.95), rgba(20, 115, 78, 0.84));
+  color: #06130d;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  box-shadow:
+    0 8px 20px rgba(73, 212, 155, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.scorexp-brand-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.scorexp-brand-name {
+  font-size: 1.12rem;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.scorexp-brand-subtitle {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.scorexp-sports-nav {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.scorexp-sports-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.scorexp-sport-button {
+  position: relative;
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: rgba(214, 232, 222, 0.72);
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.scorexp-sport-button.is-active {
+  border-color: rgba(73, 212, 155, 0.4);
+  background:
+    linear-gradient(180deg, rgba(73, 212, 155, 0.24), rgba(73, 212, 155, 0.09));
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(73, 212, 155, 0.1);
+}
+
+.scorexp-sport-button:not(:disabled):hover {
+  border-color: rgba(73, 212, 155, 0.32);
+  background: rgba(15, 42, 31, 0.76);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.scorexp-sport-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.scorexp-profile-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(238, 248, 242, 0.065), rgba(238, 248, 242, 0.025));
+  color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 10px 24px rgba(0, 0, 0, 0.2);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.scorexp-profile-button:hover {
+  border-color: rgba(73, 212, 155, 0.34);
+  background:
+    linear-gradient(180deg, rgba(73, 212, 155, 0.2), rgba(73, 212, 155, 0.07));
+  transform: translateY(-1px);
+}
+
+.scorexp-profile-icon {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.scorexp-profile-icon::before,
+.scorexp-profile-icon::after {
+  position: absolute;
+  left: 50%;
+  border: 2px solid currentColor;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.scorexp-profile-icon::before {
+  top: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.scorexp-profile-icon::after {
+  bottom: 1px;
+  width: 18px;
+  height: 9px;
+  border-radius: 999px 999px 8px 8px;
+}
+
 .hero-card,
 .empty-card,
 .banner,
@@ -2132,6 +2358,58 @@ input::placeholder {
     margin-top: 12px;
   }
 
+  .scorexp-site-header {
+    top: 8px;
+    min-height: 56px;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 20px;
+  }
+
+  .scorexp-brand-button {
+    min-width: 164px;
+    height: 40px;
+    gap: 8px;
+    padding: 0 11px 0 7px;
+    border-radius: 15px;
+  }
+
+  .scorexp-brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+  }
+
+  .scorexp-brand-name {
+    font-size: 0.98rem;
+  }
+
+  .scorexp-brand-subtitle {
+    font-size: 0.56rem;
+  }
+
+  .scorexp-sports-nav {
+    gap: 5px;
+  }
+
+  .scorexp-sport-button {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+  }
+
+  .scorexp-profile-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 15px;
+  }
+
+  .scorexp-profile-icon {
+    width: 19px;
+    height: 19px;
+  }
+
   .scoreboard-column {
     gap: 8px;
   }
@@ -2395,6 +2673,27 @@ input::placeholder {
     margin-top: 10px;
   }
 
+  .scorexp-site-header {
+    min-height: 50px;
+    padding: 7px 9px;
+  }
+
+  .scorexp-brand-button {
+    min-width: 150px;
+    height: 36px;
+  }
+
+  .scorexp-sport-button {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 0.7rem;
+  }
+
+  .scorexp-profile-button {
+    width: 36px;
+    height: 36px;
+  }
+
   .scoreboard-nav {
     padding: 7px 9px;
   }
@@ -2471,6 +2770,31 @@ input::placeholder {
 }
 
 @media (max-width: 860px) {
+  .scorexp-site-header {
+    position: static;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+    border-radius: 20px;
+  }
+
+  .scorexp-brand-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .scorexp-sports-nav {
+    grid-column: 1 / -1;
+    order: 3;
+    padding-bottom: 2px;
+  }
+
+  .scorexp-profile-button {
+    width: 46px;
+    height: 46px;
+  }
+
   .scoreboard-nav {
     flex-direction: column;
     align-items: stretch;
@@ -2568,6 +2892,38 @@ input::placeholder {
 
   .scoreboard-page-shell {
     width: calc(100% - 20px);
+  }
+
+  .scorexp-site-header {
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .scorexp-brand-button {
+    height: 44px;
+    gap: 9px;
+    padding: 0 10px 0 7px;
+  }
+
+  .scorexp-brand-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+  }
+
+  .scorexp-brand-name {
+    font-size: 1rem;
+  }
+
+  .scorexp-brand-subtitle {
+    font-size: 0.58rem;
+  }
+
+  .scorexp-sport-button {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.72rem;
   }
 
   .scroll-top-button {

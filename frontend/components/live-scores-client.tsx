@@ -79,6 +79,21 @@ const realtimeSyncIntervalMs = 12_000;
 const realtimeSyncPageSize = 200;
 const scrollTopRevealOffsetPx = 24;
 
+const sportNavItems = [
+  { key: "football", label: "Futbol", active: true },
+  { key: "afl", label: "AFL", active: false },
+  { key: "baseball", label: "Beyzbol", active: false },
+  { key: "basketball", label: "Basketbol", active: false },
+  { key: "formula-1", label: "Formula-1", active: false },
+  { key: "handball", label: "Hentbol", active: false },
+  { key: "hockey", label: "Hokey", active: false },
+  { key: "mma", label: "MMA", active: false },
+  { key: "nba", label: "NBA", active: false },
+  { key: "nfl-ncaa", label: "NFL & NCAA", active: false },
+  { key: "rugby", label: "Rugby", active: false },
+  { key: "volleyball", label: "Voleybol", active: false },
+] as const;
+
 function createLeaguePanelId(groupKey: string): string {
   return `league-panel-${groupKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
@@ -122,6 +137,57 @@ function createEmptySnapshot(): MatchesSnapshotResponse {
     total: 0,
   };
 }
+
+const ScoreXPHeader = memo(function ScoreXPHeader({
+  onHome,
+}: {
+  onHome: () => void;
+}) {
+  return (
+    <header className="scorexp-site-header" aria-label="ScoreXP üst menü">
+      <button
+        type="button"
+        className="scorexp-brand-button"
+        aria-label="ScoreXP ana sayfa ve bugünün maçları"
+        onClick={onHome}
+      >
+        <span className="scorexp-brand-mark" aria-hidden="true">
+          SX
+        </span>
+        <span className="scorexp-brand-copy">
+          <span className="scorexp-brand-name">ScoreXP</span>
+          <span className="scorexp-brand-subtitle">Canlı skor merkezi</span>
+        </span>
+      </button>
+
+      <nav className="scorexp-sports-nav" aria-label="Spor dalları">
+        {sportNavItems.map((sport) => (
+          <button
+            key={sport.key}
+            type="button"
+            className={`scorexp-sport-button ${sport.active ? "is-active" : ""}`}
+            aria-pressed={sport.active}
+            aria-disabled={!sport.active}
+            disabled={!sport.active}
+            title={sport.active ? "Futbol skorları" : `${sport.label} yakında`}
+            onClick={sport.active ? onHome : undefined}
+          >
+            {sport.label}
+          </button>
+        ))}
+      </nav>
+
+      <button
+        type="button"
+        className="scorexp-profile-button"
+        aria-label="Profil"
+        title="Profil"
+      >
+        <span className="scorexp-profile-icon" aria-hidden="true" />
+      </button>
+    </header>
+  );
+});
 
 const ScoreboardNavigation = memo(function ScoreboardNavigation({
   mode,
@@ -746,6 +812,11 @@ export function LiveScoresClient({
     });
   }, []);
 
+  const handleHeaderHome = useCallback(() => {
+    handleShowToday();
+    handleScrollToTop();
+  }, [handleScrollToTop, handleShowToday]);
+
   const loadMatchesPage = useEffectEvent(async (reset: boolean) => {
     const current = paginationRef.current;
 
@@ -1211,6 +1282,8 @@ export function LiveScoresClient({
 
   return (
     <main className="page-shell scoreboard-page-shell">
+      <ScoreXPHeader onHome={handleHeaderHome} />
+
       {transportError ? (
         <section className="banner banner-warning">
           <p>{transportError}</p>
