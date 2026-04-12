@@ -541,6 +541,7 @@ export function LiveScoresClient({
   );
   const hasMatchesInStore = loadedMatchCount > 0;
   const favoritesCount = favoriteMatchIds.size;
+  const isLiveSocketMode = isRealtimeDate && mode === "live";
   const autoOpenLeagueKeys = useMemo(
     () => buildAutoOpenLeagueKeys(visibleGroups, mode, activeFavoriteLeagueKeys),
     [activeFavoriteLeagueKeys, mode, visibleGroups],
@@ -883,7 +884,7 @@ export function LiveScoresClient({
   });
 
   const handleSnapshot = useEffectEvent((snapshot: MatchesSnapshotResponse) => {
-    if (!isRealtimeDate) {
+    if (!isLiveSocketMode) {
       return;
     }
 
@@ -900,7 +901,7 @@ export function LiveScoresClient({
   });
 
   const handleDiff = useEffectEvent((diff: MatchesDiffResponse) => {
-    if (!isRealtimeDate) {
+    if (!isLiveSocketMode) {
       return;
     }
 
@@ -1060,7 +1061,7 @@ export function LiveScoresClient({
   useEffect(() => {
     const socket = getSocket();
 
-    if (!isRealtimeDate) {
+    if (!isLiveSocketMode) {
       socket.disconnect();
       setConnectionStatus("connecting");
       return;
@@ -1125,7 +1126,7 @@ export function LiveScoresClient({
       socket.io.off("reconnect_attempt", onReconnectAttempt);
       socket.disconnect();
     };
-  }, [isRealtimeDate, store]);
+  }, [isLiveSocketMode, store]);
 
   const lastUpdateMs = new Date(meta.generatedAt).getTime();
   const dataAgeMs = Number.isFinite(lastUpdateMs)
