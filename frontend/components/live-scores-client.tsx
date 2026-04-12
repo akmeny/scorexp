@@ -73,6 +73,8 @@ const coldStartRetryDelays = [2500, 5000, 10000, 20000, 30000];
 const delayedDataThresholdMs = 90_000;
 const freshnessTickMs = 30_000;
 const loadMoreRootMargin = "1200px 0px 1600px";
+const realtimeSyncIntervalMs = 12_000;
+const realtimeSyncPageSize = 200;
 
 function createLeaguePanelId(groupKey: string): string {
   return `league-panel-${groupKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
@@ -228,7 +230,7 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
           aria-controls={panelId}
           onClick={() => onToggle(group.key)}
         >
-          <div>
+          <div className="league-primary-line is-compact">
             <div className="league-primary-line">
               {group.countryFlag ? (
                 <img
@@ -248,7 +250,8 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
                 {translateCountryName(group.country, group.countryFlag)}
               </h2>
             </div>
-            <p className="league-country">{group.leagueName}</p>
+            <span className="league-inline-separator">:</span>
+            <span className="league-name-inline">{group.leagueName}</span>
           </div>
           <div className="league-toggle-meta">
             <span className="league-count">{group.matchIds.length}</span>
@@ -712,6 +715,56 @@ export function LiveScoresClient({
     }
   });
 
+  const syncRealtimePages = useEffectEvent(async () => {
+    if (!isRealtimeDate || paginationRef.current.loading) {
+      return;
+    }
+
+    const targetCount = Math.max(
+      store.getStructureSnapshot().orderedIds.length,
+      pageSize,
+    );
+    const nextMatches: MatchesSnapshotResponse["matches"] = [];
+    let offset = 0;
+    let generatedAt = new Date().toISOString();
+    let total = 0;
+    let hasMore = true;
+
+    while (nextMatches.length < targetCount && hasMore) {
+      const page = await fetchTodayMatchesPage({
+        date: selectedDate,
+        offset,
+        limit: Math.min(realtimeSyncPageSize, targetCount - nextMatches.length),
+        liveOnly,
+      });
+
+      if (offset === 0) {
+        total = page.total;
+      }
+
+      generatedAt = page.generatedAt;
+      nextMatches.push(...page.matches);
+      hasMore = page.hasMore && page.matches.length > 0;
+      offset = page.nextOffset ?? offset + page.matches.length;
+    }
+
+    setTransportError(null);
+    setWakeRetry((current) => ({
+      ...current,
+      active: false,
+      nextDelayMs: null,
+      lastError: null,
+    }));
+
+    startTransition(() => {
+      store.applySnapshot({
+        matches: nextMatches,
+        generatedAt,
+        total,
+      });
+    });
+  });
+
   const handleSnapshot = useEffectEvent((snapshot: MatchesSnapshotResponse) => {
     if (!isRealtimeDate) {
       return;
@@ -847,6 +900,36 @@ export function LiveScoresClient({
   }, [hasMatchesInStore, pagination.hasMore, pagination.loading, visibleGroups.length]);
 
   useEffect(() => {
+    if (!isRealtimeDate) {
+      return;
+    }
+
+    const runSync = () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      void syncRealtimePages();
+    };
+
+    const interval = window.setInterval(runSync, realtimeSyncIntervalMs);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncRealtimePages();
+      }
+    };
+
+    window.addEventListener("online", runSync);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("online", runSync);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRealtimeDate, liveOnly, selectedDate, loadedMatchCount]);
+
+  useEffect(() => {
     const socket = getSocket();
 
     if (!isRealtimeDate) {
@@ -914,7 +997,7 @@ export function LiveScoresClient({
       socket.io.off("reconnect_attempt", onReconnectAttempt);
       socket.disconnect();
     };
-  }, [handleDiff, handleSnapshot, isRealtimeDate, store]);
+  }, [isRealtimeDate, store]);
 
   const lastUpdateMs = new Date(meta.generatedAt).getTime();
   const dataAgeMs = Number.isFinite(lastUpdateMs)

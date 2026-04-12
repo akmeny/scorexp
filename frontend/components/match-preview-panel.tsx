@@ -135,7 +135,7 @@ export function MatchPreviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [matchId, removed]);
+  }, [matchId, removed, match?.lastUpdatedAt]);
 
   return (
     <section className="detail-panel match-preview-panel">
@@ -193,10 +193,15 @@ export function MatchPreviewPanel({
               )}
             </div>
 
-            <div className="preview-score-cluster" aria-label="Güncel skor">
-              <span>{formatScore(match.homeScore)}</span>
-              <span className="score-separator">:</span>
-              <span>{formatScore(match.awayScore)}</span>
+            <div className="preview-score-stack">
+              <div className="preview-score-cluster" aria-label="Güncel skor">
+                <span>{formatScore(match.homeScore)}</span>
+                <span className="score-separator">:</span>
+                <span>{formatScore(match.awayScore)}</span>
+              </div>
+              <Link href={`/match/${match.matchId}`} className="preview-detail-link">
+                Maç Detayına Git
+              </Link>
             </div>
 
             <div className="preview-logo-shell">
