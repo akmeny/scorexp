@@ -53,6 +53,7 @@ const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
   { country: "world", league: /world-cup(?!-u)/ },
   { country: "europe", league: /uefa-european-championship|euro-championship|european-championship/ },
   { country: "europe", league: /uefa-nations-league|nations-league/ },
+  { country: "north-america", league: /concacaf-nations-league/ },
   { country: "south-america", league: /copa-america/ },
   { country: "asia", league: /asian-cup/ },
   { country: "africa", league: /africa-cup-of-nations/ },
@@ -63,28 +64,41 @@ const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
   { country: "asia", league: /afc-champions-league/ },
   { country: "africa", league: /caf-champions-league/ },
   { country: "england", league: /^premier-league$/ },
+  { country: "england", league: /^championship$/ },
   { country: "germany", league: /^bundesliga$/ },
   { country: "spain", league: /^la-liga$/ },
   { country: "germany", league: /^2-bundesliga$/ },
   { country: "italy", league: /^serie-a$/ },
   { country: "france", league: /^ligue-1$/ },
   { country: "netherlands", league: /^eredivisie$/ },
+  { country: "netherlands", league: /^eerste-divisie$/ },
   { country: "portugal", league: /^primeira-liga$/ },
   { country: "belgium", league: /pro-league|jupiler-pro-league/ },
   { country: "scotland", league: /premiership$/ },
   { country: "switzerland", league: /^super-league$/ },
   { country: "austria", league: /^bundesliga$/ },
+  { country: "denmark", league: /^superliga$/ },
   { country: "norway", league: /^eliteserien$/ },
   { country: "sweden", league: /^allsvenskan$/ },
+  { country: "sweden", league: /^superettan$/ },
   { country: "czech-republic", league: /^czech-liga$|^first-league$/ },
+  { country: "poland", league: /^ekstraklasa$/ },
+  { country: "greece", league: /^super-league-1$/ },
+  { country: "croatia", league: /^hnl$/ },
+  { country: "serbia", league: /^super-liga$/ },
+  { country: "ukraine", league: /^premier-league$/ },
   { country: "brazil", league: /^serie-a$/ },
   { country: /united-states|usa/, league: /^major-league-soccer$/ },
+  { country: "australia", league: /^a-league$/ },
+  { country: "japan", league: /^j1-league$/ },
+  { country: "south-korea", league: /^k-league-1$/ },
   { country: "argentina", league: /liga-profesional-argentina|primera-division/ },
   { country: "mexico", league: /^liga-mx$/ },
   { country: "colombia", league: /primera-a/ },
   { country: "china", league: /^super-league$/ },
   { country: "saudi-arabia", league: /^pro-league$/ },
   { country: "azerbaijan", league: /premyer-liqa|premier-league/ },
+  { country: "romania", league: /^liga-i$/ },
 ];
 
 function normalizeLeagueValue(value: string): string {
@@ -297,17 +311,11 @@ export function buildVisibleGroups(
 
 export function buildFavoriteGroups(
   groups: readonly LeagueGroup[],
-  favoriteLeagueKeys: ReadonlySet<string>,
   favoriteMatchIds: ReadonlySet<number>,
 ): LeagueGroup[] {
   const favoriteGroups: LeagueGroup[] = [];
 
   for (const group of groups) {
-    if (favoriteLeagueKeys.has(group.key)) {
-      favoriteGroups.push(group);
-      continue;
-    }
-
     const matchIds = group.matchIds.filter((matchId) => favoriteMatchIds.has(matchId));
 
     if (matchIds.length === 0) {

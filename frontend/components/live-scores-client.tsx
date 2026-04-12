@@ -40,6 +40,7 @@ import {
   buildFavoriteGroups,
   buildVisibleGroups,
   getDefaultLeagueFavoriteKeys,
+  isLiveStatus,
   sortGroupsByFavoritePriority,
   type LeagueGroup,
   type MatchFilters,
@@ -84,6 +85,37 @@ function createLeaguePanelId(groupKey: string): string {
 
 function countVisibleMatches(groups: readonly LeagueGroup[]): number {
   return groups.reduce((total, group) => total + group.matchIds.length, 0);
+}
+
+function buildAutoOpenLeagueKeys(
+  groups: readonly LeagueGroup[],
+  store: LiveMatchStore,
+  activeFavoriteLeagueKeys: ReadonlySet<string>,
+  favoriteMatchIds: ReadonlySet<number>,
+  activeMatchId: number | null,
+): Set<string> {
+  const keys = new Set<string>();
+
+  for (const group of groups) {
+    const hasLiveMatch = group.matchIds.some((matchId) => {
+      const match = store.getMatch(matchId);
+      return match ? isLiveStatus(match.statusShort) : false;
+    });
+    const hasFavoriteMatch = group.matchIds.some((matchId) => favoriteMatchIds.has(matchId));
+    const hasSelectedMatch =
+      activeMatchId !== null && group.matchIds.includes(activeMatchId);
+
+    if (
+      activeFavoriteLeagueKeys.has(group.key) ||
+      hasLiveMatch ||
+      hasFavoriteMatch ||
+      hasSelectedMatch
+    ) {
+      keys.add(group.key);
+    }
+  }
+
+  return keys;
 }
 
 function formatSeconds(milliseconds: number): string {
@@ -252,7 +284,7 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
                 {translateCountryName(group.country, group.countryFlag)}
               </h2>
             </div>
-            <span className="league-inline-separator">:</span>
+            <span className="league-inline-separator">-</span>
             <span className="league-name-inline">{group.leagueName}</span>
           </div>
           <div className="league-toggle-meta">
@@ -426,6 +458,9 @@ export function LiveScoresClient({
   const [expandedLeagueKeys, setExpandedLeagueKeys] = useState<Set<string>>(
     () => new Set(),
   );
+  const [collapsedLeagueKeys, setCollapsedLeagueKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [manualFavoriteLeagueKeys, setManualFavoriteLeagueKeys] = useState<Set<string>>(
     () => new Set(),
   );
@@ -501,16 +536,11 @@ export function LiveScoresClient({
     manualFavoriteLeagueKeys,
   ]);
   const visibleGroups = useMemo(() => {
-    const groups =
-      mode === "favorites"
-        ? buildFavoriteGroups(
-            baseVisibleGroups,
-            activeFavoriteLeagueKeys,
-            favoriteMatchIds,
-          )
-        : baseVisibleGroups;
+    if (mode === "favorites") {
+      return buildFavoriteGroups(baseVisibleGroups, favoriteMatchIds);
+    }
 
-    return sortGroupsByFavoritePriority(groups, activeFavoriteLeagueKeys);
+    return sortGroupsByFavoritePriority(baseVisibleGroups, activeFavoriteLeagueKeys);
   }, [activeFavoriteLeagueKeys, baseVisibleGroups, favoriteMatchIds, mode]);
   const loadedMatchCount = structure.orderedIds.length;
   const visibleMatchCount = useMemo(
@@ -518,12 +548,39 @@ export function LiveScoresClient({
     [visibleGroups],
   );
   const hasMatchesInStore = loadedMatchCount > 0;
-  const favoriteLeagueCount = activeFavoriteLeagueKeys.size;
-  const favoritesCount = favoriteLeagueCount + favoriteMatchIds.size;
+  const favoritesCount = favoriteMatchIds.size;
+  const autoOpenLeagueKeys = useMemo(
+    () =>
+      buildAutoOpenLeagueKeys(
+        visibleGroups,
+        store,
+        activeFavoriteLeagueKeys,
+        favoriteMatchIds,
+        activeMatchId,
+      ),
+    [
+      activeFavoriteLeagueKeys,
+      activeMatchId,
+      favoriteMatchIds,
+      store,
+      visibleGroups,
+    ],
+  );
+  const effectiveExpandedLeagueKeys = useMemo(() => {
+    const next = new Set(expandedLeagueKeys);
+
+    for (const groupKey of autoOpenLeagueKeys) {
+      if (!collapsedLeagueKeys.has(groupKey)) {
+        next.add(groupKey);
+      }
+    }
+
+    return next;
+  }, [autoOpenLeagueKeys, collapsedLeagueKeys, expandedLeagueKeys]);
   const emptyState = useMemo(() => {
     if (mode === "favorites") {
       if (favoritesCount === 0) {
-        return "Henüz favori lig veya maç yok. Bu görünümü doldurmak için favori ekleyin.";
+        return "Henüz favori maç yok. Bu görünümü doldurmak için yıldız ekleyin.";
       }
 
       return `${selectedDateLabel} tarihinde favori bulunmuyor.`;
@@ -536,19 +593,51 @@ export function LiveScoresClient({
     return `${selectedDateLabel} tarihinde maç bulunamadı.`;
   }, [favoritesCount, mode, selectedDateLabel]);
 
-  const handleToggleLeague = useCallback((groupKey: string) => {
-    setExpandedLeagueKeys((current) => {
-      const next = new Set(current);
+  const handleToggleLeague = useCallback(
+    (groupKey: string) => {
+      const isAutoOpen = autoOpenLeagueKeys.has(groupKey);
+      const isOpen = effectiveExpandedLeagueKeys.has(groupKey);
 
-      if (next.has(groupKey)) {
-        next.delete(groupKey);
-      } else {
-        next.add(groupKey);
+      if (isAutoOpen) {
+        setExpandedLeagueKeys((current) => {
+          if (!current.has(groupKey)) {
+            return current;
+          }
+
+          const next = new Set(current);
+          next.delete(groupKey);
+          return next;
+        });
+
+        setCollapsedLeagueKeys((current) => {
+          const next = new Set(current);
+
+          if (isOpen) {
+            next.add(groupKey);
+          } else {
+            next.delete(groupKey);
+          }
+
+          return next;
+        });
+
+        return;
       }
 
-      return next;
-    });
-  }, []);
+      setExpandedLeagueKeys((current) => {
+        const next = new Set(current);
+
+        if (isOpen) {
+          next.delete(groupKey);
+        } else {
+          next.add(groupKey);
+        }
+
+        return next;
+      });
+    },
+    [autoOpenLeagueKeys, effectiveExpandedLeagueKeys],
+  );
 
   const handleToggleFavoriteLeague = useCallback(
     (groupKey: string) => {
@@ -1086,7 +1175,7 @@ export function LiveScoresClient({
       <ProgressiveScoreboardList
         store={store}
         groups={visibleGroups}
-        expandedLeagueKeys={expandedLeagueKeys}
+        expandedLeagueKeys={effectiveExpandedLeagueKeys}
         activeFavoriteLeagueKeys={activeFavoriteLeagueKeys}
         favoriteMatchIds={favoriteMatchIds}
         selectedMatchId={activeMatchId}
