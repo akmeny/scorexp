@@ -40,20 +40,21 @@ scorexp/
 Edit `backend/.env`:
 
 ```env
+NODE_ENV=production
 PORT=4000
-LOG_LEVEL=info
-APISPORTS_KEY=your_real_api_sports_key
+APISPORTS_KEY=
 APISPORTS_BASE_URL=https://v3.football.api-sports.io
-FRONTEND_ORIGIN=http://localhost:3000
+FRONTEND_ORIGIN=https://scorexp.com,https://www.scorexp.com,https://scorexp-iota.vercel.app
 POLL_INTERVAL_MS=15000
+LOG_LEVEL=info
 ```
 
 Edit `frontend/.env.local`:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
-NEXT_PUBLIC_SOCKET_URL=http://localhost:4000
-NEXT_PUBLIC_LOG_LEVEL=warn
+NEXT_PUBLIC_API_BASE_URL=https://api.scorexp.com
+NEXT_PUBLIC_SOCKET_URL=https://api.scorexp.com
+NEXT_PUBLIC_LOG_LEVEL=info
 ```
 
 Use the committed examples as templates:
@@ -191,7 +192,7 @@ Required Vercel environment variables:
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://api.scorexp.com
 NEXT_PUBLIC_SOCKET_URL=https://api.scorexp.com
-NEXT_PUBLIC_LOG_LEVEL=warn
+NEXT_PUBLIC_LOG_LEVEL=info
 ```
 
 For Vercel preview deployments from `dev`, set preview-scope env vars to the Render dev backend:
@@ -199,7 +200,7 @@ For Vercel preview deployments from `dev`, set preview-scope env vars to the Ren
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://scorexp-api-dev.onrender.com
 NEXT_PUBLIC_SOCKET_URL=https://scorexp-api-dev.onrender.com
-NEXT_PUBLIC_LOG_LEVEL=warn
+NEXT_PUBLIC_LOG_LEVEL=info
 ```
 
 Before `api.scorexp.com` is connected, temporarily use the production Render service URL for production:
@@ -207,7 +208,7 @@ Before `api.scorexp.com` is connected, temporarily use the production Render ser
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://scorexp-api.onrender.com
 NEXT_PUBLIC_SOCKET_URL=https://scorexp-api.onrender.com
-NEXT_PUBLIC_LOG_LEVEL=warn
+NEXT_PUBLIC_LOG_LEVEL=info
 ```
 
 These frontend variables are public browser configuration. Do not put `APISPORTS_KEY` in Vercel.
@@ -237,7 +238,7 @@ The production backend service is configured by `render.yaml` with:
 
 - Root Directory: `backend`.
 - Branch: `main`.
-- Build Command: `npm ci && npm run build`.
+- Build Command: `npm install && npm run build`.
 - Start Command: `npm run start`.
 - Health Check Path: `/health`.
 - Plan: `free`.
@@ -247,7 +248,7 @@ The preview/testing backend service is also configured by `render.yaml`:
 
 - Service name: `scorexp-api-dev`.
 - Branch: `dev`.
-- Build Command: `npm ci && npm run build`.
+- Build Command: `npm install && npm run build`.
 - Start Command: `npm run start`.
 - Health Check Path: `/health`.
 - Plan: `free`.
@@ -259,7 +260,7 @@ Manual Render setup, if you do not use the Blueprint:
 - Production service: name `scorexp-api`, branch `main`, root directory `backend`.
 - Preview service: name `scorexp-api-dev`, branch `dev`, root directory `backend`.
 - Runtime: `Node`.
-- Build Command: `npm ci && npm run build`.
+- Build Command: `npm install && npm run build`.
 - Start Command: `npm run start`.
 - Health Check Path: `/health`.
 - Plan: `Free`.
@@ -271,7 +272,7 @@ NODE_ENV=production
 LOG_LEVEL=info
 APISPORTS_KEY=<your_api_sports_key>
 APISPORTS_BASE_URL=https://v3.football.api-sports.io
-FRONTEND_ORIGIN=https://scorexp.com,https://www.scorexp.com,https://<vercel-project>.vercel.app
+FRONTEND_ORIGIN=https://scorexp.com,https://www.scorexp.com,https://scorexp-iota.vercel.app
 POLL_INTERVAL_MS=15000
 ```
 
@@ -402,8 +403,8 @@ Production debugging:
 
 - Backend logs use Fastify/Pino and respect `LOG_LEVEL`.
 - Frontend logs are intentionally tiny console logs controlled by `NEXT_PUBLIC_LOG_LEVEL`.
-- Recommended production values are `LOG_LEVEL=info` on Render and `NEXT_PUBLIC_LOG_LEVEL=warn` on Vercel.
-- For deeper debugging, temporarily set `NEXT_PUBLIC_LOG_LEVEL=info` in Vercel and redeploy, then switch it back to `warn`.
+- Recommended production values are `LOG_LEVEL=info` on Render and `NEXT_PUBLIC_LOG_LEVEL=info` on Vercel.
+- For quieter frontend logs later, set `NEXT_PUBLIC_LOG_LEVEL=warn` in Vercel and redeploy.
 
 Environment setup reminders:
 

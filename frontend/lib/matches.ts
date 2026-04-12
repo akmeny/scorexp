@@ -1,9 +1,4 @@
-import type {
-  LiveMatch,
-  MatchPatchChanges,
-  MatchesDiffResponse,
-  MatchesSnapshotResponse,
-} from "@/lib/types";
+import type { LiveMatch, MatchPatchChanges } from "@/lib/types";
 
 export interface LeagueGroup {
   key: string;
@@ -22,13 +17,6 @@ export interface MatchStructureSnapshot {
 export interface MatchFilters {
   query: string;
   liveOnly: boolean;
-}
-
-export interface MatchState {
-  matches: LiveMatch[];
-  byId: Record<string, LiveMatch>;
-  generatedAt: string;
-  total: number;
 }
 
 export type FlatListItem =
@@ -107,62 +95,6 @@ export function createStructureSnapshot(
     orderedIds,
     groups: [...groups.values()],
   };
-}
-
-export function createMatchState(snapshot: MatchesSnapshotResponse): MatchState {
-  const orderedMatches = [...snapshot.matches].sort(compareMatchesForStructure);
-  const byId: Record<string, LiveMatch> = {};
-
-  for (const match of orderedMatches) {
-    byId[String(match.matchId)] = match;
-  }
-
-  return {
-    matches: orderedMatches,
-    byId,
-    generatedAt: snapshot.generatedAt,
-    total: snapshot.total,
-  };
-}
-
-export function applyDiff(
-  state: MatchState,
-  diff: MatchesDiffResponse,
-): MatchState {
-  const byId: Record<string, LiveMatch> = { ...state.byId };
-
-  for (const removed of diff.removed) {
-    delete byId[String(removed.matchId)];
-  }
-
-  for (const match of diff.added) {
-    byId[String(match.matchId)] = match;
-  }
-
-  for (const patch of diff.updated) {
-    const key = String(patch.matchId);
-    const previous = byId[key];
-
-    if (!previous) {
-      continue;
-    }
-
-    byId[key] = {
-      ...previous,
-      ...patch.changes,
-    };
-  }
-
-  return {
-    matches: Object.values(byId).sort(compareMatchesForStructure),
-    byId,
-    generatedAt: diff.generatedAt,
-    total: diff.total,
-  };
-}
-
-export function groupMatches(state: MatchState): LeagueGroup[] {
-  return [...createStructureSnapshot(state.matches, 0).groups];
 }
 
 function matchesQuery(match: LiveMatch, normalizedQuery: string): boolean {
