@@ -1043,6 +1043,20 @@ export function LiveScoresClient({
   }, []);
 
   useEffect(() => {
+    const className = "scorexp-mobile-preview-open";
+
+    if (activeMatchId !== null) {
+      document.body.classList.add(className);
+    } else {
+      document.body.classList.remove(className);
+    }
+
+    return () => {
+      document.body.classList.remove(className);
+    };
+  }, [activeMatchId]);
+
+  useEffect(() => {
     return () => {
       if (retryTimerRef.current !== null) {
         window.clearTimeout(retryTimerRef.current);

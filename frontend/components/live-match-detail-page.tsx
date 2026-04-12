@@ -4,15 +4,23 @@ import Link from "next/link";
 import { startTransition, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { MatchDetailContent, matchDetailTabLabels } from "@/components/match-detail-content";
 import { fetchMatchDetailPageData } from "@/lib/api";
+import { formatMinute, getStatusTone } from "@/lib/format";
 import { translateCountryName } from "@/lib/i18n";
 import { getSocket } from "@/lib/socket";
 import type {
+  LiveMatch,
   MatchDetailPageResponse,
   MatchDetailTabKey,
   MatchUpdateEvent,
 } from "@/lib/types";
 
 const liveLikeStatuses = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "SUSP"]);
+type DetailViewTabKey = MatchDetailTabKey | "chat";
+
+const detailViewTabLabels: Record<DetailViewTabKey, string> = {
+  ...matchDetailTabLabels,
+  chat: "Sohbet",
+};
 
 function getRefreshIntervalMs(statusShort: string): number | null {
   if (liveLikeStatuses.has(statusShort)) {
@@ -48,6 +56,35 @@ function DetailTabButton({
   );
 }
 
+function MatchChatTab({ match }: { match: LiveMatch }) {
+  return (
+    <section className="match-detail-stack match-chat-tab-panel">
+      <article className="detail-data-card match-chat-card">
+        <div className="detail-card-header">
+          <div>
+            <h3>Maç Sohbeti</h3>
+            <p className="detail-subtle">
+              {match.homeTeam.name} - {match.awayTeam.name}
+            </p>
+          </div>
+          <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
+            {formatMinute(match)}
+          </span>
+        </div>
+
+        <div className="match-chat-placeholder">
+          <span className="match-chat-orb" aria-hidden="true" />
+          <strong>Sohbet odası hazır.</strong>
+          <p>
+            Maç sohbeti yalnızca detay sayfasında görünecek şekilde ayrıldı.
+            Mesaj akışı bağlandığında bu alan canlı konuşma paneline dönüşecek.
+          </p>
+        </div>
+      </article>
+    </section>
+  );
+}
+
 export function LiveMatchDetailPage({
   initialPayload,
 }: {
@@ -57,12 +94,20 @@ export function LiveMatchDetailPage({
   const [detail, setDetail] = useState(initialPayload.detail);
   const [removed, setRemoved] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
-  const [activeTab, setActiveTab] = useState<MatchDetailTabKey>(
-    initialPayload.detail.availableTabs[0] ?? "summary",
-  );
+  const [activeTab, setActiveTab] = useState<DetailViewTabKey>("summary");
 
-  const availableTabs = useMemo<MatchDetailTabKey[]>(
-    () => (detail.availableTabs.length > 0 ? detail.availableTabs : ["summary"]),
+  const availableTabs = useMemo<DetailViewTabKey[]>(
+    () => {
+      const providerTabs: MatchDetailTabKey[] = detail.availableTabs.length > 0
+        ? detail.availableTabs
+        : ["summary"];
+
+      return [
+        "summary",
+        "chat",
+        ...providerTabs.filter((tab) => tab !== "summary"),
+      ];
+    },
     [detail.availableTabs],
   );
 
@@ -210,14 +255,18 @@ export function LiveMatchDetailPage({
             <DetailTabButton
               key={tab}
               active={activeTab === tab}
-              label={matchDetailTabLabels[tab]}
+              label={detailViewTabLabels[tab]}
               onClick={() => setActiveTab(tab)}
             />
           ))}
         </div>
 
         <section className="detail-tab-panel">
-          <MatchDetailContent activeTab={activeTab} match={match} detail={detail} />
+          {activeTab === "chat" ? (
+            <MatchChatTab match={match} />
+          ) : (
+            <MatchDetailContent activeTab={activeTab} match={match} detail={detail} />
+          )}
         </section>
       </section>
     </main>
