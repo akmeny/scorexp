@@ -139,6 +139,7 @@ const matchFormCacheTtlMs = 6 * 60 * 60 * 1000;
 const emptyFormCacheTtlMs = 15 * 60 * 1000;
 const errorFormCacheTtlMs = 2 * 60 * 1000;
 const formFetchConcurrency = 2;
+const partialMatchFormCacheTtlMs = 2 * 60 * 1000;
 
 function parsePositiveInteger(
   value: string | undefined,
@@ -578,17 +579,21 @@ export async function registerMatchesRoutes(
       };
     }
 
-    const [homeForm, awayForm] = await Promise.all([
-      getTeamRecentForm(match.homeTeam.id),
-      getTeamRecentForm(match.awayTeam.id),
-    ]);
+    const homeForm = await getTeamRecentForm(match.homeTeam.id);
+    const awayForm = await getTeamRecentForm(match.awayTeam.id);
+    const hasCompleteForm = Boolean(homeForm) && Boolean(awayForm);
+    const hasPartialForm = Boolean(homeForm) !== Boolean(awayForm);
 
     matchFormCache.set(match.matchId, {
       homeForm,
       awayForm,
       expiresAt:
         Date.now() +
-        (homeForm || awayForm ? matchFormCacheTtlMs : emptyFormCacheTtlMs),
+        (hasCompleteForm
+          ? matchFormCacheTtlMs
+          : hasPartialForm
+            ? partialMatchFormCacheTtlMs
+            : emptyFormCacheTtlMs),
     });
 
     return {
