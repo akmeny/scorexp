@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { withRetry } from "../../lib/retry.js";
 import type { ApiSportsClient } from "./apiSportsClient.js";
+import { ApiSportsError } from "./apiSportsClient.js";
 import { MatchDetailService } from "./matchDetailService.js";
 import type { MatchStore } from "./matchStore.js";
 import {
@@ -134,8 +136,9 @@ const defaultFavoriteRules: readonly LeagueFavoriteRule[] = [
 
 const preMatchStatuses = new Set(["NS", "TBD"]);
 const matchFormCacheTtlMs = 6 * 60 * 60 * 1000;
-const emptyFormCacheTtlMs = 60 * 60 * 1000;
-const formFetchConcurrency = 4;
+const emptyFormCacheTtlMs = 15 * 60 * 1000;
+const errorFormCacheTtlMs = 2 * 60 * 1000;
+const formFetchConcurrency = 2;
 
 function parsePositiveInteger(
   value: string | undefined,
@@ -235,6 +238,14 @@ function createFormSnapshot(
 
 function isPreMatchStatus(statusShort: string): boolean {
   return preMatchStatuses.has(statusShort);
+}
+
+function isRetryableProviderError(error: unknown): boolean {
+  if (error instanceof ApiSportsError) {
+    return error.isRetryable;
+  }
+
+  return true;
 }
 
 function normalizeLeagueValue(value: string): string {
@@ -393,6 +404,7 @@ export async function registerMatchesRoutes(
   const matchStatisticsCache = new Map<number, CachedMatchStatistics>();
   const matchFormCache = new Map<number, CachedMatchForm>();
   const teamFormCache = new Map<number, CachedTeamForm>();
+  const teamFormInFlight = new Map<number, Promise<MatchFormSnapshot | null>>();
   const matchDetailService = new MatchDetailService(
     options.client,
     app.log.child({
@@ -457,41 +469,90 @@ export async function registerMatchesRoutes(
       return null;
     }
 
+    const inFlight = teamFormInFlight.get(teamId);
+
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const loadForm = async (): Promise<MatchFormSnapshot | null> => {
+      try {
+        const result = await withRetry(
+          () => options.client.getRecentFixturesForTeam(teamId, 10),
+          {
+            retries: 1,
+            minDelayMs: 500,
+            factor: 2,
+            shouldRetry: isRetryableProviderError,
+            onRetry: async (error, attempt, nextDelayMs) => {
+              app.log.warn(
+                {
+                  error,
+                  teamId,
+                  attempt,
+                  nextDelayMs,
+                },
+                "Retrying recent team form fetch",
+              );
+            },
+          },
+        );
+        const last5 = normalizeRecentForm(result.data, teamId)
+          .filter((entry) => entry.result !== "U")
+          .slice(0, 5)
+          .map((entry) => ({
+            result: entry.result,
+            opponentName: entry.opponentName,
+            isHome: entry.isHome,
+            goalsFor: entry.goalsFor,
+            goalsAgainst: entry.goalsAgainst,
+          }))
+          .reverse();
+        const form = createFormSnapshot(last5, new Date().toISOString());
+
+        teamFormCache.set(teamId, {
+          form,
+          expiresAt: Date.now() + (form ? matchFormCacheTtlMs : emptyFormCacheTtlMs),
+        });
+
+        return form;
+      } catch (error) {
+        app.log.warn(
+          {
+            error,
+            teamId,
+            staleCacheAvailable: Boolean(cached?.form),
+          },
+          "Failed to fetch recent team form",
+        );
+
+        if (cached?.form) {
+          teamFormCache.set(teamId, {
+            form: cached.form,
+            expiresAt: Date.now() + errorFormCacheTtlMs,
+          });
+
+          return cached.form;
+        }
+
+        teamFormCache.set(teamId, {
+          form: null,
+          expiresAt: Date.now() + errorFormCacheTtlMs,
+        });
+
+        return null;
+      } finally {
+        teamFormInFlight.delete(teamId);
+      }
+    };
+
+    const request = loadForm();
+    teamFormInFlight.set(teamId, request);
+
     try {
-      const result = await options.client.getRecentFixturesForTeam(teamId, 5);
-      const last5 = normalizeRecentForm(result.data, teamId)
-        .slice(0, 5)
-        .map((entry) => ({
-          result: entry.result,
-          opponentName: entry.opponentName,
-          isHome: entry.isHome,
-          goalsFor: entry.goalsFor,
-          goalsAgainst: entry.goalsAgainst,
-        }))
-        .reverse();
-      const form = createFormSnapshot(last5, new Date().toISOString());
-
-      teamFormCache.set(teamId, {
-        form,
-        expiresAt: Date.now() + (form ? matchFormCacheTtlMs : emptyFormCacheTtlMs),
-      });
-
-      return form;
-    } catch (error) {
-      app.log.warn(
-        {
-          error,
-          teamId,
-        },
-        "Failed to fetch recent team form",
-      );
-
-      teamFormCache.set(teamId, {
-        form: null,
-        expiresAt: Date.now() + emptyFormCacheTtlMs,
-      });
-
-      return null;
+      return await request;
+    } finally {
+      teamFormInFlight.delete(teamId);
     }
   };
 
