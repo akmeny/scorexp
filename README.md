@@ -97,7 +97,8 @@ ScoreXP is prepared for free Git-backed deployment:
 - Frontend: Vercel, using the `frontend/` app.
 - Backend: Render, using the `backend/` app through `render.yaml`.
 - Source of truth: GitHub. Codex edits locally, you commit and push, then Vercel and Render redeploy from Git.
-- `vercel.json` is intentionally not included. Vercel can deploy this monorepo cleanly by setting the project root directory to `frontend`.
+- `frontend/vercel.json` locks the normal Vercel app settings when the Root Directory is `frontend`.
+- Root `vercel.json` is a safety fallback for existing Vercel projects that were accidentally connected to the monorepo root; it still builds and serves the frontend app from `frontend/`.
 
 Branch strategy:
 
@@ -180,6 +181,8 @@ In Vercel:
 - Build Command: `npm run build`.
 - Output Directory: leave default for Next.js.
 - Production Branch: `main`.
+
+The preferred Vercel setting is still Root Directory `frontend`. If an existing Vercel project was created with the repository root by mistake, the committed root `vercel.json` provides a fallback by running `npm --prefix frontend ci`, `npm --prefix frontend run build`, and using `frontend/.next` as the output directory. Fixing the dashboard Root Directory to `frontend` is cleaner, but the fallback prevents a wrong-root setup from building the backend or an empty project.
 
 Vercel deployment behavior:
 
