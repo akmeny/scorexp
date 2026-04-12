@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: scorexp-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: APISPORTS_KEY
+        sync: false
+      - key: APISPORTS_BASE_URL
+        value: https://v3.football.api-sports.io
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: POLL_INTERVAL_MS
+        value: 15000
+
+  - type: web
+    name: scorexp-api-dev
+    runtime: node
+    plan: free
+    rootDir: backend
+    branch: dev
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: APISPORTS_KEY
+        sync: false
+      - key: APISPORTS_BASE_URL
+        value: https://v3.football.api-sports.io
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: POLL_INTERVAL_MS
+        value: 30000
