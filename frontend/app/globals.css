@@ -65,6 +65,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background: transparent;
   font-family: "Segoe UI", "Helvetica Neue", sans-serif;
   color: var(--text);
@@ -94,6 +95,7 @@ input::placeholder {
 }
 
 .scoreboard-page-shell {
+  --scoreboard-density: 1;
   width: calc(100% - 32px);
   max-width: none;
 }
@@ -528,6 +530,21 @@ input::placeholder {
 .scoreboard-nav-date {
   position: relative;
   flex-shrink: 0;
+}
+
+@media (min-width: 861px) {
+  .scoreboard-nav {
+    flex-wrap: nowrap;
+  }
+
+  .scoreboard-nav-modes {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+  }
+
+  .scoreboard-nav-date {
+    margin-left: auto;
+  }
 }
 
 .scoreboard-date-native {
@@ -2312,6 +2329,29 @@ input::placeholder {
 
   .preview-score-cluster {
     font-size: clamp(2rem, 3.4vw, 3rem);
+  }
+}
+
+@supports (zoom: 1) {
+  @media (min-width: 1081px) and (max-width: 1500px),
+    (min-width: 1081px) and (max-height: 860px) {
+    .page-shell.scoreboard-page-shell {
+      --scoreboard-density: 0.88;
+      width: calc(113.64vw - 24px);
+      margin-left: 10px;
+      margin-right: 0;
+      zoom: var(--scoreboard-density);
+    }
+  }
+
+  @media (min-width: 1081px) and (max-height: 760px) {
+    .page-shell.scoreboard-page-shell {
+      --scoreboard-density: 0.82;
+      width: calc(121.95vw - 20px);
+      margin-left: 8px;
+      margin-right: 0;
+      zoom: var(--scoreboard-density);
+    }
   }
 }
 
