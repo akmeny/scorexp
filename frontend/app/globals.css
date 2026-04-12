@@ -334,8 +334,6 @@ img {
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.58);
   box-shadow: 0 10px 28px rgba(18, 35, 27, 0.045);
-  content-visibility: auto;
-  contain-intrinsic-size: 360px;
 }
 
 .league-stream-matches {
@@ -347,7 +345,6 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  height: 100%;
   padding: 12px 18px;
   border-bottom: 1px solid rgba(19, 42, 30, 0.08);
   background: rgba(255, 255, 255, 0.76);
@@ -398,12 +395,9 @@ img {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
-  height: 100%;
   border-top: 1px solid rgba(19, 42, 30, 0.06);
   background: rgba(255, 255, 255, 0.44);
   contain: layout paint;
-  content-visibility: auto;
-  contain-intrinsic-size: 82px;
   transition:
     background-color 160ms ease,
     box-shadow 160ms ease;
