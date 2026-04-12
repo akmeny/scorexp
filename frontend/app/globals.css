@@ -668,12 +668,15 @@ input::placeholder {
 }
 
 .match-row {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   border-top: 1px solid var(--row-border);
   background: var(--row-bg);
-  contain: layout paint;
+  contain: layout;
+  overflow: visible;
+  z-index: 0;
   transition:
     background-color 160ms ease,
     box-shadow 160ms ease;
@@ -685,6 +688,11 @@ input::placeholder {
 
 .match-row.is-selected {
   background: var(--row-selected-bg);
+}
+
+.match-row:hover,
+.match-row:focus-within {
+  z-index: 2;
 }
 
 .match-row-main {
@@ -791,6 +799,7 @@ input::placeholder {
 .team-form-chip-shell {
   position: relative;
   display: inline-flex;
+  z-index: 1;
 }
 
 .team-form-chip {
@@ -849,6 +858,11 @@ input::placeholder {
 .team-form-chip-shell:focus-within .team-form-tooltip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+.team-form-chip-shell:hover,
+.team-form-chip-shell:focus-within {
+  z-index: 4;
 }
 
 .team-form-chip.is-w {
