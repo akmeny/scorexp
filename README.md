@@ -216,6 +216,8 @@ NEXT_PUBLIC_LOG_LEVEL=info
 
 These frontend variables are public browser configuration. Do not put `APISPORTS_KEY` in Vercel.
 
+If the Vercel environment variables are accidentally missing, the production frontend falls back to `https://api.scorexp.com` instead of `localhost`. You should still set the variables explicitly in Vercel so preview and production can point at different Render services.
+
 To connect Vercel to GitHub:
 
 1. In Vercel, choose Add New Project.

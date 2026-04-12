@@ -4,9 +4,14 @@ import type {
   MatchesSnapshotViewModel,
 } from "@/lib/types";
 
+const DEFAULT_API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://api.scorexp.com"
+    : "http://localhost:4000";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ??
-  "http://localhost:4000";
+  DEFAULT_API_BASE_URL;
 
 export class BackendRequestError extends Error {
   constructor(
