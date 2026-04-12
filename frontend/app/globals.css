@@ -361,7 +361,7 @@ input::placeholder {
 
 .scoreboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr);
   gap: 18px;
   align-items: start;
   margin-top: 20px;
@@ -673,9 +673,9 @@ input::placeholder {
 
 .match-row-main {
   display: grid;
-  grid-template-columns: 104px minmax(170px, 1fr) 48px minmax(210px, 0.86fr);
+  grid-template-columns: minmax(68px, max-content) minmax(170px, 1fr) 48px;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   min-width: 0;
   padding: 10px 18px;
 }
@@ -684,7 +684,7 @@ input::placeholder {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-left: 1px solid var(--link-divider);
 }
 
@@ -694,6 +694,17 @@ input::placeholder {
 .detail-score {
   display: grid;
   gap: 6px;
+}
+
+.match-status-column {
+  justify-items: start;
+}
+
+.match-status-column .status-pill {
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 0.74rem;
+  white-space: nowrap;
 }
 
 .match-score-column {
@@ -742,12 +753,6 @@ input::placeholder {
 
 .team-name {
   font-weight: 700;
-}
-
-.match-meta-column {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
 }
 
 .kickoff-label,
@@ -1077,7 +1082,7 @@ input::placeholder {
   }
 
   .match-row-main {
-    grid-template-columns: 84px minmax(0, 1fr) 42px;
+    grid-template-columns: minmax(62px, max-content) minmax(0, 1fr) 42px;
     gap: 10px;
   }
 
@@ -1085,7 +1090,6 @@ input::placeholder {
     gap: 4px;
   }
 
-  .match-meta-column,
   .status-label {
     display: none;
   }

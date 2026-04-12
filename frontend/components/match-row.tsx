@@ -4,9 +4,6 @@ import Link from "next/link";
 import { memo, useEffect, useRef, useState } from "react";
 import { MatchFavoriteIcon } from "@/components/favorite-icons";
 import {
-  formatEventLine,
-  formatKickoff,
-  formatLastUpdated,
   formatMinute,
   getStatusTone,
 } from "@/lib/format";
@@ -14,7 +11,6 @@ import {
   LiveMatchStore,
   useLiveMatch,
 } from "@/lib/live-match-store";
-import { isLiveStatus } from "@/lib/matches";
 import type { LiveMatch } from "@/lib/types";
 
 interface MatchRowByIdProps {
@@ -65,12 +61,6 @@ export const MatchRow = memo(function MatchRow({
   isFavorite,
   onToggleFavorite,
 }: MatchRowProps) {
-  const latestEvent = match.eventsSummary?.latest ?? null;
-  const latestEventLabel = latestEvent
-    ? formatEventLine(latestEvent)
-    : isLiveStatus(match.statusShort)
-      ? "Waiting for event feed"
-      : "No events yet";
   const previousUpdatedAtRef = useRef(match.lastUpdatedAt);
   const [isFresh, setIsFresh] = useState(false);
 
@@ -106,7 +96,6 @@ export const MatchRow = memo(function MatchRow({
           <span className={`status-pill ${getStatusTone(match.statusShort)}`}>
             {formatMinute(match)}
           </span>
-          <span className="status-label">{match.statusLong}</span>
         </div>
 
         <div className="match-teams-column">
@@ -150,16 +139,6 @@ export const MatchRow = memo(function MatchRow({
           <span>{formatScore(match.homeScore)}</span>
           <span>{formatScore(match.awayScore)}</span>
         </div>
-
-        <div className="match-meta-column">
-          <span className="kickoff-label">{formatKickoff(match.startTime)}</span>
-          <span className="latest-event">{latestEventLabel}</span>
-          <span className={`freshness-chip ${isFresh ? "is-fresh" : ""}`}>
-            {isFresh
-              ? "Just updated"
-              : `Updated ${formatLastUpdated(match.lastUpdatedAt)}`}
-          </span>
-        </div>
       </Link>
 
       <div className="match-row-actions">
@@ -174,9 +153,6 @@ export const MatchRow = memo(function MatchRow({
         >
           <MatchFavoriteIcon active={isFavorite} />
         </button>
-        <Link href={`/match/${match.matchId}`} className="detail-link">
-          Page
-        </Link>
       </div>
     </article>
   );

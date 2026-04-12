@@ -7,6 +7,12 @@ const kickoffFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+const kickoffClockFormatter = new Intl.DateTimeFormat("tr-TR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "2-digit",
   minute: "2-digit",
@@ -22,11 +28,43 @@ export function formatLastUpdated(iso: string): string {
 }
 
 export function formatMinute(match: LiveMatch): string {
+  if (["1H", "2H", "ET", "BT"].includes(match.statusShort) && match.minute !== null) {
+    return `${match.minute}'`;
+  }
+
+  if (match.statusShort === "P") {
+    return "Penaltı Atışları";
+  }
+
+  if (match.statusShort === "HT") {
+    return "Devre";
+  }
+
+  if (match.statusShort === "PEN") {
+    return "Pen.";
+  }
+
+  if (match.statusShort === "FT" || match.statusShort === "AET") {
+    return "Bitti";
+  }
+
+  if (match.statusShort === "INT" || match.statusShort === "SUSP") {
+    return "Durdu";
+  }
+
+  if (["PST", "CANC", "ABD", "AWD", "WO"].includes(match.statusShort)) {
+    return "İptal";
+  }
+
+  if (match.statusShort === "NS" || match.statusShort === "TBD") {
+    return kickoffClockFormatter.format(new Date(match.startTime)).replace(":", ".");
+  }
+
   if (match.minute !== null) {
     return `${match.minute}'`;
   }
 
-  return match.statusShort;
+  return match.statusLong;
 }
 
 export function formatEventLine(event: MatchEventSummaryItem): string {
