@@ -6,6 +6,7 @@ import { MatchFavoriteIcon } from "@/components/favorite-icons";
 import { RedCardBadge, TeamNoticeBadge } from "@/components/match-live-badges";
 import { formatMinute, getStatusTone } from "@/lib/format";
 import { LiveMatchStore, useLiveMatch } from "@/lib/live-match-store";
+import type { MatchNotice } from "@/lib/live-match-presentation";
 import { useMatchPresentation } from "@/lib/live-match-presentation";
 import type {
   LiveMatch,
@@ -55,6 +56,24 @@ function formatFormTooltip(entry: MatchFormEntry): string {
 
   return `${homeScore ?? "-"}-${awayScore ?? "-"} ${entry.opponentName}`;
 }
+
+const TeamNameCluster = memo(function TeamNameCluster({
+  name,
+  redCardCount,
+  notice,
+}: {
+  name: string;
+  redCardCount: number;
+  notice: MatchNotice | null;
+}) {
+  return (
+    <div className="team-name-cluster">
+      <span className="team-name">{name}</span>
+      <RedCardBadge count={redCardCount} />
+      <TeamNoticeBadge notice={notice} />
+    </div>
+  );
+});
 
 const TeamFormStrip = memo(function TeamFormStrip({
   form,
@@ -158,9 +177,11 @@ export const MatchRow = memo(function MatchRow({
               <span className="team-logo team-logo-fallback" />
             )}
             <div className="team-line-content">
-              <span className="team-name">{match.homeTeam.name}</span>
-              <RedCardBadge count={match.homeRedCards} />
-              <TeamNoticeBadge notice={presentation.homeNotice} />
+              <TeamNameCluster
+                name={match.homeTeam.name}
+                redCardCount={match.homeRedCards}
+                notice={presentation.homeNotice}
+              />
               {showPreMatchForm ? (
                 <TeamFormStrip form={match.homeForm} teamName={match.homeTeam.name} />
               ) : null}
@@ -182,9 +203,11 @@ export const MatchRow = memo(function MatchRow({
               <span className="team-logo team-logo-fallback" />
             )}
             <div className="team-line-content">
-              <span className="team-name">{match.awayTeam.name}</span>
-              <RedCardBadge count={match.awayRedCards} />
-              <TeamNoticeBadge notice={presentation.awayNotice} />
+              <TeamNameCluster
+                name={match.awayTeam.name}
+                redCardCount={match.awayRedCards}
+                notice={presentation.awayNotice}
+              />
               {showPreMatchForm ? (
                 <TeamFormStrip form={match.awayForm} teamName={match.awayTeam.name} />
               ) : null}
