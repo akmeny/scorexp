@@ -27,6 +27,7 @@ export interface LiveMatch {
   leagueId: number;
   leagueName: string;
   country: string;
+  countryFlag: string;
   startTime: string;
   statusShort: string;
   statusLong: string;

@@ -5,6 +5,7 @@ export interface LeagueGroup {
   leagueId: number;
   leagueName: string;
   country: string;
+  countryFlag: string;
   matchIds: readonly number[];
 }
 
@@ -86,6 +87,7 @@ export function createStructureSnapshot(
       leagueId: match.leagueId,
       leagueName: match.leagueName,
       country: match.country,
+      countryFlag: match.countryFlag,
       matchIds: [match.matchId],
     });
   }
@@ -180,6 +182,7 @@ export function patchAffectsStructure(changes: MatchPatchChanges): boolean {
     "leagueId" in changes ||
     "leagueName" in changes ||
     "country" in changes ||
+    "countryFlag" in changes ||
     "startTime" in changes ||
     "statusShort" in changes ||
     "homeTeam" in changes ||

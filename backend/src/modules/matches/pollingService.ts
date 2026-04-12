@@ -146,6 +146,7 @@ function fixtureFingerprint(fixture: ProviderFixtureResponse): string {
     fixture.league.id,
     fixture.league.name ?? null,
     fixture.league.country ?? null,
+    fixture.league.flag ?? null,
     fixture.teams.home.id,
     fixture.teams.home.name ?? null,
     fixture.teams.home.logo ?? null,

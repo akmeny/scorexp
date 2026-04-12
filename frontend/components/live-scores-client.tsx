@@ -155,8 +155,24 @@ const LeagueStreamSection = memo(function LeagueStreamSection({
         onClick={() => onToggle(group.key)}
       >
         <div>
-          <h2 className="league-title">{group.leagueName}</h2>
-          <p className="league-country">{group.country}</p>
+          <div className="league-primary-line">
+            {group.countryFlag ? (
+              <img
+                src={group.countryFlag}
+                alt=""
+                width={18}
+                height={13}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                className="country-flag"
+              />
+            ) : (
+              <span className="country-flag country-flag-fallback" />
+            )}
+            <h2 className="league-title">{group.country}</h2>
+          </div>
+          <p className="league-country">{group.leagueName}</p>
         </div>
         <div className="league-toggle-trailing">
           <span className="league-count">{group.matchIds.length}</span>

@@ -109,6 +109,7 @@ function sameMatch(
     previous.leagueId === next.leagueId &&
     previous.leagueName === next.leagueName &&
     previous.country === next.country &&
+    previous.countryFlag === next.countryFlag &&
     previous.startTime === next.startTime &&
     previous.statusShort === next.statusShort &&
     previous.statusLong === next.statusLong &&
@@ -141,6 +142,10 @@ function createMatchPatch(
 
   if (previous.country !== next.country) {
     changes.country = next.country;
+  }
+
+  if (previous.countryFlag !== next.countryFlag) {
+    changes.countryFlag = next.countryFlag;
   }
 
   if (previous.startTime !== next.startTime) {

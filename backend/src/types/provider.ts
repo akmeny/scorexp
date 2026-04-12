@@ -27,6 +27,7 @@ export interface ProviderFixtureResponse {
     id: number;
     name?: string;
     country?: string;
+    flag?: string | null;
   };
   teams: {
     home: {

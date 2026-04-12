@@ -340,6 +340,13 @@ img {
   display: grid;
 }
 
+.league-primary-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .league-flat-header {
   display: flex;
   align-items: center;
@@ -402,6 +409,19 @@ img {
 .league-country {
   margin: 4px 0 0;
   font-size: 0.88rem;
+}
+
+.country-flag {
+  width: 18px;
+  height: 13px;
+  border-radius: 4px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(19, 42, 30, 0.08);
+  flex-shrink: 0;
+}
+
+.country-flag-fallback {
+  background: rgba(20, 35, 27, 0.12);
 }
 
 .league-count {

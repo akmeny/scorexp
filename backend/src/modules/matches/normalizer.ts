@@ -33,6 +33,7 @@ export function normalizeFixture(
     leagueId: fixture.league.id,
     leagueName: fixture.league.name?.trim() || "Unknown League",
     country: fixture.league.country?.trim() || "Unknown Country",
+    countryFlag: fixture.league.flag?.trim() || "",
     startTime: normalizeTimestamp(fixture.fixture),
     statusShort: fixture.fixture.status.short?.trim() || "UNK",
     statusLong: fixture.fixture.status.long?.trim() || "Unknown status",
