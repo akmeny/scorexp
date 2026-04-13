@@ -57,7 +57,7 @@ export function AndroidApkBanner() {
   return (
     <section className="banner banner-info apk-banner">
       <div className="apk-banner-copy">
-        <p>Android uygulamasi hazir. APK surumunu indirip daha hizli kullanabilirsin.</p>
+        <p>Android uygulamasi hazir. Uygulamayi yukleyip daha hizli kullanabilirsin.</p>
         <p className="banner-subtext">Bu bildirim ayni cihazda sadece bir kez gosterilir.</p>
       </div>
       <div className="apk-banner-actions">
@@ -68,7 +68,7 @@ export function AndroidApkBanner() {
           rel="noreferrer"
           onClick={dismiss}
         >
-          APK indir
+          Uygulamayi yukle
         </a>
         <button
           type="button"

@@ -134,6 +134,72 @@ function extractErrorMessage(payload: unknown, status: number): string {
   return `API-Sports request failed with status ${status}`;
 }
 
+function collectProviderErrors(
+  payload: ProviderApiEnvelope<unknown> | null,
+): string[] {
+  if (!payload) {
+    return [];
+  }
+
+  if (Array.isArray(payload.errors)) {
+    return payload.errors
+      .map((entry) => String(entry).trim())
+      .filter(Boolean);
+  }
+
+  if (payload.errors && typeof payload.errors === "object") {
+    return Object.values(payload.errors)
+      .map((entry) => String(entry).trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function formatDateKey(date: Date, timeZone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const lookup = new Map(parts.map((part) => [part.type, part.value]));
+    const year = lookup.get("year");
+    const month = lookup.get("month");
+    const day = lookup.get("day");
+
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Fall through to UTC formatting.
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftDateKey(dateKey: string, deltaDays: number): string {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + deltaDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function getFixtureDateKey(
+  fixture: ProviderFixtureResponse,
+  timeZone: string,
+): string | null {
+  if (fixture.fixture.date) {
+    return formatDateKey(new Date(fixture.fixture.date), timeZone);
+  }
+
+  if (fixture.fixture.timestamp) {
+    return formatDateKey(new Date(fixture.fixture.timestamp * 1000), timeZone);
+  }
+
+  return null;
+}
+
 export class ApiSportsClient {
   private readonly metrics: ApiSportsClientMetrics = {
     requestCount: 0,
@@ -166,10 +232,37 @@ export class ApiSportsClient {
     date: string,
     timezone: string,
   ): Promise<ApiSportsRequestResult<ProviderFixtureResponse>> {
-    return this.request<ProviderFixtureResponse>("today", "fixtures", {
+    const primary = await this.request<ProviderFixtureResponse>("today", "fixtures", {
       date,
       timezone,
     });
+
+    if (primary.data.length > 0) {
+      return primary;
+    }
+
+    const previousDate = shiftDateKey(date, -1);
+    const nextDate = shiftDateKey(date, 1);
+    const previous = await this.request<ProviderFixtureResponse>("today", "fixtures", {
+      date: previousDate,
+      timezone,
+    });
+    const next = await this.request<ProviderFixtureResponse>("today", "fixtures", {
+      date: nextDate,
+      timezone,
+    });
+    const merged = new Map<number, ProviderFixtureResponse>();
+
+    for (const fixture of [...primary.data, ...previous.data, ...next.data]) {
+      if (getFixtureDateKey(fixture, timezone) === date) {
+        merged.set(fixture.fixture.id, fixture);
+      }
+    }
+
+    return {
+      data: [...merged.values()],
+      rateLimit: next.rateLimit,
+    };
   }
 
   async getFixtureEvents(
@@ -354,6 +447,18 @@ export class ApiSportsClient {
       } catch {
         payload = null;
       }
+    }
+
+    const providerErrors = collectProviderErrors(payload);
+
+    if (providerErrors.length > 0) {
+      this.metrics.failedRequestCount += 1;
+      throw new ApiSportsError(
+        providerErrors[0]!,
+        response.ok ? 422 : response.status,
+        rateLimit,
+        rateLimit.retryAfterMs,
+      );
     }
 
     if (!response.ok) {

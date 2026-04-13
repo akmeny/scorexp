@@ -741,13 +741,50 @@ export async function registerMatchesRoutes(
     generatedAt: string;
     matches: NormalizedMatch[];
   }> => {
+    const loadProviderMatchesForDate = async (
+      targetDateKey: string,
+    ): Promise<{
+      generatedAt: string;
+      matches: NormalizedMatch[];
+    }> => {
+      const result = await options.client.getFixturesByDate(
+        targetDateKey,
+        options.scoreboardTimezone,
+      );
+      const generatedAt = new Date().toISOString();
+      const matches = result.data
+        .map((fixture) => ({
+          ...normalizeFixture(fixture, null),
+          lastUpdatedAt: generatedAt,
+        }))
+        .sort(compareMatches);
+
+      return {
+        generatedAt,
+        matches,
+      };
+    };
+
     const todayDateKey = formatDateKey(new Date(), options.scoreboardTimezone);
 
     if (dateKey === todayDateKey) {
-      return {
-        generatedAt: new Date().toISOString(),
-        matches: store.getAll(),
-      };
+      const liveSnapshot = store.getAll();
+
+      if (liveSnapshot.length > 0 || !options.providerEnabled) {
+        return {
+          generatedAt: new Date().toISOString(),
+          matches: liveSnapshot,
+        };
+      }
+
+      app.log.warn(
+        {
+          dateKey,
+        },
+        "Today store is empty; falling back to direct provider fetch",
+      );
+
+      return loadProviderMatchesForDate(dateKey);
     }
 
     const cached = customDateCache.get(dateKey);
@@ -766,17 +803,7 @@ export async function registerMatchesRoutes(
       };
     }
 
-    const result = await options.client.getFixturesByDate(
-      dateKey,
-      options.scoreboardTimezone,
-    );
-    const generatedAt = new Date().toISOString();
-    const matches = result.data
-      .map((fixture) => ({
-        ...normalizeFixture(fixture, null),
-        lastUpdatedAt: generatedAt,
-      }))
-      .sort(compareMatches);
+    const { generatedAt, matches } = await loadProviderMatchesForDate(dateKey);
 
     customDateCache.set(dateKey, {
       generatedAt,
