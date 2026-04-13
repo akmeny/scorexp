@@ -73,6 +73,17 @@ export function isLikelyBackendWakeup(error: unknown): boolean {
     return false;
   }
 
+  const message = error.message.toLowerCase();
+
+  if (
+    message.includes("account is suspended") ||
+    message.includes("api-football") ||
+    message.includes("quota") ||
+    message.includes("rate limit")
+  ) {
+    return false;
+  }
+
   return (
     error.status === null ||
     error.status === 502 ||
