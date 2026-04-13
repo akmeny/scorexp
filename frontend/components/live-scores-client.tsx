@@ -132,6 +132,17 @@ function formatSeconds(milliseconds: number): string {
   return `${Math.ceil(milliseconds / 1000)} sn`;
 }
 
+function isProviderAccessIssue(message: string | null): boolean {
+  const normalized = message?.toLowerCase() ?? "";
+
+  return (
+    normalized.includes("account is suspended") ||
+    normalized.includes("api-football") ||
+    normalized.includes("quota") ||
+    normalized.includes("rate limit")
+  );
+}
+
 function createEmptySnapshot(): MatchesSnapshotResponse {
   return {
     matches: [],
@@ -1256,6 +1267,7 @@ export function LiveScoresClient({
     hasMatchesInStore &&
     connectionStatus !== "live" &&
     dataAgeMs >= delayedDataThresholdMs;
+  const hasProviderIssue = isProviderAccessIssue(transportError);
 
   const leftColumnContent =
     !hasMatchesInStore && pagination.loading ? (
@@ -1265,6 +1277,16 @@ export function LiveScoresClient({
         <p className="empty-subtext">
           Şimdilik yalnızca ilk ekran yükleniyor. Aşağı indikçe daha fazla maç
           ve logo yüklenecek.
+        </p>
+      </section>
+    ) : !hasMatchesInStore && hasProviderIssue ? (
+      <section className="empty-card wake-card">
+        <p>Canli veri saglayicisi su anda erisilebilir degil.</p>
+        <p className="empty-subtext">
+          {transportError}
+        </p>
+        <p className="empty-subtext">
+          API-Football panelinden hesap durumunu duzeltince ScoreXP otomatik olarak veri cekmeye devam edecek.
         </p>
       </section>
     ) : !hasMatchesInStore && wakeRetry.active ? (
