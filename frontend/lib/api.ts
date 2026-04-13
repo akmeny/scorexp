@@ -37,19 +37,35 @@ async function fetchJson<T>(path: string): Promise<T> {
     });
   } catch (error) {
     throw new BackendRequestError(
-      error instanceof Error ? error.message : "Sunucuya ulaşılamıyor",
+      error instanceof Error ? error.message : "Sunucuya ulasilamiyor",
       null,
     );
   }
 
-  if (!response.ok) {
-    throw new BackendRequestError(
-      `İstek ${response.status} durum koduyla başarısız oldu`,
-      response.status,
-    );
+  const text = await response.text();
+  let payload: unknown = null;
+
+  if (text) {
+    try {
+      payload = JSON.parse(text) as unknown;
+    } catch {
+      payload = null;
+    }
   }
 
-  return (await response.json()) as T;
+  if (!response.ok) {
+    const errorMessage =
+      payload &&
+      typeof payload === "object" &&
+      "error" in payload &&
+      typeof payload.error === "string"
+        ? payload.error
+        : `Istek ${response.status} durum koduyla basarisiz oldu`;
+
+    throw new BackendRequestError(errorMessage, response.status);
+  }
+
+  return payload as T;
 }
 
 export function isLikelyBackendWakeup(error: unknown): boolean {
@@ -67,14 +83,14 @@ export function isLikelyBackendWakeup(error: unknown): boolean {
 
 export function describeBackendError(error: unknown): string {
   if (isLikelyBackendWakeup(error)) {
-    return "Sunucu uyanıyor. Render servisi başladıktan sonra canlı veriler otomatik olarak görünecek.";
+    return "Sunucu uyaniyor. Render servisi basladiktan sonra canli veriler otomatik olarak gorunecek.";
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "Sunucu şu anda kullanılamıyor.";
+  return "Sunucu su anda kullanilamiyor.";
 }
 
 export async function fetchTodayMatchesSnapshot(): Promise<MatchesSnapshotResponse> {

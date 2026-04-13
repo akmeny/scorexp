@@ -2,7 +2,10 @@ import cors from "@fastify/cors";
 import Fastify, { type RawServerDefault } from "fastify";
 import { env, isApiSportsConfigured } from "./config/env.js";
 import { fastifyLoggerOptions } from "./config/logger.js";
-import { ApiSportsClient } from "./modules/matches/apiSportsClient.js";
+import {
+  ApiSportsClient,
+  ApiSportsError,
+} from "./modules/matches/apiSportsClient.js";
 import { MatchStore } from "./modules/matches/matchStore.js";
 import { registerMatchesRoutes } from "./modules/matches/matchesRoutes.js";
 import { LiveMatchesPollingService } from "./modules/matches/pollingService.js";
@@ -94,10 +97,24 @@ async function buildServer() {
       "statusCode" in error &&
       typeof error.statusCode === "number"
         ? error.statusCode
+        : error instanceof ApiSportsError
+          ? error.status === 422
+            ? 503
+            : error.status
         : 500;
+    const message =
+      error instanceof ApiSportsError
+        ? error.message
+        : typeof error === "object" &&
+            error !== null &&
+            "message" in error &&
+            typeof error.message === "string" &&
+            statusCode < 500
+          ? error.message
+          : "Internal server error";
 
     reply.status(statusCode).send({
-      error: "Internal server error",
+      error: message,
     });
   });
 
