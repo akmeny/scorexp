@@ -155,7 +155,7 @@ function readFavorites() {
 }
 
 function policyLabel(reason?: string) {
-  if (reason === "live") return "Canli akış";
+  if (reason === "live") return "3 dk akış";
   if (reason === "finished" || reason === "locked") return "Günlük arşiv";
   return "Planlı akış";
 }
