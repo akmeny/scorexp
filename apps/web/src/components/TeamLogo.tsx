@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface TeamLogoProps {
   src: string | null;
@@ -9,6 +9,10 @@ interface TeamLogoProps {
 export function TeamLogo({ src, label, size = "md" }: TeamLogoProps) {
   const [failed, setFailed] = useState(false);
   const initial = label.trim().charAt(0).toUpperCase() || "?";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (!src || failed) {
     return (

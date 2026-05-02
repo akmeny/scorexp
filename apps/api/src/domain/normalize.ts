@@ -8,7 +8,11 @@ import type {
   ProviderMatchDetail,
   ProviderMatchEvent,
   ProviderPrediction,
+  ProviderStandingGroup,
+  ProviderStandingRecord,
+  ProviderStandingsResponse,
   ProviderTeamStatistics,
+  ProviderTopPlayer,
   ProviderMatch,
   ScoreboardSnapshot,
   ScoreboardView,
@@ -99,7 +103,12 @@ export function normalizeMatch(raw: ProviderMatch, timezone: string, updatedAt =
     league: {
       id: raw.league?.id !== undefined && raw.league?.id !== null ? String(raw.league.id) : `league-${leagueName}`,
       name: leagueName,
-      logo: raw.league?.logo ?? null,
+      logo:
+        raw.league?.logo ??
+        providerAssetUrl(
+          "leagues",
+          raw.league?.id !== undefined && raw.league?.id !== null ? String(raw.league.id) : `league-${leagueName}`
+        ),
       season: raw.league?.season !== undefined && raw.league?.season !== null ? String(raw.league.season) : null
     },
     homeTeam: normalizeTeam(raw.homeTeam, "Home"),
@@ -121,7 +130,13 @@ export function normalizeMatchDetail(
   timezone: string,
   fetchedAt: string,
   expiresAt: string,
-  refreshPolicy: MatchDetail["refreshPolicy"]
+  refreshPolicy: MatchDetail["refreshPolicy"],
+  context: {
+    headToHead?: ProviderMatch[];
+    homeForm?: ProviderMatch[];
+    awayForm?: ProviderMatch[];
+    standings?: ProviderStandingsResponse | null;
+  } = {}
 ): MatchDetail {
   const match = normalizeMatch(raw, timezone, fetchedAt);
   const detail = {
@@ -147,6 +162,16 @@ export function normalizeMatchDetail(
     },
     events: normalizeDetailEvents(raw.events),
     statistics: normalizeDetailStatistics(raw.statistics),
+    headToHead: normalizeMatchList(context.headToHead, timezone, fetchedAt),
+    form: {
+      home: normalizeMatchList(context.homeForm, timezone, fetchedAt),
+      away: normalizeMatchList(context.awayForm, timezone, fetchedAt)
+    },
+    standings: normalizeStandings(context.standings, match),
+    topPlayers: {
+      home: normalizeTopPlayers(raw.homeTeam?.topPlayers),
+      away: normalizeTopPlayers(raw.awayTeam?.topPlayers)
+    },
     predictions: {
       latestLive: latestPrediction(raw.predictions?.live),
       latestPrematch: latestPrediction(raw.predictions?.prematch)
@@ -264,6 +289,12 @@ function createMatchDetailChecksum(detail: Omit<MatchDetail, "checksum">): strin
     score: detail.match.score,
     events: detail.events,
     statistics: detail.statistics,
+    headToHead: detail.headToHead.map((match) => ({ id: match.id, score: match.score, status: match.status })),
+    form: {
+      home: detail.form.home.map((match) => ({ id: match.id, score: match.score, status: match.status })),
+      away: detail.form.away.map((match) => ({ id: match.id, score: match.score, status: match.status }))
+    },
+    standings: detail.standings,
     predictions: detail.predictions
   };
 
@@ -271,10 +302,12 @@ function createMatchDetailChecksum(detail: Omit<MatchDetail, "checksum">): strin
 }
 
 function normalizeTeam(team: ProviderMatch["homeTeam"], fallback: string) {
+  const id = team?.id !== undefined && team.id !== null ? String(team.id) : fallback.toLowerCase();
+
   return {
-    id: team?.id !== undefined && team.id !== null ? String(team.id) : fallback.toLowerCase(),
+    id,
     name: team?.name?.trim() || fallback,
-    logo: team?.logo ?? null
+    logo: team?.logo ?? providerAssetUrl("teams", id)
   };
 }
 
@@ -311,6 +344,76 @@ function normalizeDetailStatistics(groups: ProviderTeamStatistics[] | null | und
     .filter((group) => group.statistics.length > 0);
 }
 
+function normalizeMatchList(matches: ProviderMatch[] | null | undefined, timezone: string, fetchedAt: string) {
+  if (!Array.isArray(matches)) return [];
+  return matches.map((match) => normalizeMatch(match, timezone, fetchedAt));
+}
+
+function normalizeTopPlayers(players: ProviderTopPlayer[] | null | undefined) {
+  if (!Array.isArray(players)) return [];
+
+  return players
+    .filter((player) => cleanString(player.name))
+    .map((player) => ({
+      name: cleanString(player.name) ?? "Player",
+      position: cleanString(player.position),
+      statistics: Array.isArray(player.statistics)
+        ? player.statistics
+            .filter((stat) => cleanString(stat.name))
+            .map((stat) => ({
+              name: cleanString(stat.name) ?? "Statistic",
+              value: stat.value ?? null
+            }))
+        : []
+    }));
+}
+
+function normalizeStandings(raw: ProviderStandingsResponse | null | undefined, fallbackMatch: NormalizedMatch) {
+  const groups = raw?.groups;
+  if (!Array.isArray(groups)) return null;
+
+  const normalizedGroups = groups
+    .map((group: ProviderStandingGroup) => ({
+      name: cleanString(group.name) ?? fallbackMatch.league.name,
+      rows: Array.isArray(group.standings)
+        ? group.standings.map((row) => ({
+            team: normalizeTeam(row.team, "Team"),
+            position: typeof row.position === "number" ? row.position : null,
+            points: typeof row.points === "number" ? row.points : null,
+            total: normalizeStandingRecord(row.total),
+            home: normalizeStandingRecord(row.home),
+            away: normalizeStandingRecord(row.away)
+          }))
+        : []
+    }))
+    .filter((group) => group.rows.length > 0);
+
+  if (normalizedGroups.length === 0) return null;
+
+  return {
+    league: {
+      id: raw?.league?.id !== undefined && raw.league.id !== null ? String(raw.league.id) : fallbackMatch.league.id,
+      name: raw?.league?.name?.trim() || fallbackMatch.league.name,
+      logo:
+        raw?.league?.logo ??
+        providerAssetUrl("leagues", raw?.league?.id !== undefined && raw.league.id !== null ? String(raw.league.id) : fallbackMatch.league.id),
+      season: raw?.league?.season !== undefined && raw.league.season !== null ? String(raw.league.season) : fallbackMatch.league.season
+    },
+    groups: normalizedGroups
+  };
+}
+
+function normalizeStandingRecord(record: ProviderStandingRecord | null | undefined) {
+  return {
+    wins: record?.wins ?? 0,
+    draws: record?.draws ?? 0,
+    games: record?.games ?? 0,
+    loses: record?.loses ?? 0,
+    scoredGoals: record?.scoredGoals ?? 0,
+    receivedGoals: record?.receivedGoals ?? 0
+  };
+}
+
 function latestPrediction(items: ProviderPrediction[] | null | undefined): MatchDetailPrediction | null {
   if (!Array.isArray(items) || items.length === 0) return null;
   const latest = items[items.length - 1];
@@ -336,8 +439,13 @@ function cleanString(value: string | number | null | undefined) {
 
 function normalizeNumber(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return null;
-  const parsed = Number(value);
+  const parsed = typeof value === "number" ? value : Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function providerAssetUrl(kind: "teams" | "leagues", id: string) {
+  if (!id || !/^\d+$/.test(id)) return null;
+  return `https://highlightly.net/soccer/images/${kind}/${encodeURIComponent(id)}.png`;
 }
 
 function splitScore(raw: string | null | undefined): [number | null, number | null] {

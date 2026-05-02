@@ -11,6 +11,8 @@ import type {
   MatchDetail,
   MatchDetailCacheEntry,
   NormalizedMatch,
+  ProviderMatch,
+  ProviderStandingsResponse,
   RefreshPolicy,
   ScoreboardSnapshot,
   ScoreboardView,
@@ -158,7 +160,15 @@ export class ScoreboardService {
 
     const statusGroup = normalizeMatch(response.match, timezone, fetchedAt).status.group;
     const refreshPolicy = this.pickDetailRefreshPolicy(statusGroup, new Date());
-    const detail = normalizeMatchDetail(response.match, timezone, fetchedAt, refreshPolicy.nextProviderRefreshAt, refreshPolicy);
+    const context = await this.getMatchContext(response.match, timezone);
+    const detail = normalizeMatchDetail(
+      response.match,
+      timezone,
+      fetchedAt,
+      refreshPolicy.nextProviderRefreshAt,
+      refreshPolicy,
+      context
+    );
     const entry: MatchDetailCacheEntry = {
       detail,
       fetchedAt,
@@ -168,6 +178,69 @@ export class ScoreboardService {
 
     await this.cache.set(key, entry, ttlFromEntry(entry));
     return entry;
+  }
+
+  private async getMatchContext(match: ProviderMatch, timezone: string) {
+    const homeTeamId = teamId(match.homeTeam?.id);
+    const awayTeamId = teamId(match.awayTeam?.id);
+    const leagueId = teamId(match.league?.id);
+    const season = match.league?.season !== undefined && match.league.season !== null ? String(match.league.season) : null;
+
+    const [headToHead, homeForm, awayForm, standings] = await Promise.all([
+      homeTeamId && awayTeamId
+        ? this.getCachedSupplement<ProviderMatch[]>(
+            `football:h2h:${[homeTeamId, awayTeamId].sort().join(":")}`,
+            86_400,
+            () => this.highlightly.getHeadToHead(homeTeamId, awayTeamId),
+            []
+          )
+        : Promise.resolve([]),
+      homeTeamId
+        ? this.getCachedSupplement<ProviderMatch[]>(`football:form:${homeTeamId}`, 21_600, () =>
+            this.highlightly.getLastFiveGames(homeTeamId),
+            []
+          )
+        : Promise.resolve([]),
+      awayTeamId
+        ? this.getCachedSupplement<ProviderMatch[]>(`football:form:${awayTeamId}`, 21_600, () =>
+            this.highlightly.getLastFiveGames(awayTeamId),
+            []
+          )
+        : Promise.resolve([]),
+      leagueId && season
+        ? this.getCachedSupplement<ProviderStandingsResponse | null>(
+            `football:standings:${leagueId}:${season}:${timezone}`,
+            900,
+            () => this.highlightly.getStandings(leagueId, season),
+            null
+          )
+        : Promise.resolve(null)
+    ]);
+
+    return {
+      headToHead,
+      homeForm,
+      awayForm,
+      standings
+    };
+  }
+
+  private async getCachedSupplement<T>(
+    key: string,
+    ttlSeconds: number,
+    fetcher: () => Promise<T>,
+    fallback: T
+  ): Promise<T> {
+    const cached = await this.cache.get<{ value: T }>(key);
+    if (cached) return cached.value;
+
+    try {
+      const fresh = await fetcher();
+      await this.cache.set(key, { value: fresh }, ttlSeconds);
+      return fresh;
+    } catch {
+      return fallback;
+    }
   }
 
   private buildSnapshot(date: string, timezone: string, matches: NormalizedMatch[], fetchedAt: string): ScoreboardSnapshot {
@@ -238,7 +311,13 @@ function snapshotKey(date: string, timezone: string) {
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:${matchId}:${timezone}`;
+  return `football:match-detail:v2:${matchId}:${timezone}`;
+}
+
+function teamId(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") return null;
+  const normalized = String(value);
+  return /^\d+$/.test(normalized) ? normalized : null;
 }
 
 function mergePersistedFinished(incoming: NormalizedMatch[], persistedFinished: NormalizedMatch[]) {

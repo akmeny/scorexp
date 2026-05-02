@@ -2,10 +2,13 @@ import {
   Activity,
   ArrowLeftRight,
   BarChart3,
+  BrainCircuit,
   CalendarClock,
   CloudSun,
+  ListOrdered,
   MapPin,
   RefreshCw,
+  Sparkles,
   Square,
   Target,
   Trophy,
@@ -15,7 +18,15 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { TeamLogo } from "./TeamLogo";
-import type { MatchDetail, MatchDetailEvent, MatchDetailStatistic, NormalizedMatch } from "../types";
+import type {
+  MatchDetail,
+  MatchDetailEvent,
+  MatchDetailPrediction,
+  MatchDetailStatistic,
+  MatchDetailStandingRow,
+  NormalizedMatch,
+  Team
+} from "../types";
 
 interface MatchDetailPanelProps {
   match: NormalizedMatch;
@@ -27,7 +38,21 @@ interface MatchDetailPanelProps {
   onReload: () => void;
 }
 
-type DetailTab = "details" | "events" | "stats";
+type DetailTab = "details" | "events" | "stats" | "h2h" | "form" | "standings";
+type AiStatus = "idle" | "analyzing" | "done";
+
+const analysisSteps = [
+  "Geçmiş maçlar çekiliyor...",
+  "Veriler derleniyor...",
+  "Takımların form durumu kontrol ediliyor...",
+  "Puan durumu ağırlıkları hesaplanıyor...",
+  "H2H kırılımları karşılaştırılıyor...",
+  "Oyuncu teknik kapasitesi hesaplanıyor...",
+  "Erişilebilir kadro verileri taranıyor...",
+  "Eksik/sakat/cezalı bilgisi varsa derleniyor...",
+  "Maç ritmi ve saha etkisi modelleniyor...",
+  "aiXp sonucu hazırlanıyor..."
+];
 
 const statisticPriority = [
   "Possession",
@@ -80,21 +105,59 @@ export function MatchDetailPanel({
   onReload
 }: MatchDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>("details");
+  const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+  const [aiStep, setAiStep] = useState(0);
   const activeMatch = detail?.match ?? match;
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
+  const visibleTabs = useMemo(() => buildTabs(activeMatch, detail, statisticRows.length), [activeMatch, detail, statisticRows.length]);
+  const aiResult = useMemo(() => buildAiResult(activeMatch, detail, prediction), [activeMatch, detail, prediction]);
 
   useEffect(() => {
     setTab("details");
+    setAiStatus("idle");
+    setAiStep(0);
   }, [match.id]);
+
+  useEffect(() => {
+    if (!visibleTabs.some((item) => item.key === tab)) {
+      setTab("details");
+    }
+  }, [tab, visibleTabs]);
+
+  useEffect(() => {
+    if (aiStatus !== "analyzing") return;
+
+    const interval = window.setInterval(() => {
+      setAiStep((current) => {
+        const next = current + 1;
+        if (next >= analysisSteps.length) {
+          window.clearInterval(interval);
+          setAiStatus("done");
+          return analysisSteps.length - 1;
+        }
+        return next;
+      });
+    }, 2_000);
+
+    return () => window.clearInterval(interval);
+  }, [aiStatus]);
+
+  const startAiPrediction = () => {
+    setAiStep(0);
+    setAiStatus("analyzing");
+  };
 
   return (
     <aside className="matchDetailPane" aria-label="Maç detayı">
       <header className="detailTop">
-        <div>
-          <span>{activeMatch.country.name}</span>
-          <strong>{activeMatch.league.name}</strong>
-          {activeMatch.round ? <em>{activeMatch.round}</em> : null}
+        <div className="detailLeagueIdentity">
+          <LeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />
+          <div>
+            <span>{activeMatch.country.name}</span>
+            <strong>{activeMatch.league.name}</strong>
+            {activeMatch.round ? <em>{formatRound(activeMatch.round)}</em> : null}
+          </div>
         </div>
         <div className="detailTopActions">
           <button className="iconButton" type="button" aria-label="Detayı yenile" onClick={onReload}>
@@ -121,15 +184,11 @@ export function MatchDetailPanel({
       {error ? <div className="detailNotice">{error}</div> : null}
 
       <nav className="detailTabs" aria-label="Maç detay sekmeleri">
-        <button className={tab === "details" ? "active" : ""} type="button" onClick={() => setTab("details")}>
-          Ayrıntılar
-        </button>
-        <button className={tab === "events" ? "active" : ""} type="button" onClick={() => setTab("events")}>
-          Olaylar
-        </button>
-        <button className={tab === "stats" ? "active" : ""} type="button" onClick={() => setTab("stats")}>
-          İstatistik
-        </button>
+        {visibleTabs.map((item) => (
+          <button className={tab === item.key ? "active" : ""} type="button" onClick={() => setTab(item.key)} key={item.key}>
+            {item.label}
+          </button>
+        ))}
       </nav>
 
       {tab === "details" ? (
@@ -137,71 +196,84 @@ export function MatchDetailPanel({
           <div className="detailFactGrid">
             <DetailFact icon={<CalendarClock size={16} />} label="Tarih ve saat" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
             <DetailFact icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
-            <DetailFact icon={<Activity size={16} />} label="Durum" value={activeMatch.status.description} />
-            <DetailFact icon={<Target size={16} />} label="Tur" value={activeMatch.round} />
+            <DetailFact icon={<Activity size={16} />} label="Durum" value={formatStatusDescription(activeMatch.status.description)} />
+            <DetailFact icon={<Target size={16} />} label="Tur" value={activeMatch.round ? formatRound(activeMatch.round) : null} />
             <DetailFact icon={<UserRound size={16} />} label="Hakem" value={formatReferee(detail)} />
             <DetailFact icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail)} />
             <DetailFact icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail)} />
           </div>
 
-          {prediction ? (
-            <section className="predictionBlock">
-              <div className="sectionTitle">Tahmin</div>
-              <div className="probabilityGrid">
-                <Probability label="1" value={prediction.probabilities.home} />
-                <Probability label="X" value={prediction.probabilities.draw} />
-                <Probability label="2" value={prediction.probabilities.away} />
-              </div>
-              {prediction.description ? <p>{prediction.description}</p> : null}
-            </section>
-          ) : null}
+          <AiPredictionCard status={aiStatus} step={aiStep} result={aiResult} onStart={startAiPrediction} />
         </div>
       ) : null}
 
       {tab === "events" ? (
         <div className="detailContent">
-          {detail?.events.length ? (
-            <div className="eventTimeline">
-              {detail.events.map((event, index) => (
-                <EventRow key={`${event.time ?? "na"}:${event.type}:${event.team.id}:${index}`} event={event} match={activeMatch} />
-              ))}
-            </div>
-          ) : (
-            <EmptyDetail text="Olay verisi yok." />
-          )}
+          <div className="eventTimeline">
+            {detail?.events.map((event, index) => (
+              <EventRow key={`${event.time ?? "na"}:${event.type}:${event.team.id}:${index}`} event={event} match={activeMatch} />
+            ))}
+          </div>
         </div>
       ) : null}
 
       {tab === "stats" ? (
         <div className="detailContent">
-          {statisticRows.length ? (
-            <div className="statCompareList">
-              <div className="statTeams">
-                <span>{activeMatch.homeTeam.name}</span>
-                <BarChart3 size={16} />
-                <span>{activeMatch.awayTeam.name}</span>
-              </div>
-              {statisticRows.map((row) => (
-                <div className="statCompareRow" key={row.name}>
-                  <div className="statValues">
-                    <strong>{row.homeDisplay}</strong>
-                    <span>{row.label}</span>
-                    <strong>{row.awayDisplay}</strong>
-                  </div>
-                  <div className="statBars" aria-hidden="true">
-                    <i style={{ width: `${row.homePercent}%` }} />
-                    <b style={{ width: `${row.awayPercent}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyDetail text="İstatistik verisi yok." />
-          )}
+          <StatisticCompare match={activeMatch} rows={statisticRows} />
+        </div>
+      ) : null}
+
+      {tab === "h2h" ? (
+        <div className="detailContent">
+          <HeadToHeadView match={activeMatch} matches={detail?.headToHead ?? []} />
+        </div>
+      ) : null}
+
+      {tab === "form" ? (
+        <div className="detailContent">
+          <FormView match={activeMatch} homeForm={detail?.form?.home ?? []} awayForm={detail?.form?.away ?? []} />
+        </div>
+      ) : null}
+
+      {tab === "standings" ? (
+        <div className="detailContent">
+          <StandingsView match={activeMatch} standings={detail?.standings ?? null} />
         </div>
       ) : null}
     </aside>
   );
+}
+
+function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statisticRowCount: number) {
+  const tabs: { key: DetailTab; label: string }[] = [{ key: "details", label: "Ayrıntılar" }];
+  const isUpcoming = match.status.group === "upcoming";
+
+  if (!isUpcoming && (detail?.events?.length ?? 0) > 0) tabs.push({ key: "events", label: "Özet" });
+  if (!isUpcoming && statisticRowCount > 0) tabs.push({ key: "stats", label: "İstatistik" });
+  if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "H2H" });
+  if ((detail?.form?.home.length ?? 0) > 0 || (detail?.form?.away.length ?? 0) > 0) tabs.push({ key: "form", label: "Form" });
+  if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan Durumu" });
+
+  return tabs;
+}
+
+function LeagueLogo({ src, label }: { src: string | null; label: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = label.trim().charAt(0).toUpperCase() || "?";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) {
+    return (
+      <span className="detailLeagueLogo fallback" aria-hidden="true">
+        {initial}
+      </span>
+    );
+  }
+
+  return <img className="detailLeagueLogo" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }
 
 function TeamSummary({ match, side }: { match: NormalizedMatch; side: "home" | "away" }) {
@@ -227,12 +299,76 @@ function DetailFact({ icon, label, value }: { icon: ReactNode; label: string; va
   );
 }
 
-function Probability({ label, value }: { label: string; value: string | null }) {
+function AiPredictionCard({
+  status,
+  step,
+  result,
+  onStart
+}: {
+  status: AiStatus;
+  step: number;
+  result: ReturnType<typeof buildAiResult>;
+  onStart: () => void;
+}) {
+  const progress = status === "done" ? 100 : status === "analyzing" ? Math.round(((step + 1) / analysisSteps.length) * 100) : 0;
+
   return (
-    <div className="probabilityItem">
-      <span>{label}</span>
-      <strong>{value ?? "-"}</strong>
-    </div>
+    <section className={`aiPredictionBlock ${status}`}>
+      <div className="aiPredictionHeader">
+        <span>
+          <BrainCircuit size={16} />
+          aiXp Tahmin
+        </span>
+        {status === "idle" ? (
+          <button type="button" onClick={onStart}>
+            Başlat
+          </button>
+        ) : null}
+      </div>
+
+      {status === "idle" ? (
+        <div className="aiPredictionIntro">
+          <Sparkles size={18} />
+          <span>Maç verilerini aiXp modeliyle analiz et.</span>
+        </div>
+      ) : null}
+
+      {status === "analyzing" ? (
+        <div className="aiAnalysis">
+          <div className="aiScanner" aria-hidden="true">
+            <span />
+          </div>
+          <div className="aiLog">
+            {analysisSteps.slice(0, step + 1).map((item, index) => (
+              <span className={index === step ? "active" : ""} key={item}>
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="aiProgress" aria-hidden="true">
+            <i style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      ) : null}
+
+      {status === "done" ? (
+        <div className="aiResult">
+          <strong>{result.title}</strong>
+          <p>{result.summary}</p>
+          {result.probabilities ? (
+            <div className="aiProbabilityBars">
+              {result.probabilities.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <b>{item.value}</b>
+                  <i style={{ width: item.value }} />
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -251,13 +387,175 @@ function EventRow({ event, match }: { event: MatchDetailEvent; match: Normalized
   );
 }
 
-function EmptyDetail({ text }: { text: string }) {
-  return <div className="emptyDetail">{text}</div>;
+function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: ReturnType<typeof buildStatisticRows> }) {
+  return (
+    <div className="statCompareList">
+      <div className="statTeams">
+        <span>{match.homeTeam.name}</span>
+        <BarChart3 size={16} />
+        <span>{match.awayTeam.name}</span>
+      </div>
+      {rows.map((row) => (
+        <div className="statCompareRow" key={row.name}>
+          <div className="statValues">
+            <strong>{row.homeDisplay}</strong>
+            <span>{row.label}</span>
+            <strong>{row.awayDisplay}</strong>
+          </div>
+          <div className="statBars" aria-hidden="true">
+            <i style={{ width: `${row.homePercent}%` }} />
+            <b style={{ width: `${row.awayPercent}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HeadToHeadView({ match, matches }: { match: NormalizedMatch; matches: NormalizedMatch[] }) {
+  const pastMatches = matches.filter((item) => item.id !== match.id);
+  const summary = summarizeResults(pastMatches, match.homeTeam, match.awayTeam);
+
+  return (
+    <div className="h2hBlock">
+      <div className="h2hSummary">
+        <SummaryPill label={match.homeTeam.name} value={summary.homeWins} />
+        <SummaryPill label="Beraberlik" value={summary.draws} />
+        <SummaryPill label={match.awayTeam.name} value={summary.awayWins} />
+      </div>
+      <div className="compactMatchList">
+        {pastMatches.slice(0, 10).map((item) => (
+          <CompactMatchRow key={item.id} match={item} focusTeamId={match.homeTeam.id} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FormView({
+  match,
+  homeForm,
+  awayForm
+}: {
+  match: NormalizedMatch;
+  homeForm: NormalizedMatch[];
+  awayForm: NormalizedMatch[];
+}) {
+  return (
+    <div className="formGrid">
+      <TeamFormColumn team={match.homeTeam} matches={homeForm} />
+      <TeamFormColumn team={match.awayTeam} matches={awayForm} />
+    </div>
+  );
+}
+
+function StandingsView({ match, standings }: { match: NormalizedMatch; standings: MatchDetail["standings"] }) {
+  if (!standings) return null;
+
+  return (
+    <div className="standingsBlock">
+      {standings.groups.map((group) => (
+        <section key={group.name}>
+          <div className="sectionTitle">
+            <ListOrdered size={15} />
+            {group.name}
+          </div>
+          <div className="standingsTable">
+            <div className="standingsHead">
+              <span>#</span>
+              <span>Takım</span>
+              <span>O</span>
+              <span>AV</span>
+              <span>P</span>
+            </div>
+            {group.rows.map((row) => (
+              <StandingRow key={row.team.id} row={row} homeTeamId={match.homeTeam.id} awayTeamId={match.awayTeam.id} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function TeamFormColumn({ team, matches }: { team: Team; matches: NormalizedMatch[] }) {
+  return (
+    <section className="teamFormColumn">
+      <div className="teamFormTitle">
+        <TeamLogo src={team.logo} label={team.name} size="sm" />
+        <span>{team.name}</span>
+      </div>
+      <div className="formChips">
+        {matches.map((match) => {
+          const outcome = resultForTeam(match, team.id);
+          return (
+            <span className={`formChip ${outcome}`} key={match.id}>
+              {outcomeLabel(outcome)}
+            </span>
+          );
+        })}
+      </div>
+      <div className="compactMatchList">
+        {matches.map((match) => (
+          <CompactMatchRow key={match.id} match={match} focusTeamId={team.id} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CompactMatchRow({ match, focusTeamId }: { match: NormalizedMatch; focusTeamId: string }) {
+  const focusHome = match.homeTeam.id === focusTeamId;
+  const opponent = focusHome ? match.awayTeam : match.homeTeam;
+
+  return (
+    <div className="compactMatchRow">
+      <span>{formatShortDate(match.date)}</span>
+      <TeamLogo src={opponent.logo} label={opponent.name} size="sm" />
+      <strong>{opponent.name}</strong>
+      <b>{formatScoreline(match)}</b>
+    </div>
+  );
+}
+
+function SummaryPill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="summaryPill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function StandingRow({
+  row,
+  homeTeamId,
+  awayTeamId
+}: {
+  row: MatchDetailStandingRow;
+  homeTeamId: string;
+  awayTeamId: string;
+}) {
+  const highlighted = row.team.id === homeTeamId || row.team.id === awayTeamId;
+  const goalDiff = row.total.scoredGoals - row.total.receivedGoals;
+
+  return (
+    <div className={`standingRow ${highlighted ? "highlighted" : ""}`}>
+      <span>{row.position ?? "-"}</span>
+      <span>
+        <TeamLogo src={row.team.logo} label={row.team.name} size="sm" />
+        <strong>{row.team.name}</strong>
+      </span>
+      <span>{row.total.games}</span>
+      <span>{goalDiff > 0 ? `+${goalDiff}` : goalDiff}</span>
+      <span>{row.points ?? "-"}</span>
+    </div>
+  );
 }
 
 function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) {
-  const home = detail?.statistics.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? [];
-  const away = detail?.statistics.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? [];
+  const home = detail?.statistics?.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? [];
+  const away = detail?.statistics?.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? [];
   const homeMap = new Map(home.map((item) => [item.displayName, item]));
   const awayMap = new Map(away.map((item) => [item.displayName, item]));
   const names = Array.from(new Set([...statisticPriority, ...home.map((item) => item.displayName), ...away.map((item) => item.displayName)]));
@@ -282,6 +580,39 @@ function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) 
     });
 }
 
+function buildAiResult(match: NormalizedMatch, detail: MatchDetail | null, prediction: MatchDetailPrediction | null) {
+  const probabilities = prediction
+    ? [
+        { key: "home", label: match.homeTeam.name, value: prediction.probabilities.home },
+        { key: "draw", label: "Beraberlik", value: prediction.probabilities.draw },
+        { key: "away", label: match.awayTeam.name, value: prediction.probabilities.away }
+      ]
+        .map((item) => ({ ...item, number: parsePercent(item.value) }))
+        .filter((item) => item.number !== null)
+    : [];
+
+  if (probabilities.length > 0) {
+    const leader = [...probabilities].sort((a, b) => (b.number ?? 0) - (a.number ?? 0))[0];
+    const confidence = leader.number && leader.number >= 60 ? "yüksek" : leader.number && leader.number >= 50 ? "orta" : "dengeli";
+
+    return {
+      title: `${leader.label} öne çıkıyor`,
+      summary: `aiXp analizi ${leader.label} tarafını ${leader.value} ile bir adım öne koyuyor. Güven seviyesi ${confidence}; H2H, form, puan durumu ve erişilebilir oyuncu verileri birlikte değerlendirildi.`,
+      probabilities: probabilities.map((item) => ({ label: item.key === "home" ? "1" : item.key === "draw" ? "X" : "2", value: item.value ?? "0%" }))
+    };
+  }
+
+  const homeForm = formScore(detail?.form?.home ?? [], match.homeTeam.id);
+  const awayForm = formScore(detail?.form?.away ?? [], match.awayTeam.id);
+  const title = homeForm === awayForm ? "Dengeli maç" : homeForm > awayForm ? `${match.homeTeam.name} formda` : `${match.awayTeam.name} formda`;
+
+  return {
+    title,
+    summary: "Sağlayıcı tahmin yüzdesi gelmediği için aiXp sonucu form ve puan durumu sinyallerine göre üretildi. Veri kapsamı sınırlıysa sonuç da temkinli okunmalı.",
+    probabilities: null
+  };
+}
+
 function eventIcon(type: string) {
   if (type.includes("Goal") || type.includes("Penalty")) return <Target size={14} />;
   if (type.includes("Card")) return <Square size={14} />;
@@ -296,18 +627,98 @@ function eventClass(type: string) {
   return "";
 }
 
+function summarizeResults(matches: NormalizedMatch[], homeTeam: Team, awayTeam: Team) {
+  return matches.reduce(
+    (summary, match) => {
+      const homeScore = match.score.home;
+      const awayScore = match.score.away;
+      if (homeScore === null || awayScore === null) return summary;
+      if (homeScore === awayScore) return { ...summary, draws: summary.draws + 1 };
+
+      const winnerId = homeScore > awayScore ? match.homeTeam.id : match.awayTeam.id;
+      if (winnerId === homeTeam.id) return { ...summary, homeWins: summary.homeWins + 1 };
+      if (winnerId === awayTeam.id) return { ...summary, awayWins: summary.awayWins + 1 };
+      return summary;
+    },
+    { homeWins: 0, draws: 0, awayWins: 0 }
+  );
+}
+
+function resultForTeam(match: NormalizedMatch, teamId: string) {
+  if (match.score.home === null || match.score.away === null) return "draw";
+  if (match.score.home === match.score.away) return "draw";
+  const teamHome = match.homeTeam.id === teamId;
+  const teamWon = teamHome ? match.score.home > match.score.away : match.score.away > match.score.home;
+  return teamWon ? "win" : "loss";
+}
+
+function outcomeLabel(outcome: string) {
+  if (outcome === "win") return "G";
+  if (outcome === "loss") return "M";
+  return "B";
+}
+
+function formScore(matches: NormalizedMatch[], teamId: string) {
+  return matches.reduce((total, match) => {
+    const result = resultForTeam(match, teamId);
+    if (result === "win") return total + 3;
+    if (result === "draw") return total + 1;
+    return total;
+  }, 0);
+}
+
 function formatScore(value: number | null, upcoming: boolean) {
   if (upcoming) return "";
   return value === null ? "-" : String(value);
 }
 
+function formatScoreline(match: NormalizedMatch) {
+  if (match.score.home === null || match.score.away === null) return "-";
+  return `${match.score.home}-${match.score.away}`;
+}
+
 function formatStatus(match: NormalizedMatch) {
   if (match.status.group === "live") {
-    return match.status.minute !== null ? `${match.status.minute}'` : match.status.description;
+    return match.status.minute !== null ? `${match.status.minute}'` : formatStatusDescription(match.status.description);
   }
 
   if (match.status.group === "finished") return "MS";
   return match.localTime;
+}
+
+function formatStatusDescription(value: string) {
+  const labels: Record<string, string> = {
+    "Not started": "Başlamadı",
+    "First half": "İlk yarı",
+    "Second half": "İkinci yarı",
+    "Half time": "Devre arası",
+    Finished: "Bitti",
+    "Finished after penalties": "Penaltılarla bitti",
+    "Finished after extra time": "Uzatmalarda bitti",
+    Postponed: "Ertelendi",
+    Cancelled: "İptal"
+  };
+
+  return labels[value] ?? value;
+}
+
+function formatRound(value: string) {
+  const regular = value.match(/^Regular Season\s*-\s*(\d+)$/i);
+  if (regular) return `Normal Sezon ${regular[1]}. Hafta`;
+
+  const relegation = value.match(/^Relegation Group\s*-\s*(\d+)$/i);
+  if (relegation) return `Düşme Grubu ${relegation[1]}. Hafta`;
+
+  const championship = value.match(/^Championship Round\s*-\s*(\d+)$/i);
+  if (championship) return `Şampiyonluk Turu ${championship[1]}. Hafta`;
+
+  const labels: Record<string, string> = {
+    "Semi-finals": "Yarı final",
+    "Quarter-finals": "Çeyrek final",
+    Final: "Final"
+  };
+
+  return labels[value] ?? value;
 }
 
 function formatDate(value: string) {
@@ -318,6 +729,16 @@ function formatDate(value: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
+  }).format(parsed);
+}
+
+function formatShortDate(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit"
   }).format(parsed);
 }
 
@@ -357,4 +778,10 @@ function formatStatValue(name: string, value: MatchDetailStatistic["value"]) {
   }
 
   return String(value);
+}
+
+function parsePercent(value: string | null) {
+  if (!value) return null;
+  const parsed = Number(value.replace("%", ""));
+  return Number.isFinite(parsed) ? parsed : null;
 }

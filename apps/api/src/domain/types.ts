@@ -12,6 +12,19 @@ export interface ProviderTeam {
   id?: number | string | null;
   name?: string | null;
   logo?: string | null;
+  topPlayers?: ProviderTopPlayer[] | null;
+  shots?: unknown[] | null;
+}
+
+export interface ProviderTopPlayerStatistic {
+  name?: string | null;
+  value?: number | string | null;
+}
+
+export interface ProviderTopPlayer {
+  position?: string | null;
+  name?: string | null;
+  statistics?: ProviderTopPlayerStatistic[] | null;
 }
 
 export interface ProviderLeague {
@@ -101,6 +114,34 @@ export interface ProviderMatchDetail extends ProviderMatch {
   events?: ProviderMatchEvent[] | null;
   statistics?: ProviderTeamStatistics[] | null;
   predictions?: ProviderMatchPredictions | null;
+}
+
+export interface ProviderStandingRecord {
+  wins?: number | null;
+  draws?: number | null;
+  games?: number | null;
+  loses?: number | null;
+  scoredGoals?: number | null;
+  receivedGoals?: number | null;
+}
+
+export interface ProviderStandingRow {
+  team?: ProviderTeam | null;
+  position?: number | null;
+  points?: number | null;
+  total?: ProviderStandingRecord | null;
+  home?: ProviderStandingRecord | null;
+  away?: ProviderStandingRecord | null;
+}
+
+export interface ProviderStandingGroup {
+  name?: string | null;
+  standings?: ProviderStandingRow[] | null;
+}
+
+export interface ProviderStandingsResponse {
+  league?: ProviderLeague | null;
+  groups?: ProviderStandingGroup[] | null;
 }
 
 export interface Team {
@@ -221,6 +262,43 @@ export interface MatchDetailPrediction {
   };
 }
 
+export interface MatchDetailTopPlayer {
+  name: string;
+  position: string | null;
+  statistics: {
+    name: string;
+    value: number | string | null;
+  }[];
+}
+
+export interface MatchDetailStandingRecord {
+  wins: number;
+  draws: number;
+  games: number;
+  loses: number;
+  scoredGoals: number;
+  receivedGoals: number;
+}
+
+export interface MatchDetailStandingRow {
+  team: Team;
+  position: number | null;
+  points: number | null;
+  total: MatchDetailStandingRecord;
+  home: MatchDetailStandingRecord;
+  away: MatchDetailStandingRecord;
+}
+
+export interface MatchDetailStandingGroup {
+  name: string;
+  rows: MatchDetailStandingRow[];
+}
+
+export interface MatchDetailStandings {
+  league: League;
+  groups: MatchDetailStandingGroup[];
+}
+
 export interface MatchDetail {
   id: string;
   checksum: string;
@@ -245,6 +323,16 @@ export interface MatchDetail {
   };
   events: MatchDetailEvent[];
   statistics: MatchDetailTeamStatistics[];
+  headToHead: NormalizedMatch[];
+  form: {
+    home: NormalizedMatch[];
+    away: NormalizedMatch[];
+  };
+  standings: MatchDetailStandings | null;
+  topPlayers: {
+    home: MatchDetailTopPlayer[];
+    away: MatchDetailTopPlayer[];
+  };
   predictions: {
     latestLive: MatchDetailPrediction | null;
     latestPrematch: MatchDetailPrediction | null;

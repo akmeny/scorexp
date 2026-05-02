@@ -110,6 +110,43 @@ export interface MatchDetailPrediction {
   };
 }
 
+export interface MatchDetailTopPlayer {
+  name: string;
+  position: string | null;
+  statistics: {
+    name: string;
+    value: number | string | null;
+  }[];
+}
+
+export interface MatchDetailStandingRecord {
+  wins: number;
+  draws: number;
+  games: number;
+  loses: number;
+  scoredGoals: number;
+  receivedGoals: number;
+}
+
+export interface MatchDetailStandingRow {
+  team: Team;
+  position: number | null;
+  points: number | null;
+  total: MatchDetailStandingRecord;
+  home: MatchDetailStandingRecord;
+  away: MatchDetailStandingRecord;
+}
+
+export interface MatchDetailStandingGroup {
+  name: string;
+  rows: MatchDetailStandingRow[];
+}
+
+export interface MatchDetailStandings {
+  league: League;
+  groups: MatchDetailStandingGroup[];
+}
+
 export interface MatchDetail {
   id: string;
   checksum: string;
@@ -139,6 +176,16 @@ export interface MatchDetail {
   };
   events: MatchDetailEvent[];
   statistics: MatchDetailTeamStatistics[];
+  headToHead: NormalizedMatch[];
+  form: {
+    home: NormalizedMatch[];
+    away: NormalizedMatch[];
+  };
+  standings: MatchDetailStandings | null;
+  topPlayers: {
+    home: MatchDetailTopPlayer[];
+    away: MatchDetailTopPlayer[];
+  };
   predictions: {
     latestLive: MatchDetailPrediction | null;
     latestPrematch: MatchDetailPrediction | null;

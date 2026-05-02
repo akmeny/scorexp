@@ -1,5 +1,5 @@
 import type { AppEnv } from "../config/env.js";
-import type { ProviderMatch, ProviderMatchDetail } from "../domain/types.js";
+import type { ProviderMatch, ProviderMatchDetail, ProviderStandingsResponse } from "../domain/types.js";
 
 export interface HighlightlyFetchResult {
   matches: ProviderMatch[];
@@ -29,6 +29,7 @@ interface MatchesResponse {
 }
 
 type MatchDetailResponse = ProviderMatchDetail[] | { data?: ProviderMatchDetail[] };
+type MatchListResponse = ProviderMatch[] | { data?: ProviderMatch[] };
 
 export class HighlightlyClient {
   constructor(private readonly appEnv: AppEnv) {}
@@ -106,5 +107,50 @@ export class HighlightlyClient {
     const matches = Array.isArray(payload) ? payload : payload.data ?? [];
 
     return { match: matches[0] ?? null, requestCount: 1, rateLimit };
+  }
+
+  async getHeadToHead(teamIdOne: string, teamIdTwo: string): Promise<ProviderMatch[]> {
+    const payload = await this.getJson<MatchListResponse | null>("/head-2-head", {
+      teamIdOne,
+      teamIdTwo
+    });
+
+    if (!payload) return [];
+    return Array.isArray(payload) ? payload : payload.data ?? [];
+  }
+
+  async getLastFiveGames(teamId: string): Promise<ProviderMatch[]> {
+    const payload = await this.getJson<MatchListResponse | null>("/last-five-games", { teamId });
+    if (!payload) return [];
+    return Array.isArray(payload) ? payload : payload.data ?? [];
+  }
+
+  async getStandings(leagueId: string, season: string): Promise<ProviderStandingsResponse | null> {
+    return this.getJson<ProviderStandingsResponse | null>("/standings", { leagueId, season });
+  }
+
+  private async getJson<T>(path: string, params: Record<string, string>): Promise<T> {
+    const url = new URL(`${this.appEnv.highlightlyApiBaseUrl}${path}`);
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        "x-rapidapi-key": this.appEnv.highlightlyApiKey
+      },
+      signal: AbortSignal.timeout(30_000)
+    });
+
+    if (response.status === 404) {
+      return null as T;
+    }
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Highlightly ${path} failed (${response.status}): ${body.slice(0, 400)}`);
+    }
+
+    return (await response.json()) as T;
   }
 }
