@@ -25,7 +25,7 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
-const LIVE_REFRESH_SECONDS = 40;
+const LIVE_REFRESH_SECONDS = 100;
 
 interface ScoreboardQuery {
   date: string;
@@ -350,11 +350,11 @@ export class ScoreboardService {
 }
 
 function snapshotKey(date: string, timezone: string) {
-  return `football:v3:${date}:${timezone}`;
+  return `football:v4:${date}:${timezone}`;
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v4:${matchId}:${timezone}`;
+  return `football:match-detail:v5:${matchId}:${timezone}`;
 }
 
 function teamId(value: number | string | null | undefined) {

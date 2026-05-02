@@ -1,7 +1,8 @@
 {
   "android": {
-    "label": "ScoreXP APK",
-    "url": "/downloads/scorexp.apk",
+    "label": "ScoreXP Mobil",
+    "url": "/",
+    "type": "pwa",
     "version": "0.1.0"
   },
   "desktop": {

@@ -111,6 +111,10 @@ button:disabled {
   display: none;
 }
 
+.mobileOnly {
+  display: none;
+}
+
 .headerActions {
   justify-self: end;
   display: flex;
@@ -2010,6 +2014,7 @@ button:disabled {
   justify-content: center;
   gap: 5px;
   padding: 0 10px;
+  border: 0;
   border-radius: 999px;
   background: #eef6f8;
   color: #0b1114;
@@ -2808,5 +2813,87 @@ button:disabled {
     right: 10px;
     bottom: 86px;
     width: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .mobileOnly {
+    display: inline-flex;
+  }
+
+  .topNav {
+    grid-template-columns: 1fr;
+    padding: 8px 10px;
+  }
+
+  .tabs {
+    display: none;
+  }
+
+  .datePicker {
+    height: 34px;
+    justify-self: stretch;
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .filters {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 60;
+    display: block;
+    padding: 5px;
+    border: 1px solid #344249;
+    border-radius: 14px;
+    background: rgba(11, 17, 20, 0.94);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.44);
+  }
+
+  .chipRow {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .chip {
+    min-width: 0;
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 2px;
+    background: transparent;
+    color: #aebec5;
+    font-size: 9.5px;
+    font-weight: 950;
+    white-space: nowrap;
+  }
+
+  .chip.active {
+    background: #eef6f8;
+    color: #0e1518;
+  }
+
+  .chip.liveChip.active {
+    background: #f34855;
+    color: #fff;
+  }
+
+  .favoriteNavChip {
+    color: #f6c946;
+  }
+
+  .favoriteNavChip.active {
+    background: #f5c542;
+    color: #11140b;
+  }
+
+  .sortNavChip.active {
+    background: #dfe4ff;
+    color: #10161a;
+  }
+
+  .matchRow {
+    grid-template-columns: 48px minmax(0, 1fr) 24px 32px 54px;
   }
 }

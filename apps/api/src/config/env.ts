@@ -26,10 +26,10 @@ const schema = z.object({
   CACHE_DRIVER: z.enum(["redis", "memory"]).default("redis"),
   DURABLE_STORE: z.enum(["file", "redis"]).default("file"),
   REDIS_URL: z.string().optional(),
-  LIVE_REFRESH_SECONDS: numberFromEnv(40),
+  LIVE_REFRESH_SECONDS: numberFromEnv(100),
   UPCOMING_REFRESH_SECONDS: numberFromEnv(900),
   FINISHED_REFRESH_SECONDS: numberFromEnv(86400),
-  CLIENT_REFRESH_SECONDS: numberFromEnv(40)
+  CLIENT_REFRESH_SECONDS: numberFromEnv(100)
 });
 
 const parsed = schema.safeParse(process.env);

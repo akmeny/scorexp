@@ -1,4 +1,0 @@
-ScoreXP Android APK artifact slot.
-
-Replace this file with the signed production APK before distributing native Android builds.
-The web download infrastructure already points to /downloads/scorexp.apk.

@@ -90,7 +90,7 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
     const seconds = data.refreshPolicy.clientRefreshSeconds;
     const interval = window.setInterval(() => {
       void load(true);
-    }, Math.max(40, seconds) * 1000);
+    }, Math.max(100, seconds) * 1000);
 
     return () => window.clearInterval(interval);
   }, [data, load, matchId]);

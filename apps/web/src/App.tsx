@@ -17,8 +17,9 @@ const timezone = "Europe/Istanbul";
 const GOAL_HIGHLIGHT_MS = 32_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
 const notificationIcon = "/icons/icon.svg";
+const notificationSound = "/audio/notification.mp3";
 
-let notificationAudioContext: AudioContext | null = null;
+let notificationAudioElement: HTMLAudioElement | null = null;
 
 type GoalHighlightRecord = Record<string, { expiresAt: number; side: GoalHighlightSide }>;
 type TimedMatchRecord = Record<string, number>;
@@ -29,12 +30,6 @@ type FavoriteMatchSnapshot = {
   redCardsAway: number;
   statusGroup: NormalizedMatch["status"]["group"];
   statusDescription: string;
-};
-type FavoriteNotification = {
-  id: string;
-  title: string;
-  body: string;
-  matchId: string;
 };
 
 const defaultPinnedLeagues = [
@@ -64,11 +59,9 @@ export default function App() {
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
   const favoriteSnapshotsRef = useRef<Map<string, FavoriteMatchSnapshot>>(new Map());
-  const notificationCounterRef = useRef(0);
   const hasAutoSelectedInitialMatchRef = useRef(false);
   const [goalHighlights, setGoalHighlights] = useState<GoalHighlightRecord>({});
   const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
-  const [favoriteNotifications, setFavoriteNotifications] = useState<FavoriteNotification[]>([]);
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
   const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
 
@@ -272,17 +265,6 @@ export default function App() {
     favoriteSnapshotsRef.current = nextSnapshots;
   }, [allMatches, favoriteIds]);
 
-  useEffect(() => {
-    if (favoriteNotifications.length === 0) return;
-
-    const timeout = window.setTimeout(() => {
-      const now = Date.now();
-      setFavoriteNotifications((current) => current.filter((item) => Number(item.id.split(":")[0]) > now - 5_500));
-    }, 1_000);
-
-    return () => window.clearTimeout(timeout);
-  }, [favoriteNotifications]);
-
   const toggleFavorite = (id: string) => {
     setFavoriteIds((current) => {
       const next = new Set(current);
@@ -300,10 +282,7 @@ export default function App() {
 
   const emitFavoriteNotification = (title: string, body: string, matchId: string) => {
     playNotificationSound();
-    showBrowserNotification(title, body);
-
-    const id = `${Date.now()}:${notificationCounterRef.current++}`;
-    setFavoriteNotifications((current) => [{ id, title, body, matchId }, ...current].slice(0, 4));
+    void showSystemNotification(title, body, matchId);
   };
 
   const togglePinnedLeague = (group: LeagueGroup) => {
@@ -395,17 +374,58 @@ export default function App() {
 
           <div className="filters">
             <div className="chipRow">
-              <button className={view === "all" ? "chip active" : "chip"} type="button" onClick={() => selectView("all")}>
+              <button
+                className={view === "all" && tab === "all" && !sortByTime ? "chip active" : "chip"}
+                type="button"
+                onClick={() => {
+                  selectTab("all");
+                  selectView("all");
+                }}
+              >
                 Tümü
               </button>
-              <button className={view === "live" && !sortByTime ? "chip active liveChip" : "chip liveChip"} type="button" onClick={() => selectView("live")}>
+              <button
+                className={view === "live" && tab === "all" && !sortByTime ? "chip active liveChip" : "chip liveChip"}
+                type="button"
+                onClick={() => {
+                  selectTab("all");
+                  selectView("live");
+                }}
+              >
                 Canlı ({visibleLiveCount})
               </button>
-              <button className={view === "finished" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("finished")}>
+              <button
+                className={tab === "favorites" && !sortByTime ? "chip active favoriteNavChip mobileOnly" : "chip favoriteNavChip mobileOnly"}
+                type="button"
+                onClick={() => {
+                  selectView("all");
+                  selectTab("favorites");
+                }}
+              >
+                Favoriler
+              </button>
+              <button
+                className={view === "finished" && tab === "all" && !sortByTime ? "chip active" : "chip"}
+                type="button"
+                onClick={() => {
+                  selectTab("all");
+                  selectView("finished");
+                }}
+              >
                 Bitti
               </button>
-              <button className={view === "upcoming" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("upcoming")}>
+              <button
+                className={view === "upcoming" && tab === "all" && !sortByTime ? "chip active" : "chip"}
+                type="button"
+                onClick={() => {
+                  selectTab("all");
+                  selectView("upcoming");
+                }}
+              >
                 Yaklaşan
+              </button>
+              <button className={sortByTime ? "chip active sortNavChip mobileOnly" : "chip sortNavChip mobileOnly"} type="button" onClick={toggleSortByTime}>
+                Sırala
               </button>
             </div>
           </div>
@@ -469,20 +489,6 @@ export default function App() {
       ) : null}
 
       <InstallPrompt />
-
-      {favoriteNotifications.length > 0 ? (
-        <div className="favoriteNotificationStack" aria-live="polite">
-          {favoriteNotifications.map((notification) => (
-            <div className="favoriteNotificationToast" key={notification.id}>
-              <img src="/icons/icon.svg" alt="" />
-              <div>
-                <strong>{notification.title}</strong>
-                <span>{notification.body}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       {showScrollTop ? (
         <button className="scrollTopButton" type="button" onClick={scrollToTop} aria-label="En üste git">
@@ -713,66 +719,69 @@ function requestNotificationPermission() {
   void Notification.requestPermission();
 }
 
-function showBrowserNotification(title: string, body: string) {
+async function showSystemNotification(title: string, body: string, matchId: string) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
 
   try {
-    const notification = new Notification(`ScoreXP - ${title}`, {
+    const options: NotificationOptions & { renotify?: boolean } = {
       body,
       icon: notificationIcon,
       badge: notificationIcon,
-      silent: true
-    });
+      data: { matchId },
+      tag: `scorexp:${matchId}:${title}`,
+      renotify: true,
+      silent: false
+    };
+
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(`ScoreXP - ${title}`, options);
+      return;
+    }
+
+    const notification = new Notification(`ScoreXP - ${title}`, options);
     window.setTimeout(() => notification.close(), 6_000);
   } catch {
-    // Some mobile browsers only allow service-worker notifications; the in-app toast still covers the event.
+    // Browser notification support varies by mobile browser; permission + service worker covers supported paths.
   }
 }
 
 function primeNotificationSound() {
-  const context = getNotificationAudioContext();
-  void context?.resume();
+  const audio = getNotificationAudioElement();
+  if (!audio) return;
+
+  audio.muted = true;
+  audio.currentTime = 0;
+  void audio
+    .play()
+    .then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+    })
+    .catch(() => {
+      audio.muted = false;
+    });
 }
 
 function playNotificationSound() {
-  const context = getNotificationAudioContext();
-  if (!context) return;
+  const audio = getNotificationAudioElement();
+  if (!audio) return;
 
-  const start = context.currentTime;
-  const gain = context.createGain();
-  const first = context.createOscillator();
-  const second = context.createOscillator();
-
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(0.18, start + 0.012);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
-
-  first.type = "sine";
-  first.frequency.setValueAtTime(1320, start);
-  first.frequency.exponentialRampToValueAtTime(1760, start + 0.11);
-
-  second.type = "triangle";
-  second.frequency.setValueAtTime(2640, start + 0.08);
-  second.frequency.exponentialRampToValueAtTime(1980, start + 0.28);
-
-  first.connect(gain);
-  second.connect(gain);
-  gain.connect(context.destination);
-
-  first.start(start);
-  first.stop(start + 0.28);
-  second.start(start + 0.08);
-  second.stop(start + 0.42);
+  audio.pause();
+  audio.currentTime = 0;
+  audio.muted = false;
+  audio.volume = 1;
+  void audio.play().catch(() => undefined);
 }
 
-function getNotificationAudioContext() {
+function getNotificationAudioElement() {
   if (typeof window === "undefined") return null;
 
-  const AudioContextConstructor = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioContextConstructor) return null;
-
-  notificationAudioContext ??= new AudioContextConstructor();
-  return notificationAudioContext;
+  notificationAudioElement ??= new Audio(notificationSound);
+  notificationAudioElement.preload = "auto";
+  notificationAudioElement.volume = 1;
+  return notificationAudioElement;
 }
 
 function EmptyState({ tab, hasError, onReload }: { tab: string; hasError: boolean; onReload: () => void }) {
