@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 
 type InstallTarget = "mobile" | "desktop";
 
-const promptStoragePrefix = "scorexp:installPromptDismissed:v1";
 const apkDownloadUrl = (import.meta.env.VITE_APK_DOWNLOAD_URL as string | undefined)?.trim() || "/downloads/scorexp.apk";
 const desktopDownloadUrl =
   (import.meta.env.VITE_DESKTOP_DOWNLOAD_URL as string | undefined)?.trim() || "/downloads/scorexp-desktop.zip";
@@ -12,9 +11,7 @@ export function InstallPrompt() {
   const [target, setTarget] = useState<InstallTarget | null>(null);
 
   useEffect(() => {
-    const detectedTarget = isMobileBrowser() ? "mobile" : "desktop";
-    const dismissed = localStorage.getItem(storageKey(detectedTarget)) === "1";
-    if (!dismissed) setTarget(detectedTarget);
+    setTarget(isMobileBrowser() ? "mobile" : "desktop");
   }, []);
 
   if (!target) return null;
@@ -23,7 +20,6 @@ export function InstallPrompt() {
   const href = mobile ? apkDownloadUrl : desktopDownloadUrl;
 
   const dismiss = () => {
-    localStorage.setItem(storageKey(target), "1");
     setTarget(null);
   };
 
@@ -43,10 +39,6 @@ export function InstallPrompt() {
       </button>
     </aside>
   );
-}
-
-function storageKey(target: InstallTarget) {
-  return `${promptStoragePrefix}:${target}`;
 }
 
 function isMobileBrowser() {

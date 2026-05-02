@@ -12,11 +12,11 @@ interface AiPredictionModalProps {
 type AiModalStatus = "analyzing" | "done";
 
 const modalAnalysisSteps = [
-  "Mac ritmi okunuyor...",
+  "Maç ritmi okunuyor...",
   "Son skor hareketleri inceleniyor...",
-  "Form ve puan sinyalleri tartiliyor...",
+  "Form ve puan sinyalleri tartılıyor...",
   "Ev/deplasman etkisi hesaplanıyor...",
-  "Oyuncu ve olay verileri eslestiriliyor...",
+  "Oyuncu ve olay verileri eşleştiriliyor...",
   "aiXp tahmini hazırlanıyor..."
 ];
 
@@ -103,7 +103,7 @@ export function AiPredictionModal({ match, timezone, onRequestClose }: AiPredict
           <div className="aiModalResult">
             <span>
               <Sparkles size={15} />
-              Simulasyon tamamlandı
+              Simülasyon tamamlandı
             </span>
             <strong>{result.title}</strong>
             <p>{result.summary}</p>
@@ -132,25 +132,9 @@ function buildAiModalResult(match: NormalizedMatch, detail: MatchDetail | null) 
 
   if (predictionResult) return predictionResult;
 
-  const homeScore = activeMatch.score.home ?? 0;
-  const awayScore = activeMatch.score.away ?? 0;
-  const hasScore = activeMatch.score.home !== null && activeMatch.score.away !== null;
-  const leader =
-    hasScore && homeScore !== awayScore ? (homeScore > awayScore ? activeMatch.homeTeam.name : activeMatch.awayTeam.name) : null;
-
-  if (leader) {
-    return {
-      title: `${leader} momentumu onde`,
-      summary:
-        "Saglayici tahmin yuzdesi gelmedi; aiXp sonucu skor durumu, mac ritmi ve mevcut olay sinyallerine gore temkinli uretildi.",
-      probabilities: null
-    };
-  }
-
   return {
-    title: "Dengeli senaryo",
-    summary:
-      "Saglayici tahmin yuzdesi gelmedi; aiXp simülasyonu maci dengeli okuyor ve veri arttikca sonucu daha keskinlestirecek.",
+    title: "Tahmin üretilemedi",
+    summary: "aiXp Tahmin Simülasyonu veri yetersizliği nedeniyle bu maç için tahmin üretmemiştir.",
     probabilities: null
   };
 }
@@ -167,11 +151,11 @@ function resultFromPrediction(match: NormalizedMatch, prediction: MatchDetailPre
   if (probabilities.length === 0) return null;
 
   const leader = [...probabilities].sort((a, b) => (b.number ?? 0) - (a.number ?? 0))[0];
-  const confidence = leader.number && leader.number >= 60 ? "yuksek" : leader.number && leader.number >= 50 ? "orta" : "dengeli";
+  const confidence = leader.number && leader.number >= 60 ? "yüksek" : leader.number && leader.number >= 50 ? "orta" : "dengeli";
 
   return {
-    title: `${leader.team} one cikiyor`,
-    summary: `aiXp, mevcut veri setinde ${leader.team} tarafini ${leader.value} ile onde goruyor. Guven seviyesi ${confidence}.`,
+    title: `${leader.team} öne çıkıyor`,
+    summary: `aiXp, mevcut veri setinde ${leader.team} tarafını ${leader.value} ile önde görüyor. Güven seviyesi ${confidence}.`,
     probabilities: probabilities.map((item) => ({ label: item.label, value: item.value ?? "0%" }))
   };
 }

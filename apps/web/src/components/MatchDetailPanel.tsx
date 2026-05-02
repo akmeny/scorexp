@@ -622,13 +622,9 @@ function buildAiResult(match: NormalizedMatch, detail: MatchDetail | null, predi
     };
   }
 
-  const homeForm = formScore(detail?.form?.home ?? [], match.homeTeam.id);
-  const awayForm = formScore(detail?.form?.away ?? [], match.awayTeam.id);
-  const title = homeForm === awayForm ? "Dengeli maç" : homeForm > awayForm ? `${match.homeTeam.name} formda` : `${match.awayTeam.name} formda`;
-
   return {
-    title,
-    summary: "Sağlayıcı tahmin yüzdesi gelmediği için aiXp sonucu form ve puan durumu sinyallerine göre üretildi. Veri kapsamı sınırlıysa sonuç da temkinli okunmalı.",
+    title: "Tahmin üretilemedi",
+    summary: "aiXp Tahmin Simülasyonu veri yetersizliği nedeniyle bu maç için tahmin üretmemiştir.",
     probabilities: null
   };
 }

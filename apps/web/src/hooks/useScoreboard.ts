@@ -74,7 +74,7 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
   }, [load, requestKey]);
 
   useEffect(() => {
-    const seconds = data?.refreshPolicy.clientRefreshSeconds ?? 30;
+    const seconds = data?.refreshPolicy.clientRefreshSeconds ?? 40;
     const interval = window.setInterval(() => {
       void load(true);
     }, Math.max(10, seconds) * 1000);

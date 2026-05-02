@@ -25,6 +25,7 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
+const LIVE_REFRESH_SECONDS = 40;
 
 interface ScoreboardQuery {
   date: string;
@@ -317,7 +318,7 @@ export class ScoreboardService {
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
     const providerRefreshSeconds =
       reason === "live"
-        ? this.appEnv.liveRefreshSeconds
+        ? LIVE_REFRESH_SECONDS
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -325,7 +326,7 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: this.appEnv.clientRefreshSeconds,
+      clientRefreshSeconds: reason === "live" ? LIVE_REFRESH_SECONDS : this.appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
@@ -334,7 +335,7 @@ export class ScoreboardService {
     const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
     const providerRefreshSeconds =
       reason === "live"
-        ? Math.max(this.appEnv.liveRefreshSeconds, 300)
+        ? LIVE_REFRESH_SECONDS
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -349,11 +350,11 @@ export class ScoreboardService {
 }
 
 function snapshotKey(date: string, timezone: string) {
-  return `football:v2:${date}:${timezone}`;
+  return `football:v3:${date}:${timezone}`;
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v3:${matchId}:${timezone}`;
+  return `football:match-detail:v4:${matchId}:${timezone}`;
 }
 
 function teamId(value: number | string | null | undefined) {

@@ -21,7 +21,7 @@ export function SortedMatchList({
   onSelectMatch
 }: SortedMatchListProps) {
   return (
-    <div className="sortedMatchList" aria-label="Saate göre sıralı maçlar">
+    <div className="sortedMatchList" aria-label="Zamana göre sıralı maçlar">
       {matches.map((match) => (
         <MatchRow
           key={match.id}

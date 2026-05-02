@@ -16,10 +16,26 @@ import "./styles/app.css";
 const timezone = "Europe/Istanbul";
 const GOAL_HIGHLIGHT_MS = 32_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
+const notificationIcon = "/icons/icon.svg";
+
+let notificationAudioContext: AudioContext | null = null;
 
 type GoalHighlightRecord = Record<string, { expiresAt: number; side: GoalHighlightSide }>;
 type TimedMatchRecord = Record<string, number>;
 type PinOverrides = Record<string, boolean>;
+type FavoriteMatchSnapshot = {
+  scoreKey: string;
+  redCardsHome: number;
+  redCardsAway: number;
+  statusGroup: NormalizedMatch["status"]["group"];
+  statusDescription: string;
+};
+type FavoriteNotification = {
+  id: string;
+  title: string;
+  body: string;
+  matchId: string;
+};
 
 const defaultPinnedLeagues = [
   { countries: ["turkey", "turkiye", "türkiye"], leagues: ["super lig", "süper lig"] },
@@ -47,9 +63,12 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
+  const favoriteSnapshotsRef = useRef<Map<string, FavoriteMatchSnapshot>>(new Map());
+  const notificationCounterRef = useRef(0);
   const hasAutoSelectedInitialMatchRef = useRef(false);
   const [goalHighlights, setGoalHighlights] = useState<GoalHighlightRecord>({});
   const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
+  const [favoriteNotifications, setFavoriteNotifications] = useState<FavoriteNotification[]>([]);
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
   const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
 
@@ -228,14 +247,63 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [recentlyFinishedLiveMatches]);
 
+  useEffect(() => {
+    if (!allMatches.length) return;
+
+    const previousSnapshots = favoriteSnapshotsRef.current;
+    const nextSnapshots = new Map<string, FavoriteMatchSnapshot>();
+
+    for (const match of allMatches) {
+      if (!favoriteIds.has(match.id)) continue;
+
+      const nextSnapshot = favoriteSnapshot(match);
+      const previousSnapshot = previousSnapshots.get(match.id);
+
+      if (previousSnapshot) {
+        const events = favoriteMatchEvents(previousSnapshot, nextSnapshot, match);
+        for (const event of events) {
+          emitFavoriteNotification(event.title, event.body, match.id);
+        }
+      }
+
+      nextSnapshots.set(match.id, nextSnapshot);
+    }
+
+    favoriteSnapshotsRef.current = nextSnapshots;
+  }, [allMatches, favoriteIds]);
+
+  useEffect(() => {
+    if (favoriteNotifications.length === 0) return;
+
+    const timeout = window.setTimeout(() => {
+      const now = Date.now();
+      setFavoriteNotifications((current) => current.filter((item) => Number(item.id.split(":")[0]) > now - 5_500));
+    }, 1_000);
+
+    return () => window.clearTimeout(timeout);
+  }, [favoriteNotifications]);
+
   const toggleFavorite = (id: string) => {
     setFavoriteIds((current) => {
       const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        requestNotificationPermission();
+        primeNotificationSound();
+      }
       localStorage.setItem("scorexp:favorites", JSON.stringify(Array.from(next)));
       return next;
     });
+  };
+
+  const emitFavoriteNotification = (title: string, body: string, matchId: string) => {
+    playNotificationSound();
+    showBrowserNotification(title, body);
+
+    const id = `${Date.now()}:${notificationCounterRef.current++}`;
+    setFavoriteNotifications((current) => [{ id, title, body, matchId }, ...current].slice(0, 4));
   };
 
   const togglePinnedLeague = (group: LeagueGroup) => {
@@ -307,7 +375,7 @@ export default function App() {
                 Favoriler
               </button>
               <button className={sortByTime ? "active" : ""} type="button" onClick={toggleSortByTime}>
-                Saate göre sırala
+                Zamana göre sırala
               </button>
             </nav>
 
@@ -402,6 +470,20 @@ export default function App() {
 
       <InstallPrompt />
 
+      {favoriteNotifications.length > 0 ? (
+        <div className="favoriteNotificationStack" aria-live="polite">
+          {favoriteNotifications.map((notification) => (
+            <div className="favoriteNotificationToast" key={notification.id}>
+              <img src="/icons/icon.svg" alt="" />
+              <div>
+                <strong>{notification.title}</strong>
+                <span>{notification.body}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {showScrollTop ? (
         <button className="scrollTopButton" type="button" onClick={scrollToTop} aria-label="En üste git">
           <ArrowUp size={16} />
@@ -429,8 +511,7 @@ function filterGroups(
           ? group.matches
           : group.matches.filter((match) => match.status.group === options.view || (options.view === "live" && options.liveGraceIds.has(match.id)));
 
-      const isPinned = isPinnedGroup(group, options.pinnedLeagueOverrides);
-      const matches = options.favoritesOnly && !isPinned
+      const matches = options.favoritesOnly
         ? visibleByStatus.filter((match) => options.favoriteIds.has(match.id))
         : visibleByStatus;
 
@@ -551,6 +632,147 @@ function clampDate(date: string, minDate: string, maxDate: string) {
   if (date < minDate) return minDate;
   if (date > maxDate) return maxDate;
   return date;
+}
+
+function favoriteSnapshot(match: NormalizedMatch): FavoriteMatchSnapshot {
+  return {
+    scoreKey: scoreSnapshot(match),
+    redCardsHome: match.redCards?.home ?? 0,
+    redCardsAway: match.redCards?.away ?? 0,
+    statusGroup: match.status.group,
+    statusDescription: match.status.description
+  };
+}
+
+function favoriteMatchEvents(previous: FavoriteMatchSnapshot, current: FavoriteMatchSnapshot, match: NormalizedMatch) {
+  const events: { title: string; body: string }[] = [];
+  const scoreSide = scoreIncreaseSide(previous.scoreKey, current.scoreKey);
+
+  for (const side of expandSides(scoreSide)) {
+    const team = side === "home" ? match.homeTeam.name : match.awayTeam.name;
+    events.push({
+      title: "Gol",
+      body: `${team} gol attı. Skor: ${formatNotificationScore(match)}`
+    });
+  }
+
+  if (current.redCardsHome > previous.redCardsHome) {
+    events.push({
+      title: "Kırmızı kart",
+      body: `${match.homeTeam.name} kırmızı kart gördü.`
+    });
+  }
+
+  if (current.redCardsAway > previous.redCardsAway) {
+    events.push({
+      title: "Kırmızı kart",
+      body: `${match.awayTeam.name} kırmızı kart gördü.`
+    });
+  }
+
+  const previousDescription = previous.statusDescription.toLowerCase();
+  const currentDescription = current.statusDescription.toLowerCase();
+
+  if (currentDescription === "half time" && previousDescription !== "half time") {
+    events.push({
+      title: "Devre",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} maçında ilk yarı sona erdi.`
+    });
+  }
+
+  if (currentDescription === "second half" && previousDescription !== "second half") {
+    events.push({
+      title: "İkinci yarı başladı",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} maçında ikinci yarı başladı.`
+    });
+  }
+
+  if (current.statusGroup === "finished" && previous.statusGroup !== "finished") {
+    events.push({
+      title: "Maç bitti",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} bitti. Skor: ${formatNotificationScore(match)}`
+    });
+  }
+
+  return events;
+}
+
+function expandSides(side: GoalHighlightSide | null) {
+  if (side === "both") return ["home", "away"] as const;
+  if (side === "home" || side === "away") return [side] as const;
+  return [];
+}
+
+function formatNotificationScore(match: NormalizedMatch) {
+  if (match.score.home === null || match.score.away === null) return "-";
+  return `${match.score.home}-${match.score.away}`;
+}
+
+function requestNotificationPermission() {
+  if (!("Notification" in window) || Notification.permission !== "default") return;
+  void Notification.requestPermission();
+}
+
+function showBrowserNotification(title: string, body: string) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  try {
+    const notification = new Notification(`ScoreXP - ${title}`, {
+      body,
+      icon: notificationIcon,
+      badge: notificationIcon,
+      silent: true
+    });
+    window.setTimeout(() => notification.close(), 6_000);
+  } catch {
+    // Some mobile browsers only allow service-worker notifications; the in-app toast still covers the event.
+  }
+}
+
+function primeNotificationSound() {
+  const context = getNotificationAudioContext();
+  void context?.resume();
+}
+
+function playNotificationSound() {
+  const context = getNotificationAudioContext();
+  if (!context) return;
+
+  const start = context.currentTime;
+  const gain = context.createGain();
+  const first = context.createOscillator();
+  const second = context.createOscillator();
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(0.18, start + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
+
+  first.type = "sine";
+  first.frequency.setValueAtTime(1320, start);
+  first.frequency.exponentialRampToValueAtTime(1760, start + 0.11);
+
+  second.type = "triangle";
+  second.frequency.setValueAtTime(2640, start + 0.08);
+  second.frequency.exponentialRampToValueAtTime(1980, start + 0.28);
+
+  first.connect(gain);
+  second.connect(gain);
+  gain.connect(context.destination);
+
+  first.start(start);
+  first.stop(start + 0.28);
+  second.start(start + 0.08);
+  second.stop(start + 0.42);
+}
+
+function getNotificationAudioContext() {
+  if (typeof window === "undefined") return null;
+
+  const AudioContextConstructor = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextConstructor) return null;
+
+  notificationAudioContext ??= new AudioContextConstructor();
+  return notificationAudioContext;
 }
 
 function EmptyState({ tab, hasError, onReload }: { tab: string; hasError: boolean; onReload: () => void }) {
