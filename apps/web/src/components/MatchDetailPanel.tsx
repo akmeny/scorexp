@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { TeamLogo } from "./TeamLogo";
 import { localizeCountryName } from "../lib/localization";
+import { formatMatchStatusLabel } from "../lib/matchStatus";
 import type {
   MatchDetail,
   MatchDetailEvent,
@@ -295,7 +296,7 @@ function TeamSummary({ match, side }: { match: NormalizedMatch; side: "home" | "
 
   return (
     <div className="detailTeamSummary">
-      <TeamLogo src={team.logo} label={team.name} size="md" />
+      <TeamLogo src={team.logo} label={team.name} size="lg" />
       <span>{team.name}</span>
     </div>
   );
@@ -697,12 +698,7 @@ function formatScoreline(match: NormalizedMatch) {
 }
 
 function formatStatus(match: NormalizedMatch) {
-  if (match.status.group === "live") {
-    return match.status.minute !== null ? `${match.status.minute}'` : formatStatusDescription(match.status.description);
-  }
-
-  if (match.status.group === "finished") return "MS";
-  return match.localTime;
+  return formatMatchStatusLabel(match);
 }
 
 function formatStatusDescription(value: string) {

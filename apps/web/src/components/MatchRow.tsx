@@ -1,5 +1,6 @@
-import { Star } from "lucide-react";
+import { BrainCircuit, Star } from "lucide-react";
 import { TeamLogo } from "./TeamLogo";
+import { formatMatchStatusLabel, shouldShowLiveMinuteTick } from "../lib/matchStatus";
 import type { GoalHighlightSide, NormalizedMatch } from "../types";
 
 interface MatchRowProps {
@@ -8,6 +9,7 @@ interface MatchRowProps {
   selected?: boolean;
   goalHighlightSide?: GoalHighlightSide | null;
   onToggleFavorite: (id: string) => void;
+  onOpenPrediction: (match: NormalizedMatch) => void;
   onSelect: (match: NormalizedMatch) => void;
 }
 
@@ -17,6 +19,7 @@ export function MatchRow({
   selected = false,
   goalHighlightSide = null,
   onToggleFavorite,
+  onOpenPrediction,
   onSelect
 }: MatchRowProps) {
   const isLive = match.status.group === "live";
@@ -25,6 +28,8 @@ export function MatchRow({
   const awayScore = formatScore(match.score.away, isUpcoming);
   const homeGoal = isLive && (goalHighlightSide === "home" || goalHighlightSide === "both");
   const awayGoal = isLive && (goalHighlightSide === "away" || goalHighlightSide === "both");
+  const homeRedCards = match.redCards?.home ?? 0;
+  const awayRedCards = match.redCards?.away ?? 0;
 
   return (
     <article
@@ -46,13 +51,19 @@ export function MatchRow({
       <div className="teamsBlock">
         <div className={`teamLine ${homeGoal ? "scoredGoal" : ""}`}>
           <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
-          <span>{match.homeTeam.name}</span>
-          {homeGoal ? <b className="goalTag">Goool</b> : null}
+          <div className="teamNameCluster">
+            <span>{match.homeTeam.name}</span>
+            {homeRedCards > 0 ? <span className="redCardBadge">{homeRedCards}</span> : null}
+            {homeGoal ? <b className="goalTag">Goool</b> : null}
+          </div>
         </div>
         <div className={`teamLine ${awayGoal ? "scoredGoal" : ""}`}>
           <TeamLogo src={match.awayTeam.logo} label={match.awayTeam.name} size="sm" />
-          <span>{match.awayTeam.name}</span>
-          {awayGoal ? <b className="goalTag">Goool</b> : null}
+          <div className="teamNameCluster">
+            <span>{match.awayTeam.name}</span>
+            {awayRedCards > 0 ? <span className="redCardBadge">{awayRedCards}</span> : null}
+            {awayGoal ? <b className="goalTag">Goool</b> : null}
+          </div>
         </div>
       </div>
 
@@ -72,6 +83,19 @@ export function MatchRow({
       >
         <Star size={18} />
       </button>
+
+      <button
+        className="aiXpRowButton"
+        type="button"
+        aria-label="aiXp Tahmin"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenPrediction(match);
+        }}
+      >
+        <BrainCircuit size={14} />
+        <span>aiXp</span>
+      </button>
     </article>
   );
 }
@@ -82,17 +106,16 @@ function formatScore(value: number | null, upcoming: boolean) {
 }
 
 function statusLabel(match: NormalizedMatch) {
-  if (match.status.group === "live") {
-    if (match.status.minute !== null) {
-      return (
-        <span className="liveMinute">
-          <span>{match.status.minute}</span>
-          <span className="minuteTick">'</span>
-        </span>
-      );
-    }
-    return <span>{match.status.description === "Half time" ? "D.A." : ""}</span>;
+  const label = formatMatchStatusLabel(match);
+
+  if (shouldShowLiveMinuteTick(match)) {
+    return (
+      <span className="liveMinute">
+        <span>{label}</span>
+        <span className="minuteTick">'</span>
+      </span>
+    );
   }
-  if (match.status.group === "finished") return <span>MS</span>;
-  return <span>{match.localTime}</span>;
+
+  return <span>{label}</span>;
 }

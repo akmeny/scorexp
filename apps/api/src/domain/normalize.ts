@@ -119,6 +119,7 @@ export function normalizeMatch(raw: ProviderMatch, timezone: string, updatedAt =
       minute: normalizeMinute(raw.state?.clock)
     },
     score: parseScore(raw.state?.score?.current, raw.state?.score?.penalties),
+    redCards: normalizeRedCards(raw),
     isTopTier: isTopTier(countryName, leagueName),
     lastUpdatedAt: updatedAt,
     source: "highlightly"
@@ -274,6 +275,7 @@ export function createSnapshotChecksum(snapshot: Omit<ScoreboardSnapshot, "check
         id: match.id,
         status: match.status,
         score: match.score,
+        redCards: match.redCards,
         localTime: match.localTime
       }))
     }))
@@ -287,6 +289,7 @@ function createMatchDetailChecksum(detail: Omit<MatchDetail, "checksum">): strin
     id: detail.id,
     status: detail.match.status,
     score: detail.match.score,
+    redCards: detail.match.redCards,
     events: detail.events,
     statistics: detail.statistics,
     headToHead: detail.headToHead.map((match) => ({ id: match.id, score: match.score, status: match.status })),
@@ -309,6 +312,78 @@ function normalizeTeam(team: ProviderMatch["homeTeam"], fallback: string) {
     name: team?.name?.trim() || fallback,
     logo: team?.logo ?? providerAssetUrl("teams", id)
   };
+}
+
+function normalizeRedCards(raw: ProviderMatch) {
+  const fromStatistics = redCardsFromStatistics(raw);
+  if (fromStatistics) return fromStatistics;
+
+  return redCardsFromEvents(raw);
+}
+
+function redCardsFromStatistics(raw: ProviderMatch) {
+  if (!Array.isArray(raw.statistics)) return null;
+
+  const cards = { home: 0, away: 0 };
+  let found = false;
+
+  for (const group of raw.statistics) {
+    const side = providerTeamSide(group.team, raw);
+    if (!side || !Array.isArray(group.statistics)) continue;
+
+    const redCardStat = group.statistics.find((item) => isRedCardLabel(item.displayName));
+    if (!redCardStat) continue;
+
+    cards[side] = Math.max(0, normalizeCardCount(redCardStat.value));
+    found = true;
+  }
+
+  return found ? cards : null;
+}
+
+function redCardsFromEvents(raw: ProviderMatch) {
+  const cards = { home: 0, away: 0 };
+  if (!Array.isArray(raw.events)) return cards;
+
+  for (const event of raw.events) {
+    if (!isRedCardLabel(event.type)) continue;
+
+    const side = providerTeamSide(event.team, raw);
+    if (side) cards[side] += 1;
+  }
+
+  return cards;
+}
+
+function providerTeamSide(team: ProviderMatch["homeTeam"], raw: ProviderMatch) {
+  const teamId = providerEntityId(team?.id);
+  const homeId = providerEntityId(raw.homeTeam?.id);
+  const awayId = providerEntityId(raw.awayTeam?.id);
+
+  if (teamId && homeId && teamId === homeId) return "home" as const;
+  if (teamId && awayId && teamId === awayId) return "away" as const;
+
+  const teamName = cleanString(team?.name)?.toLowerCase();
+  if (!teamName) return null;
+  if (teamName === cleanString(raw.homeTeam?.name)?.toLowerCase()) return "home" as const;
+  if (teamName === cleanString(raw.awayTeam?.name)?.toLowerCase()) return "away" as const;
+  return null;
+}
+
+function providerEntityId(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+}
+
+function isRedCardLabel(value: string | null | undefined) {
+  const normalized = value?.toLowerCase() ?? "";
+  return normalized.includes("red") && normalized.includes("card");
+}
+
+function normalizeCardCount(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = typeof value === "number" ? value : Number.parseInt(String(value).replace(/[^\d-]/g, ""), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function normalizeDetailEvents(events: ProviderMatchEvent[] | null | undefined) {

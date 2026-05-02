@@ -1,5 +1,7 @@
 import { ArrowUp, CalendarDays, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AiPredictionModal } from "./components/AiPredictionModal";
+import { InstallPrompt } from "./components/InstallPrompt";
 import { LeagueCard } from "./components/LeagueCard";
 import { MatchDetailPanel } from "./components/MatchDetailPanel";
 import { SiteHeader } from "./components/SiteHeader";
@@ -12,9 +14,11 @@ import type { GoalHighlightSide, LeagueGroup, NormalizedMatch, ScoreboardView } 
 import "./styles/app.css";
 
 const timezone = "Europe/Istanbul";
-const GOAL_HIGHLIGHT_MS = 3_000;
+const GOAL_HIGHLIGHT_MS = 32_000;
+const LIVE_FINISHED_GRACE_MS = 60_000;
 
 type GoalHighlightRecord = Record<string, { expiresAt: number; side: GoalHighlightSide }>;
+type TimedMatchRecord = Record<string, number>;
 type PinOverrides = Record<string, boolean>;
 
 const defaultPinnedLeagues = [
@@ -39,11 +43,24 @@ export default function App() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => readFavorites());
   const [pinnedLeagueOverrides, setPinnedLeagueOverrides] = useState<PinOverrides>(() => readPinnedLeagueOverrides());
   const [selectedMatch, setSelectedMatch] = useState<NormalizedMatch | null>(null);
+  const [predictionMatch, setPredictionMatch] = useState<NormalizedMatch | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const previousScoresRef = useRef<Map<string, string>>(new Map());
+  const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
+  const hasAutoSelectedInitialMatchRef = useRef(false);
   const [goalHighlights, setGoalHighlights] = useState<GoalHighlightRecord>({});
+  const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
   const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
+
+  const activeRecentlyFinishedLiveIds = useMemo(() => {
+    const now = Date.now();
+    return new Set(
+      Object.entries(recentlyFinishedLiveMatches)
+        .filter(([, expiresAt]) => expiresAt > now)
+        .map(([id]) => id)
+    );
+  }, [recentlyFinishedLiveMatches]);
 
   const groups = useMemo(() => {
     const source = data?.leagues ?? [];
@@ -51,9 +68,10 @@ export default function App() {
       view,
       favoritesOnly: tab === "favorites",
       favoriteIds,
-      pinnedLeagueOverrides
+      pinnedLeagueOverrides,
+      liveGraceIds: activeRecentlyFinishedLiveIds
     });
-  }, [data?.leagues, favoriteIds, pinnedLeagueOverrides, tab, view]);
+  }, [activeRecentlyFinishedLiveIds, data?.leagues, favoriteIds, pinnedLeagueOverrides, tab, view]);
 
   const allMatches = useMemo(() => {
     return (data?.leagues ?? []).flatMap((league) => league.matches);
@@ -73,6 +91,12 @@ export default function App() {
   }, [goalHighlights]);
 
   const counts = data?.counts ?? { all: 0, live: 0, finished: 0, upcoming: 0, unknown: 0 };
+  const visibleLiveCount = counts.live + activeRecentlyFinishedLiveIds.size;
+  const today = todayInTimezone(timezone);
+  const minDate = shiftDate(today, -7);
+  const maxDate = shiftDate(today, 7);
+  const canGoPreviousDay = date > minDate;
+  const canGoNextDay = date < maxDate;
   const defaultGroupOpen = view === "live" || tab === "favorites";
 
   useEffect(() => {
@@ -80,6 +104,22 @@ export default function App() {
     updateScrollButton();
     window.addEventListener("scroll", updateScrollButton, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollButton);
+  }, []);
+
+  useEffect(() => {
+    const themeColor = "#090d0f";
+    document.documentElement.style.backgroundColor = "#0c1113";
+    document.body.style.backgroundColor = "#0c1113";
+
+    const metas = [
+      document.querySelector('meta[name="theme-color"]'),
+      document.querySelector('meta[name="msapplication-navbutton-color"]'),
+      document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+    ].filter((item): item is HTMLMetaElement => item instanceof HTMLMetaElement);
+
+    for (const meta of metas) {
+      meta.setAttribute("content", themeColor);
+    }
   }, []);
 
   useEffect(() => {
@@ -115,8 +155,29 @@ export default function App() {
     const updated = allMatches.find((match) => match.id === selectedMatch.id);
     if (updated && updated !== selectedMatch) {
       setSelectedMatch(updated);
+    } else if (!updated && allMatches.length > 0) {
+      setSelectedMatch(null);
     }
   }, [allMatches, selectedMatch]);
+
+  useEffect(() => {
+    if (predictionMatch) {
+      const updated = allMatches.find((match) => match.id === predictionMatch.id);
+      if (updated && updated !== predictionMatch) {
+        setPredictionMatch(updated);
+      }
+    }
+  }, [allMatches, predictionMatch]);
+
+  useEffect(() => {
+    if (hasAutoSelectedInitialMatchRef.current || !isDesktopViewport()) return;
+
+    const firstMatch = sortByTime ? sortedMatches[0] : groups[0]?.matches[0];
+    if (!firstMatch) return;
+
+    hasAutoSelectedInitialMatchRef.current = true;
+    setSelectedMatch(firstMatch);
+  }, [groups, sortByTime, sortedMatches]);
 
   useEffect(() => {
     const hasHighlights = Object.keys(goalHighlights).length > 0;
@@ -131,6 +192,41 @@ export default function App() {
 
     return () => window.clearTimeout(timeout);
   }, [goalHighlights]);
+
+  useEffect(() => {
+    if (!allMatches.length) return;
+
+    const now = Date.now();
+    const nextStatuses = new Map<string, NormalizedMatch["status"]["group"]>();
+    const nextGrace: TimedMatchRecord = {};
+
+    for (const match of allMatches) {
+      const previousStatus = previousStatusRef.current.get(match.id);
+      if (previousStatus === "live" && match.status.group === "finished") {
+        nextGrace[match.id] = now + LIVE_FINISHED_GRACE_MS;
+      }
+      nextStatuses.set(match.id, match.status.group);
+    }
+
+    previousStatusRef.current = nextStatuses;
+
+    if (Object.keys(nextGrace).length > 0) {
+      setRecentlyFinishedLiveMatches((current) => ({ ...current, ...nextGrace }));
+    }
+  }, [allMatches]);
+
+  useEffect(() => {
+    if (Object.keys(recentlyFinishedLiveMatches).length === 0) return;
+
+    const timeout = window.setTimeout(() => {
+      const now = Date.now();
+      setRecentlyFinishedLiveMatches((current) =>
+        Object.fromEntries(Object.entries(current).filter(([, expiresAt]) => expiresAt > now))
+      );
+    }, 500);
+
+    return () => window.clearTimeout(timeout);
+  }, [recentlyFinishedLiveMatches]);
 
   const toggleFavorite = (id: string) => {
     setFavoriteIds((current) => {
@@ -189,6 +285,10 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const goToDate = (nextDate: string) => {
+    setDate(clampDate(nextDate, minDate, maxDate));
+  };
+
   return (
     <>
       <SiteHeader footballCount={counts.all} />
@@ -212,14 +312,14 @@ export default function App() {
             </nav>
 
             <div className="datePicker">
-              <button className="iconButton" type="button" aria-label="Önceki gün" onClick={() => setDate(shiftDate(date, -1))}>
+              <button className="iconButton" type="button" aria-label="Önceki gün" disabled={!canGoPreviousDay} onClick={() => goToDate(shiftDate(date, -1))}>
                 <ChevronLeft size={18} />
               </button>
-              <button className="dateButton" type="button" onClick={() => setDate(todayInTimezone(timezone))}>
+              <button className="dateButton" type="button" onClick={() => goToDate(todayInTimezone(timezone))}>
                 <CalendarDays size={14} />
                 {dateLabel(date, timezone)}
               </button>
-              <button className="iconButton" type="button" aria-label="Sonraki gün" onClick={() => setDate(shiftDate(date, 1))}>
+              <button className="iconButton" type="button" aria-label="Sonraki gün" disabled={!canGoNextDay} onClick={() => goToDate(shiftDate(date, 1))}>
                 <ChevronRight size={18} />
               </button>
             </div>
@@ -231,7 +331,7 @@ export default function App() {
                 Tümü
               </button>
               <button className={view === "live" && !sortByTime ? "chip active liveChip" : "chip liveChip"} type="button" onClick={() => selectView("live")}>
-                Canlı ({counts.live})
+                Canlı ({visibleLiveCount})
               </button>
               <button className={view === "finished" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("finished")}>
                 Bitti
@@ -253,6 +353,7 @@ export default function App() {
                 favoriteIds={favoriteIds}
                 goalHighlights={activeGoalHighlights}
                 onToggleFavorite={toggleFavorite}
+                onOpenPrediction={setPredictionMatch}
                 onSelectMatch={setSelectedMatch}
               />
             ) : (
@@ -273,6 +374,7 @@ export default function App() {
                     onToggle={toggleGroup}
                     onTogglePinned={togglePinnedLeague}
                     onToggleFavorite={toggleFavorite}
+                    onOpenPrediction={setPredictionMatch}
                     onSelectMatch={setSelectedMatch}
                   />
                 );
@@ -282,6 +384,7 @@ export default function App() {
         </section>
         {selectedMatch ? (
           <MatchDetailPanel
+            key={selectedMatch.id}
             match={selectedMatch}
             detail={detailState.data}
             loading={detailState.loading}
@@ -292,6 +395,12 @@ export default function App() {
           />
         ) : null}
       </main>
+
+      {predictionMatch ? (
+        <AiPredictionModal match={predictionMatch} timezone={timezone} onRequestClose={() => setPredictionMatch(null)} />
+      ) : null}
+
+      <InstallPrompt />
 
       {showScrollTop ? (
         <button className="scrollTopButton" type="button" onClick={scrollToTop} aria-label="En üste git">
@@ -310,12 +419,15 @@ function filterGroups(
     favoritesOnly: boolean;
     favoriteIds: Set<string>;
     pinnedLeagueOverrides: PinOverrides;
+    liveGraceIds: Set<string>;
   }
 ) {
   return groups
     .map((group) => {
       const visibleByStatus =
-        options.view === "all" ? group.matches : group.matches.filter((match) => match.status.group === options.view);
+        options.view === "all"
+          ? group.matches
+          : group.matches.filter((match) => match.status.group === options.view || (options.view === "live" && options.liveGraceIds.has(match.id)));
 
       const isPinned = isPinnedGroup(group, options.pinnedLeagueOverrides);
       const matches = options.favoritesOnly && !isPinned
@@ -428,6 +540,17 @@ function scoreIncreaseSide(previous: string, current: string): GoalHighlightSide
 function toScoreNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isDesktopViewport() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(min-width: 981px) and (pointer: fine)").matches;
+}
+
+function clampDate(date: string, minDate: string, maxDate: string) {
+  if (date < minDate) return minDate;
+  if (date > maxDate) return maxDate;
+  return date;
 }
 
 function EmptyState({ tab, hasError, onReload }: { tab: string; hasError: boolean; onReload: () => void }) {

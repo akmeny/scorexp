@@ -30,6 +30,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .siteHeader {
   position: sticky;
   top: 0;
@@ -99,6 +104,11 @@ button {
 
 .headerSearch input::placeholder {
   color: #9faab0;
+}
+
+.mobileHeaderActions,
+.mobileSearchPanel {
+  display: none;
 }
 
 .headerActions {
@@ -517,7 +527,7 @@ button {
 }
 
 .leagueIdentity strong,
-.teamLine span {
+.teamNameCluster > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -599,7 +609,7 @@ button {
   cursor: pointer;
   min-height: 64px;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 24px 34px;
+  grid-template-columns: 54px minmax(0, 1fr) 28px 34px 68px;
   align-items: center;
   padding: 7px 0 7px 12px;
   border-top: 1px solid #29353a;
@@ -634,9 +644,11 @@ button {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(255, 51, 70, 0.18);
-  transform-origin: left center;
-  animation: goalSweep 3s ease-out forwards;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 51, 70, 0.26) 0 8px, rgba(255, 51, 70, 0.11) 8px 16px),
+    rgba(255, 51, 70, 0.12);
+  transform: translateX(-100%);
+  animation: goalSweep 2s ease-out forwards;
 }
 
 .matchTime {
@@ -678,7 +690,7 @@ button {
 .teamLine {
   min-width: 0;
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   color: #f1f7fb;
@@ -687,13 +699,41 @@ button {
   line-height: 1.1;
 }
 
+.teamNameCluster {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.teamNameCluster > span:first-child {
+  min-width: 0;
+}
+
+.redCardBadge {
+  flex: 0 0 auto;
+  min-width: 12px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background: #ef2e3f;
+  color: #fff;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1;
+}
+
 .goalTag {
+  flex: 0 0 auto;
   color: #ff3044;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0;
   white-space: nowrap;
-  animation: goalTagPulse 3s ease-out forwards;
+  animation: goalTagPulse 2s ease-out forwards;
 }
 
 .scoreBlock {
@@ -726,6 +766,33 @@ button {
   fill: currentColor;
 }
 
+.aiXpRowButton {
+  width: 62px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  justify-self: center;
+  border: 1px solid #394a50;
+  border-radius: 999px;
+  background: #0c1316;
+  color: #dce7ff;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.aiXpRowButton svg {
+  color: #7c83ff;
+}
+
+.aiXpRowButton:hover {
+  border-color: #5a65df;
+  background: #151c32;
+  color: #fff;
+}
+
 .matchDetailPane {
   width: min(480px, calc(100vw - 24px));
   max-height: calc(100vh - 136px);
@@ -738,6 +805,7 @@ button {
   border-radius: 8px;
   background: #11181b;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+  animation: detailPaneEnter 180ms ease-out;
 }
 
 .detailTop {
@@ -1582,6 +1650,12 @@ button {
   height: 24px;
 }
 
+.teamLogo.lg,
+.logoFallback.lg {
+  width: 48px;
+  height: 48px;
+}
+
 .logoFallback {
   color: #d8e8ed;
   font-size: 10px;
@@ -1659,9 +1733,529 @@ button {
   background: #ffffff;
 }
 
+.aiPredictionOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(4, 7, 9, 0.48);
+  backdrop-filter: blur(9px);
+}
+
+.aiPredictionModal {
+  width: min(360px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid #344249;
+  border-radius: 8px;
+  background: #10171a;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.46);
+  animation: aiModalEnter 180ms ease-out;
+}
+
+.aiModalHeader {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 8px 0 12px;
+  border-bottom: 1px solid #26343a;
+}
+
+.aiModalHeader > span,
+.aiModalResult > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #eef7fa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.aiModalHeader svg {
+  color: #7c83ff;
+}
+
+.aiModalClose {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b8c8cf;
+}
+
+.aiModalClose:not(:disabled):hover {
+  background: #1b252a;
+  color: #fff;
+}
+
+.aiModalTeams {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  background: #141d20;
+}
+
+.aiModalTeams strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModalTeams strong:last-child {
+  text-align: right;
+}
+
+.aiModalTeams span {
+  min-width: 48px;
+  color: #ff5360;
+  font-size: 13px;
+  font-weight: 950;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.aiModalAnalysis,
+.aiModalResult {
+  padding: 14px;
+}
+
+.aiModalAnalysis {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+}
+
+.aiModalScanner {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #4650c8;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(180deg, rgba(124, 131, 255, 0.14) 0 2px, transparent 2px 6px),
+    #111a2e;
+}
+
+.aiModalScanner::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 7px;
+  height: 2px;
+  background: #3fe0a0;
+  box-shadow: 0 0 13px rgba(63, 224, 160, 0.8);
+  animation: scanLine 1.8s ease-in-out infinite;
+}
+
+.aiModalScanner span {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(124, 131, 255, 0.65);
+  border-radius: 4px;
+}
+
+.aiModalAnalysis p {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #dfe9ec;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModalProgress {
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #1f2b32;
+}
+
+.aiModalProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c83ff, #3fe0a0);
+  transition: width 300ms ease;
+}
+
+.aiModalResult > span {
+  color: #95ffe0;
+}
+
+.aiModalResult strong {
+  display: block;
+  margin-top: 8px;
+  color: #f3fbf8;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.aiModalResult p {
+  margin: 7px 0 10px;
+  color: #c2d1d5;
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.aiModalBars {
+  display: grid;
+  gap: 7px;
+}
+
+.aiModalBars div {
+  position: relative;
+  overflow: hidden;
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid #28453f;
+  border-radius: 6px;
+  background: #101a1a;
+}
+
+.aiModalBars i {
+  position: absolute;
+  inset: auto auto 0 0;
+  height: 2px;
+  background: #3fe0a0;
+}
+
+.aiModalBars span,
+.aiModalBars b {
+  position: relative;
+  z-index: 1;
+  color: #eaf6f2;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.installPrompt {
+  position: fixed;
+  right: 18px;
+  bottom: 70px;
+  z-index: 55;
+  width: min(340px, calc(100vw - 24px));
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto 30px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #334248;
+  border-radius: 8px;
+  background: rgba(14, 21, 24, 0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  animation: installPromptEnter 220ms ease-out;
+}
+
+.installPromptIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #171d3b;
+  color: #9fa6ff;
+}
+
+.installPromptText {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.installPromptText strong {
+  color: #f2f8fa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.installPromptText span {
+  overflow: hidden;
+  color: #aabcc3;
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.installDownloadButton {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef6f8;
+  color: #0b1114;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.installCloseButton {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b7c6cc;
+}
+
+.installCloseButton:hover {
+  background: #1c262b;
+  color: #fff;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    padding-bottom: 78px;
+  }
+
+  .siteHeader {
+    min-height: 118px;
+  }
+
+  .headerTop {
+    height: 54px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .headerSearch,
+  .headerActions {
+    display: none;
+  }
+
+  .mobileHeaderActions {
+    position: relative;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobileHeaderIcon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #29363b;
+    border-radius: 8px;
+    background: #12191c;
+    color: #eef7fa;
+  }
+
+  .mobileHeaderIcon[aria-expanded="true"] {
+    border-color: #5a65df;
+    background: #171d3b;
+    color: #fff;
+  }
+
+  .mobileProfileMenu {
+    position: absolute;
+    right: 0;
+    top: 44px;
+    z-index: 45;
+    width: 156px;
+    overflow: hidden;
+    border: 1px solid #344249;
+    border-radius: 8px;
+    background: #0e1518;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+  }
+
+  .mobileProfileMenu button {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    border: 0;
+    border-bottom: 1px solid #26343a;
+    background: transparent;
+    color: #eaf2f5;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .mobileProfileMenu button:last-child {
+    border-bottom: 0;
+  }
+
+  .mobileSearchPanel {
+    display: block;
+    padding: 0 10px 9px;
+    background: #090d0f;
+  }
+
+  .mobileSearchInput {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    border: 1px solid #2c3a40;
+    border-radius: 8px;
+    background: #151d20;
+    color: #cbd4d8;
+  }
+
+  .mobileSearchInput input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #eef7fa;
+    font-size: 13px;
+  }
+
+  .sportsBar {
+    min-height: 64px;
+  }
+
+  .appShell {
+    min-height: calc(100vh - 118px);
+    padding-bottom: 74px;
+  }
+
+  .scorePanel {
+    min-height: calc(100vh - 118px);
+  }
+
+  .topNav {
+    grid-template-columns: 1fr;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .tabs {
+    min-height: 34px;
+    height: 34px;
+  }
+
+  .tabs button {
+    height: 34px;
+    font-size: 11px;
+  }
+
+  .datePicker {
+    height: 34px;
+    justify-self: stretch;
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .dateButton,
+  .datePicker .iconButton {
+    height: 34px;
+  }
+
+  .filters {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 60;
+    display: block;
+    padding: 6px;
+    border: 1px solid #344249;
+    border-radius: 14px;
+    background: rgba(11, 17, 20, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.44);
+  }
+
+  .chipRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .chip {
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 4px;
+    background: transparent;
+    color: #aebec5;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .chip.active {
+    background: #eef6f8;
+    color: #0e1518;
+  }
+
+  .chip.liveChip.active {
+    background: #f34855;
+    color: #fff;
+  }
+
+  .matchRow {
+    grid-template-columns: 48px minmax(0, 1fr) 24px 32px 54px;
+    min-height: 64px;
+    padding-left: 8px;
+  }
+
+  .aiXpRowButton {
+    width: 50px;
+    font-size: 9px;
+  }
+
+  .scrollTopButton {
+    bottom: 84px;
+  }
+
+  .installPrompt {
+    left: 10px;
+    right: 10px;
+    bottom: 86px;
+    width: auto;
   }
 }
 
@@ -1673,11 +2267,11 @@ button {
 
 @keyframes goalSweep {
   from {
-    transform: scaleX(0);
+    transform: translateX(-100%);
   }
 
   to {
-    transform: scaleX(1);
+    transform: translateX(0);
   }
 }
 
@@ -1688,14 +2282,45 @@ button {
   }
 
   12%,
-  78% {
+  100% {
     opacity: 1;
     transform: translateX(0);
   }
+}
 
-  100% {
+@keyframes detailPaneEnter {
+  from {
     opacity: 0;
-    transform: translateX(2px);
+    transform: translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes aiModalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes installPromptEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -1976,5 +2601,138 @@ button {
     right: 12px;
     bottom: 12px;
     z-index: 18;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    padding-bottom: 78px;
+  }
+
+  .siteHeader {
+    min-height: 118px;
+  }
+
+  .headerTop {
+    height: 54px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .headerSearch,
+  .headerActions {
+    display: none;
+  }
+
+  .mobileHeaderActions {
+    position: relative;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sportsBar {
+    min-height: 64px;
+  }
+
+  .appShell {
+    min-height: calc(100vh - 118px);
+    padding-bottom: 74px;
+  }
+
+  .scorePanel {
+    min-height: calc(100vh - 118px);
+  }
+
+  .topNav {
+    grid-template-columns: 1fr;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .tabs {
+    height: 34px;
+    min-height: 34px;
+    width: 100%;
+  }
+
+  .tabs button {
+    height: 34px;
+  }
+
+  .datePicker {
+    height: 34px;
+    justify-self: stretch;
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .dateButton,
+  .datePicker .iconButton {
+    height: 34px;
+  }
+
+  .filters {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 60;
+    display: block;
+    padding: 6px;
+    border: 1px solid #344249;
+    border-radius: 14px;
+    background: rgba(11, 17, 20, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.44);
+  }
+
+  .chipRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .chip {
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 4px;
+    background: transparent;
+    color: #aebec5;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .chip.active {
+    background: #eef6f8;
+    color: #0e1518;
+  }
+
+  .chip.liveChip.active {
+    background: #f34855;
+    color: #fff;
+  }
+
+  .matchRow {
+    grid-template-columns: 48px minmax(0, 1fr) 24px 32px 54px;
+    min-height: 64px;
+    padding-left: 8px;
+  }
+
+  .aiXpRowButton {
+    width: 50px;
+    font-size: 9px;
+  }
+
+  .scrollTopButton {
+    bottom: 84px;
+  }
+
+  .installPrompt {
+    left: 10px;
+    right: 10px;
+    bottom: 86px;
+    width: auto;
   }
 }

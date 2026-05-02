@@ -7,6 +7,7 @@ interface SortedMatchListProps {
   favoriteIds: Set<string>;
   goalHighlights: Record<string, GoalHighlightSide>;
   onToggleFavorite: (id: string) => void;
+  onOpenPrediction: (match: NormalizedMatch) => void;
   onSelectMatch: (match: NormalizedMatch) => void;
 }
 
@@ -16,6 +17,7 @@ export function SortedMatchList({
   favoriteIds,
   goalHighlights,
   onToggleFavorite,
+  onOpenPrediction,
   onSelectMatch
 }: SortedMatchListProps) {
   return (
@@ -28,6 +30,7 @@ export function SortedMatchList({
           favorite={favoriteIds.has(match.id)}
           goalHighlightSide={goalHighlights[match.id] ?? null}
           onToggleFavorite={onToggleFavorite}
+          onOpenPrediction={onOpenPrediction}
           onSelect={onSelectMatch}
         />
       ))}

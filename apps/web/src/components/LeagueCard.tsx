@@ -15,6 +15,7 @@ interface LeagueCardProps {
   onToggle: (key: string) => void;
   onTogglePinned: (group: LeagueGroup) => void;
   onToggleFavorite: (id: string) => void;
+  onOpenPrediction: (match: NormalizedMatch) => void;
   onSelectMatch: (match: NormalizedMatch) => void;
 }
 
@@ -29,6 +30,7 @@ export function LeagueCard({
   onToggle,
   onTogglePinned,
   onToggleFavorite,
+  onOpenPrediction,
   onSelectMatch
 }: LeagueCardProps) {
   const countryName = localizeCountryName(group.country.name);
@@ -72,6 +74,7 @@ export function LeagueCard({
               favorite={favoriteIds.has(match.id)}
               goalHighlightSide={goalHighlights[match.id] ?? null}
               onToggleFavorite={onToggleFavorite}
+              onOpenPrediction={onOpenPrediction}
               onSelect={onSelectMatch}
             />
           ))}

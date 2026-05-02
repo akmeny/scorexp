@@ -23,6 +23,9 @@ import type { HotCache } from "../storage/cache.js";
 import type { DurableStore } from "../storage/jsonStore.js";
 import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 
+const CARD_ENRICHMENT_LIMIT = 32;
+const CARD_ENRICHMENT_CONCURRENCY = 4;
+
 interface ScoreboardQuery {
   date: string;
   timezone: string;
@@ -123,7 +126,9 @@ export class ScoreboardService {
   private async fetchAndBuild(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {
     const fetchedAt = new Date().toISOString();
     const response = await this.highlightly.getMatchesByDate(date, timezone);
-    const incoming = response.matches.map((match) => normalizeMatch(match, timezone, fetchedAt));
+    const normalized = response.matches.map((match) => normalizeMatch(match, timezone, fetchedAt));
+    const cardEnrichment = await this.enrichLiveMatchCards(normalized, timezone, fetchedAt);
+    const incoming = cardEnrichment.matches;
     const persistedFinished = await this.store.getFinishedMatches(key);
     const merged = mergePersistedFinished(incoming, persistedFinished);
     const newlyFinished = merged.filter((match) => match.status.group === "finished");
@@ -135,7 +140,7 @@ export class ScoreboardService {
       snapshot,
       fetchedAt,
       expiresAt: snapshot.expiresAt,
-      providerRequestCount: response.requestCount
+      providerRequestCount: response.requestCount + cardEnrichment.requestCount
     };
 
     await this.cache.set(key, entry, ttlFromEntry(entry));
@@ -148,6 +153,43 @@ export class ScoreboardService {
     }
 
     return entry;
+  }
+
+  private async enrichLiveMatchCards(matches: NormalizedMatch[], timezone: string, fetchedAt: string) {
+    const candidates = matches
+      .filter((match) => match.status.group === "live")
+      .sort((a, b) => Number(b.isTopTier) - Number(a.isTopTier) || a.timestamp - b.timestamp)
+      .slice(0, CARD_ENRICHMENT_LIMIT);
+
+    if (candidates.length === 0) {
+      return { matches, requestCount: 0 };
+    }
+
+    const results = await mapWithConcurrency(candidates, CARD_ENRICHMENT_CONCURRENCY, async (match) => {
+      try {
+        const detail = await this.highlightly.getMatchById(match.providerId);
+        if (!detail.match) {
+          return { id: match.id, redCards: match.redCards, requestCount: detail.requestCount };
+        }
+
+        return {
+          id: match.id,
+          redCards: normalizeMatch(detail.match, timezone, fetchedAt).redCards,
+          requestCount: detail.requestCount
+        };
+      } catch {
+        return { id: match.id, redCards: match.redCards, requestCount: 0 };
+      }
+    });
+
+    const byId = new Map(results.map((result) => [result.id, result]));
+    return {
+      matches: matches.map((match) => {
+        const enriched = byId.get(match.id);
+        return enriched ? { ...match, redCards: enriched.redCards } : match;
+      }),
+      requestCount: results.reduce((total, result) => total + result.requestCount, 0)
+    };
   }
 
   private async fetchAndBuildMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
@@ -307,11 +349,11 @@ export class ScoreboardService {
 }
 
 function snapshotKey(date: string, timezone: string) {
-  return `football:${date}:${timezone}`;
+  return `football:v2:${date}:${timezone}`;
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v2:${matchId}:${timezone}`;
+  return `football:match-detail:v3:${matchId}:${timezone}`;
 }
 
 function teamId(value: number | string | null | undefined) {
@@ -339,6 +381,23 @@ function mergePersistedFinished(incoming: NormalizedMatch[], persistedFinished: 
   }
 
   return Array.from(merged.values()).sort((a, b) => a.timestamp - b.timestamp);
+}
+
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>) {
+  const results: R[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const currentIndex = index;
+      index += 1;
+      results[currentIndex] = await mapper(items[currentIndex]);
+    }
+  }
+
+  const workerCount = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 function ttlFromEntry(entry: { expiresAt: string }) {

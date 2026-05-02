@@ -42,6 +42,8 @@ export interface ProviderMatch {
   awayTeam?: ProviderTeam | null;
   homeTeam?: ProviderTeam | null;
   league?: ProviderLeague | null;
+  events?: ProviderMatchEvent[] | null;
+  statistics?: ProviderTeamStatistics[] | null;
   state?: {
     description?: string | null;
     clock?: number | string | null;
@@ -189,6 +191,10 @@ export interface NormalizedMatch {
     minute: number | null;
   };
   score: MatchScore;
+  redCards: {
+    home: number;
+    away: number;
+  };
   isTopTier: boolean;
   lastUpdatedAt: string;
   source: "highlightly";

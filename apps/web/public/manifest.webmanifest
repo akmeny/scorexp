@@ -1,0 +1,17 @@
+{
+  "name": "ScoreXP",
+  "short_name": "ScoreXP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1113",
+  "theme_color": "#090d0f",
+  "description": "Canli futbol skorlari ve aiXp tahminleri.",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

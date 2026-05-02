@@ -1,0 +1,12 @@
+{
+  "android": {
+    "label": "ScoreXP APK",
+    "url": "/downloads/scorexp.apk",
+    "version": "0.1.0"
+  },
+  "desktop": {
+    "label": "ScoreXP Desktop",
+    "url": "/downloads/scorexp-desktop.zip",
+    "version": "0.1.0"
+  }
+}

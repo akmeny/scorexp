@@ -5,7 +5,8 @@ import {
   Search,
   Settings,
   Star,
-  Zap
+  Zap,
+  X
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
@@ -52,6 +53,8 @@ const overflowSports = [
 
 export function SiteHeader({ footballCount }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const sportsBarRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
@@ -110,6 +113,46 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
           <input type="search" placeholder="Maçları, müsabakaları, takımları ve oyuncuları ara" />
         </label>
 
+        <div className="mobileHeaderActions">
+          <button
+            className="mobileHeaderIcon"
+            type="button"
+            aria-label="Ara"
+            aria-expanded={mobileSearchOpen}
+            onClick={() => {
+              setMobileSearchOpen((open) => !open);
+              setProfileMenuOpen(false);
+            }}
+          >
+            {mobileSearchOpen ? <X size={19} /> : <Search size={19} />}
+          </button>
+          <button
+            className="mobileHeaderIcon"
+            type="button"
+            aria-label="Profil ve ayarlar"
+            aria-expanded={profileMenuOpen}
+            onClick={() => {
+              setMobileSearchOpen(false);
+              setProfileMenuOpen((open) => !open);
+            }}
+          >
+            <CircleUserRound size={20} />
+          </button>
+
+          {profileMenuOpen ? (
+            <div className="mobileProfileMenu">
+              <button type="button">
+                <CircleUserRound size={15} />
+                <span>Profil</span>
+              </button>
+              <button type="button">
+                <Settings size={15} />
+                <span>Ayarlar</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+
         <div className="headerActions">
           <button className="loginButton" type="button">
             <CircleUserRound size={17} />
@@ -126,6 +169,15 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
           </button>
         </div>
       </div>
+
+      {mobileSearchOpen ? (
+        <div className="mobileSearchPanel">
+          <label className="mobileSearchInput">
+            <Search size={17} />
+            <input autoFocus type="search" placeholder="Maç, takım veya oyuncu ara" />
+          </label>
+        </div>
+      ) : null}
 
       <div className="sportsBar" ref={sportsBarRef}>
         <nav className="sportsNav" aria-label="Spor dalları">

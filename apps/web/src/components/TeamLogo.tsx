@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 interface TeamLogoProps {
   src: string | null;
   label: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }
 
 export function TeamLogo({ src, label, size = "md" }: TeamLogoProps) {
