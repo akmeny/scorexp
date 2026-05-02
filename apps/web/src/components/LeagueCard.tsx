@@ -7,7 +7,6 @@ interface LeagueCardProps {
   group: LeagueGroup;
   collapsed: boolean;
   favoriteIds: Set<string>;
-  showOdds: boolean;
   onToggle: (key: string) => void;
   onToggleFavorite: (id: string) => void;
 }
@@ -16,7 +15,6 @@ export function LeagueCard({
   group,
   collapsed,
   favoriteIds,
-  showOdds,
   onToggle,
   onToggleFavorite
 }: LeagueCardProps) {
@@ -43,7 +41,6 @@ export function LeagueCard({
               key={match.id}
               match={match}
               favorite={favoriteIds.has(match.id)}
-              showOdds={showOdds}
               onToggleFavorite={onToggleFavorite}
             />
           ))}

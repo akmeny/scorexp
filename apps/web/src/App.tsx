@@ -12,20 +12,18 @@ export default function App() {
   const [date, setDate] = useState(() => todayInTimezone(timezone));
   const [view, setView] = useState<ScoreboardView>("all");
   const [tab, setTab] = useState<"all" | "favorites" | "matches">("all");
-  const [showOdds, setShowOdds] = useState(false);
-  const [showLowerLeagues, setShowLowerLeagues] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => readFavorites());
-  const { data, loading, refreshing, error, reload } = useScoreboard(date, timezone, view);
+  const { data, loading, refreshing, error, reload } = useScoreboard(date, timezone, "all");
 
   const groups = useMemo(() => {
     const source = data?.leagues ?? [];
     return filterGroups(source, {
+      view,
       favoritesOnly: tab === "favorites",
-      favoriteIds,
-      showLowerLeagues
+      favoriteIds
     });
-  }, [data?.leagues, favoriteIds, showLowerLeagues, tab]);
+  }, [data?.leagues, favoriteIds, tab, view]);
 
   const counts = data?.counts ?? { all: 0, live: 0, finished: 0, upcoming: 0, unknown: 0 };
 
@@ -97,23 +95,6 @@ export default function App() {
               Tümü
             </button>
           </div>
-
-          <label className="toggleLabel">
-            <span>Oranlar</span>
-            <input type="checkbox" checked={showOdds} onChange={(event) => setShowOdds(event.target.checked)} />
-          </label>
-        </div>
-
-        <div className="subFilter">
-          <span>Alt lig maçlarını göster</span>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={showLowerLeagues}
-              onChange={(event) => setShowLowerLeagues(event.target.checked)}
-            />
-            <span />
-          </label>
         </div>
 
         <div className="statusLine">
@@ -137,7 +118,6 @@ export default function App() {
               group={group}
               collapsed={collapsed.has(group.key)}
               favoriteIds={favoriteIds}
-              showOdds={showOdds}
               onToggle={toggleGroup}
               onToggleFavorite={toggleFavorite}
             />
@@ -150,18 +130,20 @@ export default function App() {
 
 function filterGroups(
   groups: LeagueGroup[],
-  options: { favoritesOnly: boolean; favoriteIds: Set<string>; showLowerLeagues: boolean }
+  options: { view: ScoreboardView; favoritesOnly: boolean; favoriteIds: Set<string> }
 ) {
   return groups
     .map((group) => {
+      const visibleByStatus =
+        options.view === "all" ? group.matches : group.matches.filter((match) => match.status.group === options.view);
+
       const matches = options.favoritesOnly
-        ? group.matches.filter((match) => options.favoriteIds.has(match.id))
-        : group.matches;
+        ? visibleByStatus.filter((match) => options.favoriteIds.has(match.id))
+        : visibleByStatus;
 
       return { ...group, matches };
     })
-    .filter((group) => group.matches.length > 0)
-    .filter((group) => options.showLowerLeagues || group.isTopTier || group.counts.live > 0);
+    .filter((group) => group.matches.length > 0);
 }
 
 function readFavorites() {

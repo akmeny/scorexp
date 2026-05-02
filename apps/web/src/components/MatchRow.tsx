@@ -5,22 +5,20 @@ import type { NormalizedMatch } from "../types";
 interface MatchRowProps {
   match: NormalizedMatch;
   favorite: boolean;
-  showOdds: boolean;
   onToggleFavorite: (id: string) => void;
 }
 
-export function MatchRow({ match, favorite, showOdds, onToggleFavorite }: MatchRowProps) {
+export function MatchRow({ match, favorite, onToggleFavorite }: MatchRowProps) {
   const isLive = match.status.group === "live";
   const isUpcoming = match.status.group === "upcoming";
   const homeScore = formatScore(match.score.home, isUpcoming);
   const awayScore = formatScore(match.score.away, isUpcoming);
 
   return (
-    <article className={`matchRow ${isLive ? "live" : ""}`}>
+    <article className={`matchRow ${match.status.group}`}>
       <div className="matchTime">
         {isLive ? <span className="liveMark" /> : null}
-        <span>{isLive ? `${match.status.minute ?? ""}'` : match.localTime}</span>
-        <small>{statusShort(match)}</small>
+        <span>{statusLabel(match)}</span>
       </div>
 
       <div className="teamsBlock">
@@ -39,14 +37,6 @@ export function MatchRow({ match, favorite, showOdds, onToggleFavorite }: MatchR
         <span>{awayScore}</span>
       </div>
 
-      {showOdds ? (
-        <div className="oddsMini" aria-label="Oranlar">
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-        </div>
-      ) : null}
-
       <button
         className={`iconButton starButton ${favorite ? "active" : ""}`}
         type="button"
@@ -64,8 +54,11 @@ function formatScore(value: number | null, upcoming: boolean) {
   return value === null ? "-" : String(value);
 }
 
-function statusShort(match: NormalizedMatch) {
-  if (match.status.group === "live") return match.status.description === "Half time" ? "HT" : "CANLI";
+function statusLabel(match: NormalizedMatch) {
+  if (match.status.group === "live") {
+    if (match.status.minute !== null) return `${match.status.minute}'`;
+    return match.status.description === "Half time" ? "HT" : "";
+  }
   if (match.status.group === "finished") return "MS";
-  return "-";
+  return match.localTime;
 }
