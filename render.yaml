@@ -5,14 +5,10 @@ services:
     repo: https://github.com/akmeny/scorexp.git
     branch: main
     rootDir: apps/api
-    plan: starter
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
-    disk:
-      name: scorexp-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 20.17.0
@@ -29,8 +25,10 @@ services:
       - key: DEFAULT_TIMEZONE
         value: Europe/Istanbul
       - key: DATA_DIR
-        value: /var/data
+        value: /tmp/scorexp-data
       - key: CACHE_DRIVER
+        value: redis
+      - key: DURABLE_STORE
         value: redis
       - key: REDIS_URL
         fromService:

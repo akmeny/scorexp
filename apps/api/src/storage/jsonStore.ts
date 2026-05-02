@@ -15,6 +15,15 @@ interface DurableData {
   completedDates: Record<string, CompletedDateRecord>;
 }
 
+export interface DurableStore {
+  getSnapshot(key: string): Promise<SnapshotCacheEntry | null>;
+  saveSnapshot(key: string, snapshot: SnapshotCacheEntry): Promise<void>;
+  getFinishedMatches(key: string): Promise<NormalizedMatch[]>;
+  saveFinishedMatches(key: string, matches: NormalizedMatch[]): Promise<void>;
+  getCompletedDate(key: string): Promise<CompletedDateRecord | null>;
+  markDateCompleted(key: string, matchCount: number, fetchedAt: string): Promise<void>;
+}
+
 const emptyData = (): DurableData => ({
   version: 1,
   snapshots: {},
@@ -22,7 +31,7 @@ const emptyData = (): DurableData => ({
   completedDates: {}
 });
 
-export class JsonFileStore {
+export class JsonFileStore implements DurableStore {
   private data: DurableData = emptyData();
   private loadPromise: Promise<void>;
   private writeQueue = Promise.resolve();

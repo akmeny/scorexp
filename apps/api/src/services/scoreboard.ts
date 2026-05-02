@@ -15,7 +15,7 @@ import type {
 } from "../domain/types.js";
 import type { HighlightlyClient } from "../provider/highlightly.js";
 import type { HotCache } from "../storage/cache.js";
-import type { JsonFileStore } from "../storage/jsonStore.js";
+import type { DurableStore } from "../storage/jsonStore.js";
 import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 
 interface ScoreboardQuery {
@@ -31,7 +31,7 @@ export class ScoreboardService {
     private readonly appEnv: AppEnv,
     private readonly highlightly: HighlightlyClient,
     private readonly cache: HotCache,
-    private readonly store: JsonFileStore
+    private readonly store: DurableStore
   ) {}
 
   async getScoreboard(query: ScoreboardQuery): Promise<ScoreboardSnapshot> {
