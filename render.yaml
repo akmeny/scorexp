@@ -21,7 +21,7 @@ services:
       - key: PORT
         value: 10000
       - key: FRONTEND_ORIGIN
-        value: https://scorexp-nine.vercel.app,http://localhost:5173
+        value: https://scorexp.com,https://www.scorexp.com,https://scorexp-nine.vercel.app,http://localhost:5173
       - key: DEFAULT_TIMEZONE
         value: Europe/Istanbul
       - key: DATA_DIR
