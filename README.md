@@ -43,7 +43,7 @@ cp apps/web/.env.example apps/web/.env
 
 ## Deploy
 
-Backend Render için `render.yaml` ile tanımlandı. Persistent disk `/var/data` altında bitmiş maç snapshot'larını korur.
+Backend Render için `render.yaml` ile tanımlandı. Persistent disk `/var/data` altında bitmiş maç snapshot'larını korur; Render Key Value `REDIS_URL` olarak bağlanır.
 
 Frontend Vercel için `apps/web/vercel.json` hazır. Production API fallback adresi `https://scorexp-api.onrender.com`; farklı Render URL'i kullanılırsa Vercel'de `VITE_API_BASE_URL` set edilmelidir.
 
