@@ -1,0 +1,589 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0c1113;
+  color: #eef6f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #0c1113;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.appShell {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 6px;
+  background:
+    linear-gradient(180deg, rgba(29, 40, 43, 0.88), rgba(12, 17, 19, 0.96) 280px),
+    #0c1113;
+}
+
+.scorePanel {
+  width: min(100%, 560px);
+  min-height: calc(100vh - 12px);
+  background: #141b1e;
+  border: 1px solid #253136;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.topNav {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 8px 0 12px;
+  border-bottom: 1px solid #28353a;
+  gap: 10px;
+}
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  height: 48px;
+  min-width: 0;
+}
+
+.tabs button {
+  position: relative;
+  min-width: 64px;
+  height: 48px;
+  padding: 0 12px;
+  color: #7580d9;
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tabs button.active {
+  color: #7781ff;
+}
+
+.tabs button.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #747cff;
+}
+
+.datePicker {
+  display: grid;
+  grid-template-columns: 32px minmax(96px, 136px) 32px;
+  align-items: center;
+  height: 30px;
+  border: 1px solid #364164;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #11171a;
+}
+
+.iconButton,
+.dateButton {
+  border: 0;
+  color: #9ca6ff;
+  background: transparent;
+}
+
+.iconButton {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dateButton {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #c8ceff;
+  font-size: 11px;
+  font-weight: 800;
+  border-left: 1px solid #29314d;
+  border-right: 1px solid #29314d;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 10px 8px 6px;
+  gap: 8px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.chip {
+  min-height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #080d0f;
+  color: #e6f1f4;
+  padding: 0 15px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.chip.active {
+  background: #eef6f8;
+  color: #0e1518;
+}
+
+.chip.liveChip {
+  color: #ff626f;
+}
+
+.chip.liveChip.active {
+  background: #f34855;
+  color: #fff;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  color: #f2f7ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.toggleLabel input,
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggleLabel::after {
+  content: "";
+  width: 30px;
+  height: 16px;
+  border-radius: 999px;
+  background: #3a4246;
+  box-shadow: inset 14px 0 0 #626a70;
+}
+
+.toggleLabel:has(input:checked)::after {
+  background: #4350b7;
+  box-shadow: inset -14px 0 0 #7984ff;
+}
+
+.subFilter {
+  margin: 0 8px 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #070c0e;
+  border-radius: 8px;
+  color: #eef7f8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.switch {
+  position: relative;
+  width: 35px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.switch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #31383d;
+}
+
+.switch span::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background: #7b86ff;
+  transition: transform 160ms ease;
+}
+
+.switch input:checked + span::after {
+  transform: translateX(15px);
+}
+
+.statusLine {
+  min-height: 25px;
+  padding: 0 14px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a8b0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.syncSpin {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+}
+
+.dividerDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #4f626a;
+}
+
+.errorBanner {
+  margin: 0 8px 8px;
+  padding: 9px 12px;
+  border: 1px solid #7c2f36;
+  background: #261115;
+  color: #ffb8bd;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.leagueStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.leagueCard {
+  border-top: 1px solid #303d42;
+  background: #141b1e;
+}
+
+.leagueHeader {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 16px;
+  color: inherit;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.leagueIdentity {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.leagueIdentity strong,
+.teamLine span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leagueIdentity strong {
+  display: block;
+  color: #f5fbff;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.leagueIdentity span {
+  display: block;
+  color: #8ca0a8;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.leagueActions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #c4d4dc;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+}
+
+.matchRow {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 24px auto 34px;
+  align-items: center;
+  padding: 7px 0 7px 12px;
+  border-top: 1px solid #29353a;
+  background: #151d20;
+}
+
+.matchRow.live {
+  background: #131b1e;
+}
+
+.matchTime {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  color: #9db4bd;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.matchTime small {
+  min-height: 12px;
+  color: #ff4958;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.liveMark {
+  position: absolute;
+  left: -8px;
+  top: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff3b4d;
+}
+
+.teamsBlock {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.teamLine {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  color: #f1f7fb;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.scoreBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  min-width: 20px;
+  padding-right: 8px;
+  color: #ff5260;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.oddsMini {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  gap: 4px;
+  padding-right: 6px;
+}
+
+.oddsMini span {
+  height: 22px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0c1214;
+  color: #7f929a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.starButton {
+  color: #8c9ca3;
+  border-left: 1px solid #313d42;
+}
+
+.starButton.active {
+  color: #ffd166;
+}
+
+.starButton.active svg {
+  fill: currentColor;
+}
+
+.teamLogo,
+.logoFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #202b30;
+}
+
+.teamLogo.sm,
+.logoFallback.sm {
+  width: 18px;
+  height: 18px;
+}
+
+.teamLogo.md,
+.logoFallback.md {
+  width: 24px;
+  height: 24px;
+}
+
+.logoFallback {
+  color: #d8e8ed;
+  font-size: 10px;
+  font-weight: 950;
+  border: 1px solid #35454b;
+}
+
+.loadingBlock {
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.skeletonRow {
+  height: 62px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #11181b 0%, #1f2a2e 52%, #11181b 100%);
+  background-size: 220% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.emptyState {
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #a8bac2;
+  text-align: center;
+  padding: 24px;
+}
+
+.emptyState strong {
+  color: #ecf6f9;
+  font-size: 14px;
+}
+
+.emptyState button {
+  min-height: 30px;
+  border: 1px solid #4650a9;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #dce0ff;
+  background: #171d3b;
+  font-weight: 850;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .appShell {
+    padding: 0;
+  }
+
+  .scorePanel {
+    min-height: 100vh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .topNav {
+    grid-template-columns: 1fr;
+    padding: 0 8px 8px;
+    gap: 0;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tabs button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  .datePicker {
+    justify-self: stretch;
+    grid-template-columns: 36px 1fr 36px;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .toggleLabel {
+    justify-self: end;
+  }
+
+  .matchRow {
+    grid-template-columns: 48px minmax(0, 1fr) 22px 34px;
+  }
+
+  .oddsMini {
+    display: none;
+  }
+}

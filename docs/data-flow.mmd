@@ -1,0 +1,13 @@
+flowchart LR
+  B[Tarayıcı\nReact scoreboard] -->|30 sn sessiz fetch\nIf-None-Match + checksum| A[Fastify API\n/api/v1/football/scoreboard]
+  A --> C{Snapshot sıcak mı?}
+  C -->|Evet| R[Redis / Memory\nhot cache]
+  C -->|Bitmiş tarih kilitli| D[Durable Store\nfinished write-once]
+  C -->|Süre doldu| P[Highlightly Football API\n/matches?date&timezone]
+  P -->|raw payload| N[Normalize\nstatus + score + league]
+  N --> M[Merge persisted finished]
+  M --> S[Stable grouped snapshot]
+  S --> R
+  S --> D
+  S --> A
+  A --> B

@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: scorexp-api
+    runtime: node
+    rootDir: apps/api
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    disk:
+      name: scorexp-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 20.17.0
+      - key: HIGHLIGHTLY_API_KEY
+        sync: false
+      - key: HIGHLIGHTLY_API_BASE_URL
+        value: https://soccer.highlightly.net
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_ORIGIN
+        value: "*"
+      - key: DEFAULT_TIMEZONE
+        value: Europe/Istanbul
+      - key: DATA_DIR
+        value: /var/data
+      - key: CACHE_DRIVER
+        value: memory
+      - key: LIVE_REFRESH_SECONDS
+        value: 180
+      - key: UPCOMING_REFRESH_SECONDS
+        value: 900
+      - key: FINISHED_REFRESH_SECONDS
+        value: 86400
+      - key: CLIENT_REFRESH_SECONDS
+        value: 30
