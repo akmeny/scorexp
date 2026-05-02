@@ -1,9 +1,11 @@
-import { Activity, CalendarDays, ChevronLeft, ChevronRight, RotateCw, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LeagueCard } from "./components/LeagueCard";
+import { SiteHeader } from "./components/SiteHeader";
+import { SortedMatchList } from "./components/SortedMatchList";
 import { dateLabel, shiftDate, todayInTimezone } from "./lib/date";
 import { useScoreboard } from "./hooks/useScoreboard";
-import type { LeagueGroup, ScoreboardView } from "./types";
+import type { LeagueGroup, NormalizedMatch, ScoreboardView } from "./types";
 import "./styles/app.css";
 
 const timezone = "Europe/Istanbul";
@@ -11,10 +13,13 @@ const timezone = "Europe/Istanbul";
 export default function App() {
   const [date, setDate] = useState(() => todayInTimezone(timezone));
   const [view, setView] = useState<ScoreboardView>("all");
-  const [tab, setTab] = useState<"all" | "favorites" | "matches">("all");
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [tab, setTab] = useState<"all" | "favorites">("all");
+  const [sortByTime, setSortByTime] = useState(false);
+  const [groupOpenOverrides, setGroupOpenOverrides] = useState<Record<string, boolean>>({});
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => readFavorites());
-  const { data, loading, refreshing, error, reload } = useScoreboard(date, timezone, "all");
+  const previousScoresRef = useRef<Map<string, string>>(new Map());
+  const [goalHighlights, setGoalHighlights] = useState<Record<string, number>>({});
+  const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
 
   const groups = useMemo(() => {
     const source = data?.leagues ?? [];
@@ -25,7 +30,59 @@ export default function App() {
     });
   }, [data?.leagues, favoriteIds, tab, view]);
 
+  const allMatches = useMemo(() => {
+    return (data?.leagues ?? []).flatMap((league) => league.matches);
+  }, [data?.leagues]);
+
+  const sortedMatches = useMemo(() => {
+    return [...allMatches].sort((a, b) => a.timestamp - b.timestamp || a.homeTeam.name.localeCompare(b.homeTeam.name));
+  }, [allMatches]);
+
+  const highlightedIds = useMemo(() => {
+    const now = Date.now();
+    return new Set(Object.entries(goalHighlights).filter(([, expiresAt]) => expiresAt > now).map(([id]) => id));
+  }, [goalHighlights]);
+
   const counts = data?.counts ?? { all: 0, live: 0, finished: 0, upcoming: 0, unknown: 0 };
+  const defaultGroupOpen = view === "live" || tab === "favorites";
+
+  useEffect(() => {
+    if (!allMatches.length) return;
+
+    const now = Date.now();
+    const previousScores = previousScoresRef.current;
+    const nextScores = new Map<string, string>();
+    const nextHighlights: Record<string, number> = {};
+
+    for (const match of allMatches) {
+      const scoreKey = scoreSnapshot(match);
+      const previous = previousScores.get(match.id);
+      if (previous && didScoreIncrease(previous, scoreKey)) {
+        nextHighlights[match.id] = now + 33_000;
+      }
+      nextScores.set(match.id, scoreKey);
+    }
+
+    previousScoresRef.current = nextScores;
+
+    if (Object.keys(nextHighlights).length > 0) {
+      setGoalHighlights((current) => ({ ...current, ...nextHighlights }));
+    }
+  }, [allMatches]);
+
+  useEffect(() => {
+    const hasHighlights = Object.keys(goalHighlights).length > 0;
+    if (!hasHighlights) return;
+
+    const timeout = window.setTimeout(() => {
+      const now = Date.now();
+      setGoalHighlights((current) =>
+        Object.fromEntries(Object.entries(current).filter(([, expiresAt]) => expiresAt > now))
+      );
+    }, 1_000);
+
+    return () => window.clearTimeout(timeout);
+  }, [goalHighlights]);
 
   const toggleFavorite = (id: string) => {
     setFavoriteIds((current) => {
@@ -38,31 +95,50 @@ export default function App() {
   };
 
   const toggleGroup = (key: string) => {
-    setCollapsed((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
+    setGroupOpenOverrides((current) => {
+      const isOpen = current[key] ?? defaultGroupOpen;
+      return { ...current, [key]: !isOpen };
     });
   };
 
+  const selectTab = (nextTab: "all" | "favorites") => {
+    setTab(nextTab);
+    setSortByTime(false);
+    setGroupOpenOverrides({});
+  };
+
+  const selectView = (nextView: ScoreboardView) => {
+    setView(nextView);
+    setSortByTime(false);
+    setGroupOpenOverrides({});
+  };
+
+  const toggleSortByTime = () => {
+    setTab("all");
+    setView("all");
+    setGroupOpenOverrides({});
+    setSortByTime((current) => !current);
+  };
+
   return (
-    <main className="appShell">
-      <section className="scorePanel" aria-label="Canli skorlar">
+    <>
+      <SiteHeader />
+      <main className="appShell">
+        <section className="scorePanel" aria-label="Canli skorlar">
         <header className="topNav">
           <nav className="tabs" aria-label="Skor sekmeleri">
-            <button className={tab === "all" ? "active" : ""} type="button" onClick={() => setTab("all")}>
+            <button className={tab === "all" && !sortByTime ? "active" : ""} type="button" onClick={() => selectTab("all")}>
               Tümü
             </button>
             <button
-              className={tab === "favorites" ? "active" : ""}
+              className={tab === "favorites" && !sortByTime ? "active" : ""}
               type="button"
-              onClick={() => setTab("favorites")}
+              onClick={() => selectTab("favorites")}
             >
               Favoriler
             </button>
-            <button className={tab === "matches" ? "active" : ""} type="button" onClick={() => setTab("matches")}>
-              Müsabakalar
+            <button className={sortByTime ? "active" : ""} type="button" onClick={toggleSortByTime}>
+              Saate Göre Sırala
             </button>
           </nav>
 
@@ -82,49 +158,51 @@ export default function App() {
 
         <div className="filters">
           <div className="chipRow">
-            <button className={view === "live" ? "chip active liveChip" : "chip liveChip"} type="button" onClick={() => setView("live")}>
+            <button className={view === "live" && !sortByTime ? "chip active liveChip" : "chip liveChip"} type="button" onClick={() => selectView("live")}>
               Canlı ({counts.live})
             </button>
-            <button className={view === "finished" ? "chip active" : "chip"} type="button" onClick={() => setView("finished")}>
+            <button className={view === "finished" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("finished")}>
               Bitti
             </button>
-            <button className={view === "upcoming" ? "chip active" : "chip"} type="button" onClick={() => setView("upcoming")}>
+            <button className={view === "upcoming" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("upcoming")}>
               Yaklaşan
             </button>
-            <button className={view === "all" ? "chip active" : "chip"} type="button" onClick={() => setView("all")}>
+            <button className={view === "all" ? "chip active" : "chip"} type="button" onClick={() => selectView("all")}>
               Tümü
             </button>
           </div>
-        </div>
-
-        <div className="statusLine">
-          <span className={refreshing ? "syncSpin" : ""}>
-            <RotateCw size={13} />
-          </span>
-          <span>{data ? `Son veri: ${new Date(data.sourceUpdatedAt).toLocaleTimeString("tr-TR")}` : "Veri hazirlaniyor"}</span>
-          <span className="dividerDot" />
-          <Activity size={13} />
-          <span>{policyLabel(data?.refreshPolicy.reason)}</span>
         </div>
 
         {error ? <div className="errorBanner">{error}</div> : null}
 
         <div className="leagueStack">
           {loading && !data ? <LoadingRows /> : null}
-          {!loading && groups.length === 0 ? <EmptyState tab={tab} onReload={reload} /> : null}
-          {groups.map((group) => (
-            <LeagueCard
-              key={group.key}
-              group={group}
-              collapsed={collapsed.has(group.key)}
+          {!loading && !sortByTime && groups.length === 0 ? <EmptyState tab={tab} onReload={reload} /> : null}
+          {!loading && sortByTime && sortedMatches.length === 0 ? <EmptyState tab={tab} onReload={reload} /> : null}
+          {sortByTime ? (
+            <SortedMatchList
+              matches={sortedMatches}
               favoriteIds={favoriteIds}
-              onToggle={toggleGroup}
+              highlightedIds={highlightedIds}
               onToggleFavorite={toggleFavorite}
             />
-          ))}
+          ) : (
+            groups.map((group) => (
+              <LeagueCard
+                key={group.key}
+                group={group}
+                collapsed={!(groupOpenOverrides[group.key] ?? defaultGroupOpen)}
+                favoriteIds={favoriteIds}
+                highlightedIds={highlightedIds}
+                onToggle={toggleGroup}
+                onToggleFavorite={toggleFavorite}
+              />
+            ))
+          )}
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   );
 }
 
@@ -154,12 +232,6 @@ function readFavorites() {
   }
 }
 
-function policyLabel(reason?: string) {
-  if (reason === "live") return "3 dk akış";
-  if (reason === "finished" || reason === "locked") return "Günlük arşiv";
-  return "Planlı akış";
-}
-
 function LoadingRows() {
   return (
     <div className="loadingBlock">
@@ -168,6 +240,21 @@ function LoadingRows() {
       ))}
     </div>
   );
+}
+
+function scoreSnapshot(match: NormalizedMatch) {
+  return `${match.score.home ?? ""}:${match.score.away ?? ""}`;
+}
+
+function didScoreIncrease(previous: string, current: string) {
+  const [previousHome, previousAway] = previous.split(":").map(toScoreNumber);
+  const [currentHome, currentAway] = current.split(":").map(toScoreNumber);
+  return currentHome > previousHome || currentAway > previousAway;
+}
+
+function toScoreNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function EmptyState({ tab, onReload }: { tab: string; onReload: () => void }) {

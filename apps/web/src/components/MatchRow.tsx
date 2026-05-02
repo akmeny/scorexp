@@ -5,17 +5,18 @@ import type { NormalizedMatch } from "../types";
 interface MatchRowProps {
   match: NormalizedMatch;
   favorite: boolean;
+  goalHighlighted?: boolean;
   onToggleFavorite: (id: string) => void;
 }
 
-export function MatchRow({ match, favorite, onToggleFavorite }: MatchRowProps) {
+export function MatchRow({ match, favorite, goalHighlighted = false, onToggleFavorite }: MatchRowProps) {
   const isLive = match.status.group === "live";
   const isUpcoming = match.status.group === "upcoming";
   const homeScore = formatScore(match.score.home, isUpcoming);
   const awayScore = formatScore(match.score.away, isUpcoming);
 
   return (
-    <article className={`matchRow ${match.status.group}`}>
+    <article className={`matchRow ${match.status.group} ${goalHighlighted ? "goalFlash" : ""}`}>
       <div className="matchTime">
         {isLive ? <span className="liveMark" /> : null}
         <span>{statusLabel(match)}</span>

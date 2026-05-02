@@ -29,11 +29,259 @@ button {
   cursor: pointer;
 }
 
+.siteHeader {
+  position: relative;
+  z-index: 10;
+  min-height: 116px;
+  background: #090d0f;
+  border-top: 1px solid #343a3d;
+  border-bottom: 1px solid #252d31;
+  color: #f4f8fa;
+}
+
+.headerTop {
+  height: 54px;
+  display: grid;
+  grid-template-columns: 230px minmax(280px, 454px) 1fr;
+  align-items: center;
+  gap: 18px;
+  padding: 0 14px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f2f7f9;
+  text-decoration: none;
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.brandMark {
+  width: 23px;
+  height: 23px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f8fa;
+  color: #0b1012;
+  border-radius: 5px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.headerSearch {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: #22292e;
+  color: #cbd4d8;
+}
+
+.headerSearch input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #e8eff2;
+  font-size: 13px;
+  font-weight: 450;
+}
+
+.headerSearch input::placeholder {
+  color: #9faab0;
+}
+
+.headerActions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.loginButton,
+.headerIcon,
+.newsButton {
+  border: 0;
+  color: #f5f8fa;
+  background: transparent;
+}
+
+.loginButton {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 15px;
+  border-radius: 4px;
+  background: #f4f6f7;
+  color: #080d0f;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.headerIcon {
+  width: 22px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sportsBar {
+  position: relative;
+  min-height: 61px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  padding: 0 12px 9px;
+}
+
+.sportsNav {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  overflow: hidden;
+}
+
+.sportItem {
+  position: relative;
+  min-width: 44px;
+  max-width: 96px;
+  height: 48px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  border: 0;
+  color: #f0f4f6;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sportItem > span:last-child {
+  max-width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sportItem.active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 4px 4px 0 0;
+  background: #22292e;
+  z-index: -1;
+}
+
+.sportItem.active::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: -9px;
+  height: 2px;
+  background: #7680ff;
+}
+
+.sportIconWrap {
+  position: relative;
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sportBadge {
+  position: absolute;
+  left: 15px;
+  top: -5px;
+  min-width: 16px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #171d20;
+  color: #f7fbfd;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.newsButton {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sportsMenu {
+  position: absolute;
+  left: clamp(12px, 5vw, 58px);
+  top: 57px;
+  width: min(510px, calc(100vw - 24px));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 6px;
+  border: 6px solid #1e272d;
+  border-radius: 8px;
+  background: #0f1518;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34);
+}
+
+.sportsMenu button {
+  min-height: 37px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 1px solid #283238;
+  color: #e7eef1;
+  background: #11171a;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sportsMenu button:nth-child(odd) {
+  border-right: 1px solid #283238;
+}
+
+.sportsMenu strong {
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #20292e;
+  color: #dbe5e8;
+  font-weight: 600;
+}
+
 .appShell {
-  min-height: 100vh;
+  min-height: calc(100vh - 116px);
   display: flex;
   justify-content: flex-start;
-  padding: 6px 10px;
+  padding: 10px 10px 6px;
   background:
     linear-gradient(180deg, rgba(29, 40, 43, 0.88), rgba(12, 17, 19, 0.96) 280px),
     #0c1113;
@@ -75,7 +323,7 @@ button {
   background: transparent;
   border: 0;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 650;
 }
 
 .tabs button.active {
@@ -244,7 +492,7 @@ button {
   display: block;
   color: #f5fbff;
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 560;
   line-height: 1.2;
 }
 
@@ -252,6 +500,7 @@ button {
   display: block;
   color: #8ca0a8;
   font-size: 11px;
+  font-weight: 450;
   line-height: 1.25;
 }
 
@@ -270,6 +519,8 @@ button {
 }
 
 .matchRow {
+  position: relative;
+  overflow: hidden;
   min-height: 64px;
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr) 24px 34px;
@@ -279,8 +530,23 @@ button {
   background: #151d20;
 }
 
+.matchRow > * {
+  position: relative;
+  z-index: 1;
+}
+
 .matchRow.live {
   background: #131b1e;
+}
+
+.matchRow.goalFlash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(255, 51, 70, 0.33);
+  transform-origin: left center;
+  animation: goalSweep 3s ease-out forwards;
 }
 
 .matchTime {
@@ -292,7 +558,7 @@ button {
   gap: 2px;
   color: #f2f8fa;
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 650;
   line-height: 1.1;
 }
 
@@ -325,7 +591,7 @@ button {
   gap: 7px;
   color: #f1f7fb;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 520;
   line-height: 1.1;
 }
 
@@ -338,7 +604,7 @@ button {
   padding-right: 8px;
   color: #f2f8fa;
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 700;
   line-height: 1.1;
 }
 
@@ -385,8 +651,14 @@ button {
 .logoFallback {
   color: #d8e8ed;
   font-size: 10px;
-  font-weight: 950;
+  font-weight: 650;
   border: 1px solid #35454b;
+}
+
+.sortedMatchList {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #303d42;
 }
 
 .loadingBlock {
@@ -442,8 +714,64 @@ button {
   }
 }
 
+@keyframes goalSweep {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (max-width: 480px) {
+  .siteHeader {
+    min-height: 150px;
+  }
+
+  .headerTop {
+    height: auto;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+
+  .headerActions {
+    display: none;
+  }
+
+  .sportsBar {
+    grid-template-columns: 1fr;
+    padding: 0 10px 9px;
+  }
+
+  .sportsNav {
+    overflow-x: auto;
+    gap: 14px;
+    padding-bottom: 2px;
+  }
+
+  .newsButton {
+    display: none;
+  }
+
+  .sportsMenu {
+    left: 10px;
+    top: 56px;
+    grid-template-columns: 1fr;
+    width: calc(100vw - 20px);
+  }
+
+  .sportsMenu button:nth-child(odd) {
+    border-right: 0;
+  }
+
   .appShell {
+    min-height: calc(100vh - 150px);
     padding: 0 0 0 10px;
   }
 
@@ -469,6 +797,7 @@ button {
     flex: 1 1 0;
     min-width: 0;
     padding: 0 6px;
+    font-size: 11px;
   }
 
   .datePicker {
