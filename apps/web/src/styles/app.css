@@ -2817,6 +2817,19 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    overscroll-behavior-y: none;
+  }
+
+  body,
+  a,
+  button,
+  img {
+    -webkit-touch-callout: none;
+  }
+
   .mobileOnly {
     display: inline-flex;
   }
@@ -2854,18 +2867,27 @@ button:disabled {
   .chipRow {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-auto-rows: 42px;
+    align-items: stretch;
     gap: 4px;
   }
 
   .chip {
     min-width: 0;
+    width: 100%;
+    height: 42px;
     min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 10px;
     padding: 0 2px;
     background: transparent;
     color: #aebec5;
     font-size: 9.5px;
     font-weight: 950;
+    line-height: 1;
+    text-align: center;
     white-space: nowrap;
   }
 

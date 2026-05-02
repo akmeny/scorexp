@@ -16,7 +16,9 @@ import "./styles/app.css";
 const timezone = "Europe/Istanbul";
 const GOAL_HIGHLIGHT_MS = 32_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
-const notificationIcon = "/icons/icon.svg";
+const notificationIcon = "/icons/icon-192.png";
+const notificationBadge = "/icons/notification-badge.png";
+const notificationImage = "/icons/icon-512.png";
 const notificationSound = "/audio/notification.mp3";
 
 let notificationAudioElement: HTMLAudioElement | null = null;
@@ -723,13 +725,23 @@ async function showSystemNotification(title: string, body: string, matchId: stri
   if (!("Notification" in window) || Notification.permission !== "granted") return;
 
   try {
-    const options: NotificationOptions & { renotify?: boolean } = {
+    const options: NotificationOptions & {
+      image?: string;
+      renotify?: boolean;
+      requireInteraction?: boolean;
+      timestamp?: number;
+      vibrate?: number[];
+    } = {
       body,
       icon: notificationIcon,
-      badge: notificationIcon,
-      data: { matchId },
-      tag: `scorexp:${matchId}:${title}`,
+      badge: notificationBadge,
+      image: notificationImage,
+      data: { matchId, url: "/" },
+      tag: `scorexp:${matchId}:${Date.now()}`,
       renotify: true,
+      requireInteraction: false,
+      timestamp: Date.now(),
+      vibrate: [80, 40, 80],
       silent: false
     };
 
