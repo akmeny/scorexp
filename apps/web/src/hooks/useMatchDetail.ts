@@ -1,59 +1,60 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchScoreboard } from "../lib/api";
-import type { ScoreboardSnapshot, ScoreboardView } from "../types";
+import { fetchMatchDetail } from "../lib/api";
+import type { MatchDetail } from "../types";
 
-interface UseScoreboardState {
-  data: ScoreboardSnapshot | null;
+interface UseMatchDetailState {
+  data: MatchDetail | null;
   loading: boolean;
   refreshing: boolean;
   error: string | null;
   reload: () => void;
 }
 
-export function useScoreboard(date: string, timezone: string, view: ScoreboardView): UseScoreboardState {
-  const [data, setData] = useState<ScoreboardSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+export function useMatchDetail(matchId: string | null, timezone: string): UseMatchDetailState {
+  const [data, setData] = useState<MatchDetail | null>(null);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const etagRef = useRef<string | null>(null);
-  const dataRef = useRef<ScoreboardSnapshot | null>(null);
+  const dataRef = useRef<MatchDetail | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const requestKey = `${date}:${timezone}:${view}`;
 
   const load = useCallback(
     async (silent = false) => {
+      if (!matchId) return;
+
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+
       if (silent) setRefreshing(true);
       if (!silent) setLoading(true);
 
       try {
-        const result = await fetchScoreboard({
-          date,
+        const result = await fetchMatchDetail({
+          matchId,
           timezone,
-          view,
           etag: etagRef.current,
           signal: controller.signal
         });
 
         if (result.etag) etagRef.current = result.etag;
-        const nextSnapshot = result.snapshot;
-        if (nextSnapshot) {
+        if (result.detail) {
           setData((current) => {
-            if (current && current.checksum === nextSnapshot.checksum && current.view === nextSnapshot.view) {
+            if (current && current.checksum === result.detail?.checksum) {
               dataRef.current = current;
               return current;
             }
-            dataRef.current = nextSnapshot;
-            return nextSnapshot;
+
+            dataRef.current = result.detail;
+            return result.detail;
           });
         }
         setError(null);
       } catch (caught) {
         if ((caught as Error).name !== "AbortError") {
-          console.warn("Scoreboard refresh failed", caught);
-          setError(dataRef.current ? null : "Skorlar şu anda alınamadı.");
+          console.warn("Match detail refresh failed", caught);
+          setError(dataRef.current ? null : "Maç detayı şu anda alınamadı.");
         }
       } finally {
         if (abortRef.current === controller) {
@@ -63,24 +64,36 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
         setRefreshing(false);
       }
     },
-    [date, timezone, view]
+    [matchId, timezone]
   );
 
   useEffect(() => {
     etagRef.current = null;
-    void load(false);
+    dataRef.current = null;
+    setData(null);
+    setError(null);
 
+    if (!matchId) {
+      setLoading(false);
+      setRefreshing(false);
+      abortRef.current?.abort();
+      return;
+    }
+
+    void load(false);
     return () => abortRef.current?.abort();
-  }, [load, requestKey]);
+  }, [load, matchId]);
 
   useEffect(() => {
-    const seconds = data?.refreshPolicy.clientRefreshSeconds ?? 30;
+    if (!matchId || !data) return;
+
+    const seconds = data.refreshPolicy.clientRefreshSeconds;
     const interval = window.setInterval(() => {
       void load(true);
-    }, Math.max(10, seconds) * 1000);
+    }, Math.max(300, seconds) * 1000);
 
     return () => window.clearInterval(interval);
-  }, [data?.refreshPolicy.clientRefreshSeconds, load]);
+  }, [data, load, matchId]);
 
   return {
     data,

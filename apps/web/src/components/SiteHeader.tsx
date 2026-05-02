@@ -7,8 +7,9 @@ import {
   Star,
   Zap
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SiteHeaderProps {
   footballCount: number;
@@ -51,6 +52,9 @@ const overflowSports = [
 
 export function SiteHeader({ footballCount }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const sportsBarRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const counts = {
     football: footballCount,
     basketball: 0,
@@ -64,6 +68,34 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
     darts: 0,
     iceHockey: 0
   };
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const updatePosition = () => {
+      const sportsBar = sportsBarRef.current;
+      const button = moreButtonRef.current;
+      if (!sportsBar || !button) return;
+
+      const barRect = sportsBar.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      const menuWidth = Math.min(510, window.innerWidth - 24);
+      const preferredLeft = buttonRect.left - barRect.left;
+      const alignedLeft =
+        preferredLeft + menuWidth > barRect.width ? buttonRect.right - barRect.left - menuWidth : preferredLeft;
+      const left = Math.max(0, Math.min(alignedLeft, barRect.width - menuWidth));
+
+      setMenuStyle({
+        left,
+        top: buttonRect.bottom - barRect.top + 8,
+        width: menuWidth
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [menuOpen]);
 
   return (
     <header className="siteHeader">
@@ -95,7 +127,7 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
         </div>
       </div>
 
-      <div className="sportsBar">
+      <div className="sportsBar" ref={sportsBarRef}>
         <nav className="sportsNav" aria-label="Spor dalları">
           {primarySports.map((sport) => {
             const Icon = sport.icon;
@@ -110,7 +142,12 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
             );
           })}
 
-          <button className="sportItem moreSportsButton" type="button" onClick={() => setMenuOpen((open) => !open)}>
+          <button
+            className="sportItem moreSportsButton"
+            type="button"
+            ref={moreButtonRef}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
             <span className="sportIconWrap">
               <Menu size={16} />
             </span>
@@ -124,7 +161,7 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
         </button>
 
         {menuOpen ? (
-          <div className="sportsMenu">
+          <div className="sportsMenu" style={menuStyle}>
             {overflowSports.map((label) => (
               <button type="button" key={label}>
                 <MoreSportIcon size={18} />

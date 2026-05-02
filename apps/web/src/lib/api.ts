@@ -1,6 +1,7 @@
-import type { ScoreboardSnapshot, ScoreboardView } from "../types";
+import type { MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
+const fallbackLocalApi = "http://localhost:4000";
 const configuredBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
 const apiBase = resolveApiBase(configuredBase);
 
@@ -14,6 +15,19 @@ export interface FetchScoreboardOptions {
 
 export interface FetchScoreboardResult {
   snapshot: ScoreboardSnapshot | null;
+  etag: string | null;
+  notModified: boolean;
+}
+
+export interface FetchMatchDetailOptions {
+  matchId: string;
+  timezone: string;
+  etag?: string | null;
+  signal?: AbortSignal;
+}
+
+export interface FetchMatchDetailResult {
+  detail: MatchDetail | null;
   etag: string | null;
   notModified: boolean;
 }
@@ -48,11 +62,43 @@ export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<
   };
 }
 
+export async function fetchMatchDetail(options: FetchMatchDetailOptions): Promise<FetchMatchDetailResult> {
+  const url = new URL(`/api/v1/football/matches/${encodeURIComponent(options.matchId)}/detail`, apiBase);
+  url.searchParams.set("timezone", options.timezone);
+
+  const response = await fetch(url, {
+    signal: options.signal,
+    headers: options.etag ? { "If-None-Match": options.etag } : undefined
+  });
+
+  if (response.status === 304) {
+    return {
+      detail: null,
+      etag: options.etag ?? null,
+      notModified: true
+    };
+  }
+
+  if (!response.ok) {
+    throw new Error(`Match detail request failed (${response.status})`);
+  }
+
+  return {
+    detail: (await response.json()) as MatchDetail,
+    etag: response.headers.get("ETag"),
+    notModified: false
+  };
+}
+
 function resolveApiBase(value: string | undefined) {
   const configured = value?.trim();
 
   if (configured && (!isLocalOnlyUrl(configured) || isBrowserOnLocalhost())) {
     return configured;
+  }
+
+  if (isBrowserOnLocalhost()) {
+    return fallbackLocalApi;
   }
 
   return fallbackProductionApi;

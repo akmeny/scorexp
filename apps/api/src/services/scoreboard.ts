@@ -4,9 +4,12 @@ import {
   createSnapshotChecksum,
   filterSnapshot,
   groupMatches,
-  normalizeMatch
+  normalizeMatch,
+  normalizeMatchDetail
 } from "../domain/normalize.js";
 import type {
+  MatchDetail,
+  MatchDetailCacheEntry,
   NormalizedMatch,
   RefreshPolicy,
   ScoreboardSnapshot,
@@ -24,8 +27,14 @@ interface ScoreboardQuery {
   view: ScoreboardView;
 }
 
+interface MatchDetailQuery {
+  matchId: string;
+  timezone: string;
+}
+
 export class ScoreboardService {
   private readonly inFlight = new Map<string, Promise<SnapshotCacheEntry>>();
+  private readonly detailInFlight = new Map<string, Promise<MatchDetailCacheEntry>>();
 
   constructor(
     private readonly appEnv: AppEnv,
@@ -56,8 +65,29 @@ export class ScoreboardService {
       return filterSnapshot(durable.snapshot, query.view);
     }
 
-    const fresh = await this.refresh(key, query.date, query.timezone);
-    return filterSnapshot(fresh.snapshot, query.view);
+    try {
+      const fresh = await this.refresh(key, query.date, query.timezone);
+      return filterSnapshot(fresh.snapshot, query.view);
+    } catch (error) {
+      const staleFallback = cached ?? durable;
+      if (staleFallback) {
+        return filterSnapshot(staleFallback.snapshot, query.view);
+      }
+
+      throw error;
+    }
+  }
+
+  async getMatchDetail(query: MatchDetailQuery): Promise<MatchDetail> {
+    const key = matchDetailKey(query.matchId, query.timezone);
+    const cached = await this.cache.get<MatchDetailCacheEntry>(key);
+
+    if (cached && new Date(cached.expiresAt).getTime() > Date.now()) {
+      return cached.detail;
+    }
+
+    const fresh = await this.refreshMatchDetail(key, query.matchId, query.timezone);
+    return fresh.detail;
   }
 
   async warmScoreboard(date: string, timezone: string): Promise<void> {
@@ -73,6 +103,18 @@ export class ScoreboardService {
     });
 
     this.inFlight.set(key, promise);
+    return promise;
+  }
+
+  private async refreshMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
+    const existing = this.detailInFlight.get(key);
+    if (existing) return existing;
+
+    const promise = this.fetchAndBuildMatchDetail(key, matchId, timezone).finally(() => {
+      this.detailInFlight.delete(key);
+    });
+
+    this.detailInFlight.set(key, promise);
     return promise;
   }
 
@@ -103,6 +145,28 @@ export class ScoreboardService {
       await this.store.markDateCompleted(key, merged.length, fetchedAt);
     }
 
+    return entry;
+  }
+
+  private async fetchAndBuildMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
+    const fetchedAt = new Date().toISOString();
+    const response = await this.highlightly.getMatchById(matchId);
+
+    if (!response.match) {
+      throw new Error(`Match detail not found (${matchId})`);
+    }
+
+    const statusGroup = normalizeMatch(response.match, timezone, fetchedAt).status.group;
+    const refreshPolicy = this.pickDetailRefreshPolicy(statusGroup, new Date());
+    const detail = normalizeMatchDetail(response.match, timezone, fetchedAt, refreshPolicy.nextProviderRefreshAt, refreshPolicy);
+    const entry: MatchDetailCacheEntry = {
+      detail,
+      fetchedAt,
+      expiresAt: detail.expiresAt,
+      providerRequestCount: response.requestCount
+    };
+
+    await this.cache.set(key, entry, ttlFromEntry(entry));
     return entry;
   }
 
@@ -150,10 +214,31 @@ export class ScoreboardService {
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
+
+  private pickDetailRefreshPolicy(statusGroup: NormalizedMatch["status"]["group"], now: Date): RefreshPolicy {
+    const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
+    const providerRefreshSeconds =
+      reason === "live"
+        ? Math.max(this.appEnv.liveRefreshSeconds, 300)
+        : reason === "finished"
+          ? this.appEnv.finishedRefreshSeconds
+          : this.appEnv.upcomingRefreshSeconds;
+
+    return {
+      reason,
+      providerRefreshSeconds,
+      clientRefreshSeconds: providerRefreshSeconds,
+      nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
+    };
+  }
 }
 
 function snapshotKey(date: string, timezone: string) {
   return `football:${date}:${timezone}`;
+}
+
+function matchDetailKey(matchId: string, timezone: string) {
+  return `football:match-detail:${matchId}:${timezone}`;
 }
 
 function mergePersistedFinished(incoming: NormalizedMatch[], persistedFinished: NormalizedMatch[]) {
@@ -177,7 +262,7 @@ function mergePersistedFinished(incoming: NormalizedMatch[], persistedFinished: 
   return Array.from(merged.values()).sort((a, b) => a.timestamp - b.timestamp);
 }
 
-function ttlFromEntry(entry: SnapshotCacheEntry) {
+function ttlFromEntry(entry: { expiresAt: string }) {
   const ttlMs = new Date(entry.expiresAt).getTime() - Date.now();
   return Math.max(30, Math.ceil(ttlMs / 1000));
 }

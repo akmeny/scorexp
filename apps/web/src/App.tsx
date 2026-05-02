@@ -1,9 +1,11 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LeagueCard } from "./components/LeagueCard";
+import { MatchDetailPanel } from "./components/MatchDetailPanel";
 import { SiteHeader } from "./components/SiteHeader";
 import { SortedMatchList } from "./components/SortedMatchList";
 import { dateLabel, shiftDate, todayInTimezone } from "./lib/date";
+import { useMatchDetail } from "./hooks/useMatchDetail";
 import { useScoreboard } from "./hooks/useScoreboard";
 import type { LeagueGroup, NormalizedMatch, ScoreboardView } from "./types";
 import "./styles/app.css";
@@ -17,18 +19,22 @@ export default function App() {
   const [sortByTime, setSortByTime] = useState(false);
   const [groupOpenOverrides, setGroupOpenOverrides] = useState<Record<string, boolean>>({});
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => readFavorites());
+  const [pinnedLeagueIds, setPinnedLeagueIds] = useState<Set<string>>(() => readPinnedLeagues());
+  const [selectedMatch, setSelectedMatch] = useState<NormalizedMatch | null>(null);
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const [goalHighlights, setGoalHighlights] = useState<Record<string, number>>({});
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
+  const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
 
   const groups = useMemo(() => {
     const source = data?.leagues ?? [];
     return filterGroups(source, {
       view,
       favoritesOnly: tab === "favorites",
-      favoriteIds
+      favoriteIds,
+      pinnedLeagueIds
     });
-  }, [data?.leagues, favoriteIds, tab, view]);
+  }, [data?.leagues, favoriteIds, pinnedLeagueIds, tab, view]);
 
   const allMatches = useMemo(() => {
     return (data?.leagues ?? []).flatMap((league) => league.matches);
@@ -71,6 +77,14 @@ export default function App() {
   }, [allMatches]);
 
   useEffect(() => {
+    if (!selectedMatch) return;
+    const updated = allMatches.find((match) => match.id === selectedMatch.id);
+    if (updated && updated !== selectedMatch) {
+      setSelectedMatch(updated);
+    }
+  }, [allMatches, selectedMatch]);
+
+  useEffect(() => {
     const hasHighlights = Object.keys(goalHighlights).length > 0;
     if (!hasHighlights) return;
 
@@ -90,6 +104,16 @@ export default function App() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       localStorage.setItem("scorexp:favorites", JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const togglePinnedLeague = (key: string) => {
+    setPinnedLeagueIds((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      localStorage.setItem("scorexp:pinnedLeagues", JSON.stringify(Array.from(next)));
       return next;
     });
   };
@@ -173,18 +197,18 @@ export default function App() {
           </div>
         </div>
 
-        {error ? <div className="errorBanner">{error}</div> : null}
-
         <div className="leagueStack">
           {loading && !data ? <LoadingRows /> : null}
-          {!loading && !sortByTime && groups.length === 0 ? <EmptyState tab={tab} onReload={reload} /> : null}
-          {!loading && sortByTime && sortedMatches.length === 0 ? <EmptyState tab={tab} onReload={reload} /> : null}
+          {!loading && !sortByTime && groups.length === 0 ? <EmptyState tab={tab} hasError={Boolean(error && !data)} onReload={reload} /> : null}
+          {!loading && sortByTime && sortedMatches.length === 0 ? <EmptyState tab={tab} hasError={Boolean(error && !data)} onReload={reload} /> : null}
           {sortByTime ? (
             <SortedMatchList
               matches={sortedMatches}
+              selectedMatchId={selectedMatch?.id ?? null}
               favoriteIds={favoriteIds}
               highlightedIds={highlightedIds}
               onToggleFavorite={toggleFavorite}
+              onSelectMatch={setSelectedMatch}
             />
           ) : (
             groups.map((group) => (
@@ -192,15 +216,31 @@ export default function App() {
                 key={group.key}
                 group={group}
                 collapsed={!(groupOpenOverrides[group.key] ?? defaultGroupOpen)}
+                pinned={pinnedLeagueIds.has(group.key)}
+                showMatchCount={view !== "live"}
+                selectedMatchId={selectedMatch?.id ?? null}
                 favoriteIds={favoriteIds}
                 highlightedIds={highlightedIds}
                 onToggle={toggleGroup}
+                onTogglePinned={togglePinnedLeague}
                 onToggleFavorite={toggleFavorite}
+                onSelectMatch={setSelectedMatch}
               />
             ))
           )}
         </div>
         </section>
+        {selectedMatch ? (
+          <MatchDetailPanel
+            match={selectedMatch}
+            detail={detailState.data}
+            loading={detailState.loading}
+            refreshing={detailState.refreshing}
+            error={detailState.error}
+            onClose={() => setSelectedMatch(null)}
+            onReload={detailState.reload}
+          />
+        ) : null}
       </main>
     </>
   );
@@ -208,25 +248,35 @@ export default function App() {
 
 function filterGroups(
   groups: LeagueGroup[],
-  options: { view: ScoreboardView; favoritesOnly: boolean; favoriteIds: Set<string> }
+  options: { view: ScoreboardView; favoritesOnly: boolean; favoriteIds: Set<string>; pinnedLeagueIds: Set<string> }
 ) {
   return groups
     .map((group) => {
       const visibleByStatus =
         options.view === "all" ? group.matches : group.matches.filter((match) => match.status.group === options.view);
 
-      const matches = options.favoritesOnly
+      const isPinned = options.pinnedLeagueIds.has(group.key);
+      const matches = options.favoritesOnly && !isPinned
         ? visibleByStatus.filter((match) => options.favoriteIds.has(match.id))
         : visibleByStatus;
 
       return { ...group, matches };
     })
-    .filter((group) => group.matches.length > 0);
+    .filter((group) => group.matches.length > 0)
+    .sort((a, b) => Number(options.pinnedLeagueIds.has(b.key)) - Number(options.pinnedLeagueIds.has(a.key)));
 }
 
 function readFavorites() {
   try {
     return new Set<string>(JSON.parse(localStorage.getItem("scorexp:favorites") ?? "[]"));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function readPinnedLeagues() {
+  try {
+    return new Set<string>(JSON.parse(localStorage.getItem("scorexp:pinnedLeagues") ?? "[]"));
   } catch {
     return new Set<string>();
   }
@@ -257,11 +307,11 @@ function toScoreNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function EmptyState({ tab, onReload }: { tab: string; onReload: () => void }) {
+function EmptyState({ tab, hasError, onReload }: { tab: string; hasError: boolean; onReload: () => void }) {
   return (
     <div className="emptyState">
       <Search size={22} />
-      <strong>{tab === "favorites" ? "Favori maç yok" : "Maç bulunamadı"}</strong>
+      <strong>{hasError ? "Skorlar yüklenemedi" : tab === "favorites" ? "Favori maç yok" : "Maç bulunamadı"}</strong>
       <button type="button" onClick={onReload}>
         Yenile
       </button>

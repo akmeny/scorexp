@@ -5,21 +5,33 @@ import type { NormalizedMatch } from "../types";
 interface MatchRowProps {
   match: NormalizedMatch;
   favorite: boolean;
+  selected?: boolean;
   goalHighlighted?: boolean;
   onToggleFavorite: (id: string) => void;
+  onSelect: (match: NormalizedMatch) => void;
 }
 
-export function MatchRow({ match, favorite, goalHighlighted = false, onToggleFavorite }: MatchRowProps) {
+export function MatchRow({ match, favorite, selected = false, goalHighlighted = false, onToggleFavorite, onSelect }: MatchRowProps) {
   const isLive = match.status.group === "live";
   const isUpcoming = match.status.group === "upcoming";
   const homeScore = formatScore(match.score.home, isUpcoming);
   const awayScore = formatScore(match.score.away, isUpcoming);
 
   return (
-    <article className={`matchRow ${match.status.group} ${goalHighlighted ? "goalFlash" : ""}`}>
+    <article
+      className={`matchRow ${match.status.group} ${selected ? "selected" : ""} ${goalHighlighted ? "goalFlash" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(match)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(match);
+        }
+      }}
+    >
       <div className="matchTime">
-        {isLive ? <span className="liveMark" /> : null}
-        <span>{statusLabel(match)}</span>
+        {statusLabel(match)}
       </div>
 
       <div className="teamsBlock">
@@ -42,7 +54,10 @@ export function MatchRow({ match, favorite, goalHighlighted = false, onToggleFav
         className={`iconButton starButton ${favorite ? "active" : ""}`}
         type="button"
         aria-label="Favori"
-        onClick={() => onToggleFavorite(match.id)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleFavorite(match.id);
+        }}
       >
         <Star size={18} />
       </button>
@@ -57,9 +72,16 @@ function formatScore(value: number | null, upcoming: boolean) {
 
 function statusLabel(match: NormalizedMatch) {
   if (match.status.group === "live") {
-    if (match.status.minute !== null) return `${match.status.minute}'`;
-    return match.status.description === "Half time" ? "HT" : "";
+    if (match.status.minute !== null) {
+      return (
+        <span className="liveMinute">
+          <span>{match.status.minute}</span>
+          <span className="minuteTick">'</span>
+        </span>
+      );
+    }
+    return <span>{match.status.description === "Half time" ? "HT" : ""}</span>;
   }
-  if (match.status.group === "finished") return "MS";
-  return match.localTime;
+  if (match.status.group === "finished") return <span>MS</span>;
+  return <span>{match.localTime}</span>;
 }

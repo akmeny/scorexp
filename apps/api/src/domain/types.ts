@@ -39,6 +39,70 @@ export interface ProviderMatch {
   } | null;
 }
 
+export interface ProviderVenue {
+  name?: string | null;
+  city?: string | null;
+  country?: string | null;
+  capacity?: number | string | null;
+}
+
+export interface ProviderReferee {
+  name?: string | null;
+  nationality?: string | null;
+}
+
+export interface ProviderForecast {
+  status?: string | null;
+  temperature?: number | string | null;
+}
+
+export interface ProviderMatchEvent {
+  team?: ProviderTeam | null;
+  time?: string | number | null;
+  type?: string | null;
+  playerId?: number | string | null;
+  player?: string | null;
+  assistingPlayerId?: number | string | null;
+  assist?: string | null;
+  substituted?: string | null;
+}
+
+export interface ProviderStatistic {
+  displayName?: string | null;
+  value?: number | string | null;
+}
+
+export interface ProviderTeamStatistics {
+  team?: ProviderTeam | null;
+  statistics?: ProviderStatistic[] | null;
+}
+
+export interface ProviderPrediction {
+  type?: string | null;
+  modelType?: string | null;
+  description?: string | null;
+  generatedAt?: string | null;
+  probabilities?: {
+    home?: string | null;
+    draw?: string | null;
+    away?: string | null;
+  } | null;
+}
+
+export interface ProviderMatchPredictions {
+  live?: ProviderPrediction[] | null;
+  prematch?: ProviderPrediction[] | null;
+}
+
+export interface ProviderMatchDetail extends ProviderMatch {
+  venue?: ProviderVenue | null;
+  referee?: ProviderReferee | null;
+  forecast?: ProviderForecast | null;
+  events?: ProviderMatchEvent[] | null;
+  statistics?: ProviderTeamStatistics[] | null;
+  predictions?: ProviderMatchPredictions | null;
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -121,6 +185,74 @@ export interface ScoreboardSnapshot {
 
 export interface SnapshotCacheEntry {
   snapshot: ScoreboardSnapshot;
+  fetchedAt: string;
+  expiresAt: string;
+  providerRequestCount: number;
+}
+
+export interface MatchDetailEvent {
+  team: Team;
+  time: string | null;
+  type: string;
+  player: string | null;
+  assist: string | null;
+  substituted: string | null;
+}
+
+export interface MatchDetailStatistic {
+  displayName: string;
+  value: number | string | null;
+}
+
+export interface MatchDetailTeamStatistics {
+  team: Team;
+  statistics: MatchDetailStatistic[];
+}
+
+export interface MatchDetailPrediction {
+  type: string | null;
+  modelType: string | null;
+  description: string | null;
+  generatedAt: string | null;
+  probabilities: {
+    home: string | null;
+    draw: string | null;
+    away: string | null;
+  };
+}
+
+export interface MatchDetail {
+  id: string;
+  checksum: string;
+  source: "highlightly";
+  fetchedAt: string;
+  expiresAt: string;
+  refreshPolicy: RefreshPolicy;
+  match: NormalizedMatch;
+  venue: {
+    name: string | null;
+    city: string | null;
+    country: string | null;
+    capacity: number | null;
+  };
+  referee: {
+    name: string | null;
+    nationality: string | null;
+  };
+  forecast: {
+    status: string | null;
+    temperature: number | null;
+  };
+  events: MatchDetailEvent[];
+  statistics: MatchDetailTeamStatistics[];
+  predictions: {
+    latestLive: MatchDetailPrediction | null;
+    latestPrematch: MatchDetailPrediction | null;
+  };
+}
+
+export interface MatchDetailCacheEntry {
+  detail: MatchDetail;
   fetchedAt: string;
   expiresAt: string;
   providerRequestCount: number;

@@ -52,5 +52,6 @@ Frontend Vercel için `apps/web/vercel.json` hazır. Production API fallback adr
 ```http
 GET /api/health
 GET /api/v1/football/scoreboard?date=2026-05-02&timezone=Europe/Istanbul&view=all
+GET /api/v1/football/matches/:id/detail?timezone=Europe/Istanbul
 GET /api/v1/football/flow
 ```

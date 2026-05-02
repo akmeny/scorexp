@@ -1,8 +1,17 @@
 import type { AppEnv } from "../config/env.js";
-import type { ProviderMatch } from "../domain/types.js";
+import type { ProviderMatch, ProviderMatchDetail } from "../domain/types.js";
 
 export interface HighlightlyFetchResult {
   matches: ProviderMatch[];
+  requestCount: number;
+  rateLimit: {
+    limit: string | null;
+    remaining: string | null;
+  };
+}
+
+export interface HighlightlyMatchDetailResult {
+  match: ProviderMatchDetail | null;
   requestCount: number;
   rateLimit: {
     limit: string | null;
@@ -18,6 +27,8 @@ interface MatchesResponse {
     limit?: number;
   };
 }
+
+type MatchDetailResponse = ProviderMatchDetail[] | { data?: ProviderMatchDetail[] };
 
 export class HighlightlyClient {
   constructor(private readonly appEnv: AppEnv) {}
@@ -66,5 +77,34 @@ export class HighlightlyClient {
     }
 
     return { matches, requestCount, rateLimit };
+  }
+
+  async getMatchById(id: string): Promise<HighlightlyMatchDetailResult> {
+    const url = new URL(`${this.appEnv.highlightlyApiBaseUrl}/matches/${encodeURIComponent(id)}`);
+    const response = await fetch(url, {
+      headers: {
+        "x-rapidapi-key": this.appEnv.highlightlyApiKey
+      },
+      signal: AbortSignal.timeout(30_000)
+    });
+
+    const rateLimit = {
+      limit: response.headers.get("x-ratelimit-requests-limit"),
+      remaining: response.headers.get("x-ratelimit-requests-remaining")
+    };
+
+    if (response.status === 404) {
+      return { match: null, requestCount: 1, rateLimit };
+    }
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Highlightly /matches/${id} failed (${response.status}): ${body.slice(0, 400)}`);
+    }
+
+    const payload = (await response.json()) as MatchDetailResponse;
+    const matches = Array.isArray(payload) ? payload : payload.data ?? [];
+
+    return { match: matches[0] ?? null, requestCount: 1, rateLimit };
   }
 }

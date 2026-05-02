@@ -11,6 +11,14 @@ const querySchema = z.object({
   view: z.enum(["all", "live", "finished", "upcoming"]).optional()
 });
 
+const detailParamsSchema = z.object({
+  id: z.string().min(1)
+});
+
+const detailQuerySchema = z.object({
+  timezone: z.string().optional()
+});
+
 export async function registerFootballRoutes(app: FastifyInstance, service: ScoreboardService, appEnv: AppEnv) {
   app.get("/api/v1/football/scoreboard", async (request, reply) => {
     const parsed = querySchema.parse(request.query);
@@ -33,6 +41,24 @@ export async function registerFootballRoutes(app: FastifyInstance, service: Scor
     }
 
     return snapshot;
+  });
+
+  app.get("/api/v1/football/matches/:id/detail", async (request, reply) => {
+    const params = detailParamsSchema.parse(request.params);
+    const parsed = detailQuerySchema.parse(request.query);
+    const timezone = parsed.timezone ?? appEnv.defaultTimezone;
+
+    const detail = await service.getMatchDetail({ matchId: params.id, timezone });
+    const etag = `"${detail.checksum}"`;
+
+    reply.header("Cache-Control", "no-store");
+    reply.header("ETag", etag);
+
+    if (request.headers["if-none-match"] === etag) {
+      return reply.code(304).send();
+    }
+
+    return detail;
   });
 
   app.get("/api/v1/football/flow", async () => ({

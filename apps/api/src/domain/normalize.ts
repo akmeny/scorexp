@@ -1,8 +1,14 @@
 import { createHash } from "node:crypto";
 import type {
   LeagueGroup,
+  MatchDetail,
+  MatchDetailPrediction,
   MatchScore,
   NormalizedMatch,
+  ProviderMatchDetail,
+  ProviderMatchEvent,
+  ProviderPrediction,
+  ProviderTeamStatistics,
   ProviderMatch,
   ScoreboardSnapshot,
   ScoreboardView,
@@ -110,6 +116,49 @@ export function normalizeMatch(raw: ProviderMatch, timezone: string, updatedAt =
   };
 }
 
+export function normalizeMatchDetail(
+  raw: ProviderMatchDetail,
+  timezone: string,
+  fetchedAt: string,
+  expiresAt: string,
+  refreshPolicy: MatchDetail["refreshPolicy"]
+): MatchDetail {
+  const match = normalizeMatch(raw, timezone, fetchedAt);
+  const detail = {
+    id: match.id,
+    source: "highlightly" as const,
+    fetchedAt,
+    expiresAt,
+    refreshPolicy,
+    match,
+    venue: {
+      name: cleanString(raw.venue?.name),
+      city: cleanString(raw.venue?.city),
+      country: cleanString(raw.venue?.country),
+      capacity: normalizeNumber(raw.venue?.capacity)
+    },
+    referee: {
+      name: cleanString(raw.referee?.name),
+      nationality: cleanString(raw.referee?.nationality)
+    },
+    forecast: {
+      status: cleanString(raw.forecast?.status),
+      temperature: normalizeNumber(raw.forecast?.temperature)
+    },
+    events: normalizeDetailEvents(raw.events),
+    statistics: normalizeDetailStatistics(raw.statistics),
+    predictions: {
+      latestLive: latestPrediction(raw.predictions?.live),
+      latestPrematch: latestPrediction(raw.predictions?.prematch)
+    }
+  };
+
+  return {
+    ...detail,
+    checksum: createMatchDetailChecksum(detail)
+  };
+}
+
 export function groupMatches(matches: NormalizedMatch[]): LeagueGroup[] {
   const groups = new Map<string, LeagueGroup>();
 
@@ -208,12 +257,87 @@ export function createSnapshotChecksum(snapshot: Omit<ScoreboardSnapshot, "check
   return createHash("sha256").update(JSON.stringify(stableShape)).digest("hex").slice(0, 16);
 }
 
+function createMatchDetailChecksum(detail: Omit<MatchDetail, "checksum">): string {
+  const stableShape = {
+    id: detail.id,
+    status: detail.match.status,
+    score: detail.match.score,
+    events: detail.events,
+    statistics: detail.statistics,
+    predictions: detail.predictions
+  };
+
+  return createHash("sha256").update(JSON.stringify(stableShape)).digest("hex").slice(0, 16);
+}
+
 function normalizeTeam(team: ProviderMatch["homeTeam"], fallback: string) {
   return {
     id: team?.id !== undefined && team.id !== null ? String(team.id) : fallback.toLowerCase(),
     name: team?.name?.trim() || fallback,
     logo: team?.logo ?? null
   };
+}
+
+function normalizeDetailEvents(events: ProviderMatchEvent[] | null | undefined) {
+  if (!Array.isArray(events)) return [];
+
+  return events
+    .filter((event) => cleanString(event.type))
+    .map((event) => ({
+      team: normalizeTeam(event.team, "Team"),
+      time: event.time !== undefined && event.time !== null && event.time !== "" ? String(event.time) : null,
+      type: cleanString(event.type) ?? "Event",
+      player: cleanString(event.player),
+      assist: cleanString(event.assist),
+      substituted: cleanString(event.substituted)
+    }));
+}
+
+function normalizeDetailStatistics(groups: ProviderTeamStatistics[] | null | undefined) {
+  if (!Array.isArray(groups)) return [];
+
+  return groups
+    .map((group) => ({
+      team: normalizeTeam(group.team, "Team"),
+      statistics: Array.isArray(group.statistics)
+        ? group.statistics
+            .filter((item) => cleanString(item.displayName))
+            .map((item) => ({
+              displayName: cleanString(item.displayName) ?? "Statistic",
+              value: item.value ?? null
+            }))
+        : []
+    }))
+    .filter((group) => group.statistics.length > 0);
+}
+
+function latestPrediction(items: ProviderPrediction[] | null | undefined): MatchDetailPrediction | null {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  const latest = items[items.length - 1];
+
+  return {
+    type: cleanString(latest.type),
+    modelType: cleanString(latest.modelType),
+    description: cleanString(latest.description),
+    generatedAt: cleanString(latest.generatedAt),
+    probabilities: {
+      home: cleanString(latest.probabilities?.home),
+      draw: cleanString(latest.probabilities?.draw),
+      away: cleanString(latest.probabilities?.away)
+    }
+  };
+}
+
+function cleanString(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeNumber(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function splitScore(raw: string | null | undefined): [number | null, number | null] {
