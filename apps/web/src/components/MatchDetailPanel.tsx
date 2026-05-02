@@ -15,9 +15,10 @@ import {
   UserRound,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { TeamLogo } from "./TeamLogo";
+import { localizeCountryName } from "../lib/localization";
 import type {
   MatchDetail,
   MatchDetailEvent,
@@ -46,7 +47,7 @@ const analysisSteps = [
   "Veriler derleniyor...",
   "Takımların form durumu kontrol ediliyor...",
   "Puan durumu ağırlıkları hesaplanıyor...",
-  "H2H kırılımları karşılaştırılıyor...",
+  "Aralarındaki maç kırılımları karşılaştırılıyor...",
   "Oyuncu teknik kapasitesi hesaplanıyor...",
   "Erişilebilir kadro verileri taranıyor...",
   "Eksik/sakat/cezalı bilgisi varsa derleniyor...",
@@ -58,6 +59,7 @@ const statisticPriority = [
   "Possession",
   "Shots on target",
   "Shots off target",
+  "Total shots",
   "Corners",
   "Free Kicks",
   "Throw-Ins",
@@ -71,13 +73,24 @@ const statisticLabels: Record<string, string> = {
   Possession: "Topa sahip olma",
   "Shots on target": "İsabetli şut",
   "Shots off target": "İsabetsiz şut",
+  "Total shots": "Toplam şut",
+  "Blocked shots": "Engellenen şut",
+  "Shots inside box": "Ceza sahası içi şut",
+  "Shots outside box": "Ceza sahası dışı şut",
   Corners: "Korner",
   "Free Kicks": "Serbest vuruş",
   "Throw-Ins": "Taç",
   "Goal Kicks": "Aut atışı",
   Offsides: "Ofsayt",
+  Fouls: "Faul",
+  Saves: "Kurtarış",
+  "Goalkeeper saves": "Kaleci kurtarışı",
+  Passes: "Pas",
+  "Accurate passes": "İsabetli pas",
   "Yellow cards": "Sarı kart",
-  "Red cards": "Kırmızı kart"
+  "Red cards": "Kırmızı kart",
+  "Yellow Cards": "Sarı kart",
+  "Red Cards": "Kırmızı kart"
 };
 
 const eventLabels: Record<string, string> = {
@@ -112,6 +125,7 @@ export function MatchDetailPanel({
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
   const visibleTabs = useMemo(() => buildTabs(activeMatch, detail, statisticRows.length), [activeMatch, detail, statisticRows.length]);
   const aiResult = useMemo(() => buildAiResult(activeMatch, detail, prediction), [activeMatch, detail, prediction]);
+  const tabStyle = { "--tab-count": visibleTabs.length } as CSSProperties;
 
   useEffect(() => {
     setTab("details");
@@ -153,10 +167,10 @@ export function MatchDetailPanel({
       <header className="detailTop">
         <div className="detailLeagueIdentity">
           <LeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />
-          <div>
-            <span>{activeMatch.country.name}</span>
-            <strong>{activeMatch.league.name}</strong>
-            {activeMatch.round ? <em>{formatRound(activeMatch.round)}</em> : null}
+          <div className="detailLeagueMeta">
+            <span className="detailLeagueCountry">{localizeCountryName(activeMatch.country.name)}</span>
+            <strong title={activeMatch.league.name}>{activeMatch.league.name}</strong>
+            {activeMatch.round ? <em title={formatRound(activeMatch.round)}>{formatRound(activeMatch.round)}</em> : null}
           </div>
         </div>
         <div className="detailTopActions">
@@ -183,7 +197,7 @@ export function MatchDetailPanel({
       {loading ? <div className="detailNotice">Detaylar yükleniyor</div> : null}
       {error ? <div className="detailNotice">{error}</div> : null}
 
-      <nav className="detailTabs" aria-label="Maç detay sekmeleri">
+      <nav className={`detailTabs ${visibleTabs.length >= 6 ? "dense" : ""}`} aria-label="Maç detay sekmeleri" style={tabStyle}>
         {visibleTabs.map((item) => (
           <button className={tab === item.key ? "active" : ""} type="button" onClick={() => setTab(item.key)} key={item.key}>
             {item.label}
@@ -250,9 +264,9 @@ function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statistic
 
   if (!isUpcoming && (detail?.events?.length ?? 0) > 0) tabs.push({ key: "events", label: "Özet" });
   if (!isUpcoming && statisticRowCount > 0) tabs.push({ key: "stats", label: "İstatistik" });
-  if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "H2H" });
+  if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "Aralar" });
   if ((detail?.form?.home.length ?? 0) > 0 || (detail?.form?.away.length ?? 0) > 0) tabs.push({ key: "form", label: "Form" });
-  if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan Durumu" });
+  if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan" });
 
   return tabs;
 }
@@ -310,10 +324,17 @@ function AiPredictionCard({
   result: ReturnType<typeof buildAiResult>;
   onStart: () => void;
 }) {
+  const blockRef = useRef<HTMLElement | null>(null);
   const progress = status === "done" ? 100 : status === "analyzing" ? Math.round(((step + 1) / analysisSteps.length) * 100) : 0;
 
+  useEffect(() => {
+    if (status === "done") {
+      blockRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [status]);
+
   return (
-    <section className={`aiPredictionBlock ${status}`}>
+    <section className={`aiPredictionBlock ${status}`} ref={blockRef}>
       <div className="aiPredictionHeader">
         <span>
           <BrainCircuit size={16} />
@@ -338,12 +359,10 @@ function AiPredictionCard({
           <div className="aiScanner" aria-hidden="true">
             <span />
           </div>
-          <div className="aiLog">
-            {analysisSteps.slice(0, step + 1).map((item, index) => (
-              <span className={index === step ? "active" : ""} key={item}>
-                {item}
-              </span>
-            ))}
+          <div className="aiLog" aria-live="polite">
+            <span className="active" key={analysisSteps[step]}>
+              {analysisSteps[step]}
+            </span>
           </div>
           <div className="aiProgress" aria-hidden="true">
             <i style={{ width: `${progress}%` }} />
@@ -597,7 +616,7 @@ function buildAiResult(match: NormalizedMatch, detail: MatchDetail | null, predi
 
     return {
       title: `${leader.label} öne çıkıyor`,
-      summary: `aiXp analizi ${leader.label} tarafını ${leader.value} ile bir adım öne koyuyor. Güven seviyesi ${confidence}; H2H, form, puan durumu ve erişilebilir oyuncu verileri birlikte değerlendirildi.`,
+      summary: `aiXp analizi ${leader.label} tarafını ${leader.value} ile bir adım öne koyuyor. Güven seviyesi ${confidence}; aralarındaki maçlar, form, puan durumu ve erişilebilir oyuncu verileri birlikte değerlendirildi.`,
       probabilities: probabilities.map((item) => ({ label: item.key === "home" ? "1" : item.key === "draw" ? "X" : "2", value: item.value ?? "0%" }))
     };
   }
@@ -692,11 +711,21 @@ function formatStatusDescription(value: string) {
     "First half": "İlk yarı",
     "Second half": "İkinci yarı",
     "Half time": "Devre arası",
+    "Extra time": "Uzatmalar",
+    "Break time": "Ara",
+    Penalties: "Penaltılar",
+    Suspended: "Askıya alındı",
+    Interrupted: "Kesintiye uğradı",
+    "In progress": "Devam ediyor",
     Finished: "Bitti",
     "Finished after penalties": "Penaltılarla bitti",
     "Finished after extra time": "Uzatmalarda bitti",
     Postponed: "Ertelendi",
-    Cancelled: "İptal"
+    "To be announced": "Açıklanacak",
+    Cancelled: "İptal",
+    Awarded: "Hükmen",
+    Abandoned: "Yarıda kaldı",
+    Unknown: "Bilinmiyor"
   };
 
   return labels[value] ?? value;
@@ -715,6 +744,10 @@ function formatRound(value: string) {
   const labels: Record<string, string> = {
     "Semi-finals": "Yarı final",
     "Quarter-finals": "Çeyrek final",
+    "Round of 16": "Son 16",
+    "Group Stage": "Grup aşaması",
+    "Preliminary Round": "Ön eleme turu",
+    "Qualification Round": "Eleme turu",
     Final: "Final"
   };
 
@@ -745,20 +778,47 @@ function formatShortDate(value: string) {
 function formatVenue(detail: MatchDetail | null) {
   const venue = detail?.venue;
   if (!venue) return null;
-  return [venue.name, venue.city, venue.country].filter(Boolean).join(" • ") || null;
+  return [venue.name, venue.city, localizeCountryName(venue.country)].filter(Boolean).join(" • ") || null;
 }
 
 function formatReferee(detail: MatchDetail | null) {
   const referee = detail?.referee;
   if (!referee) return null;
-  return [referee.name, referee.nationality].filter(Boolean).join(" • ") || null;
+  return [referee.name, localizeCountryName(referee.nationality)].filter(Boolean).join(" • ") || null;
 }
 
 function formatForecast(detail: MatchDetail | null) {
   const forecast = detail?.forecast;
   if (!forecast) return null;
   const temperature = forecast.temperature !== null && forecast.temperature !== undefined ? `${forecast.temperature}°` : null;
-  return [forecast.status, temperature].filter(Boolean).join(" • ") || null;
+  return [formatWeatherStatus(forecast.status), temperature].filter(Boolean).join(" • ") || null;
+}
+
+function formatWeatherStatus(value: string | null) {
+  if (!value) return null;
+
+  const labels: Record<string, string> = {
+    clear: "Açık",
+    Clear: "Açık",
+    clouds: "Bulutlu",
+    Clouds: "Bulutlu",
+    cloudy: "Bulutlu",
+    Cloudy: "Bulutlu",
+    rain: "Yağmurlu",
+    Rain: "Yağmurlu",
+    snow: "Karlı",
+    Snow: "Karlı",
+    mist: "Puslu",
+    Mist: "Puslu",
+    fog: "Sisli",
+    Fog: "Sisli",
+    drizzle: "Çisenti",
+    Drizzle: "Çisenti",
+    thunderstorm: "Gök gürültülü",
+    Thunderstorm: "Gök gürültülü"
+  };
+
+  return labels[value] ?? labels[value.toLowerCase()] ?? value;
 }
 
 function comparableStatValue(name: string, value: MatchDetailStatistic["value"]) {

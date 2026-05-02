@@ -53,7 +53,7 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
         setError(null);
       } catch (caught) {
         if ((caught as Error).name !== "AbortError") {
-          console.warn("Match detail refresh failed", caught);
+          console.warn("Maç detayı yenileme başarısız oldu", caught);
           setError(dataRef.current ? null : "Maç detayı şu anda alınamadı.");
         }
       } finally {

@@ -1,11 +1,11 @@
 import { MatchRow } from "./MatchRow";
-import type { NormalizedMatch } from "../types";
+import type { GoalHighlightSide, NormalizedMatch } from "../types";
 
 interface SortedMatchListProps {
   matches: NormalizedMatch[];
   selectedMatchId: string | null;
   favoriteIds: Set<string>;
-  highlightedIds: Set<string>;
+  goalHighlights: Record<string, GoalHighlightSide>;
   onToggleFavorite: (id: string) => void;
   onSelectMatch: (match: NormalizedMatch) => void;
 }
@@ -14,7 +14,7 @@ export function SortedMatchList({
   matches,
   selectedMatchId,
   favoriteIds,
-  highlightedIds,
+  goalHighlights,
   onToggleFavorite,
   onSelectMatch
 }: SortedMatchListProps) {
@@ -26,7 +26,7 @@ export function SortedMatchList({
           match={match}
           selected={selectedMatchId === match.id}
           favorite={favoriteIds.has(match.id)}
-          goalHighlighted={highlightedIds.has(match.id)}
+          goalHighlightSide={goalHighlights[match.id] ?? null}
           onToggleFavorite={onToggleFavorite}
           onSelect={onSelectMatch}
         />

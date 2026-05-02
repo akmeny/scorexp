@@ -52,7 +52,7 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
         setError(null);
       } catch (caught) {
         if ((caught as Error).name !== "AbortError") {
-          console.warn("Scoreboard refresh failed", caught);
+          console.warn("Skor yenileme başarısız oldu", caught);
           setError(dataRef.current ? null : "Skorlar şu anda alınamadı.");
         }
       } finally {

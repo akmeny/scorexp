@@ -24,17 +24,17 @@ const primarySports = [
   { key: "basketball", label: "Basketbol", icon: BasketballIcon },
   { key: "volleyball", label: "Voleybol", icon: VolleyballIcon },
   { key: "tennis", label: "Tenis", icon: TennisIcon },
-  { key: "motorsport", label: "Motor Sporları", icon: RacingIcon },
+  { key: "motorsport", label: "Motor sporları", icon: RacingIcon },
   { key: "mma", label: "MMA", icon: MmaIcon },
   { key: "americanFootball", label: "Amerikan futbolu", icon: AmericanFootballIcon },
   { key: "handball", label: "Hentbol", icon: HandballIcon },
   { key: "esports", label: "E-spor", icon: EsportsIcon },
   { key: "darts", label: "Dart", icon: DartsIcon },
-  { key: "iceHockey", label: "Ice hockey", icon: IceHockeyIcon }
+  { key: "iceHockey", label: "Buz hokeyi", icon: IceHockeyIcon }
 ];
 
 const overflowSports = [
-  "Table tennis",
+  "Masa tenisi",
   "Beyzbol",
   "Ragbi",
   "Badminton",
@@ -42,10 +42,10 @@ const overflowSports = [
   "Futsal",
   "Bisiklet",
   "Snooker",
-  "Su Topu",
-  "Aussie rules",
-  "Beach volleyball",
-  "Mini Futbol",
+  "Su topu",
+  "Avustralya futbolu",
+  "Plaj voleybolu",
+  "Mini futbol",
   "Florbol",
   "Bandy"
 ];
@@ -151,7 +151,7 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
             <span className="sportIconWrap">
               <Menu size={16} />
             </span>
-            <span>Daha F...</span>
+            <span>Daha fazla</span>
           </button>
         </nav>
 

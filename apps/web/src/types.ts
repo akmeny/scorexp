@@ -1,5 +1,6 @@
 export type StatusGroup = "live" | "finished" | "upcoming" | "unknown";
 export type ScoreboardView = "all" | "live" | "finished" | "upcoming";
+export type GoalHighlightSide = "home" | "away" | "both";
 
 export interface Team {
   id: string;
