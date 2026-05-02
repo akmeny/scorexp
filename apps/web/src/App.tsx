@@ -58,7 +58,7 @@ export default function App() {
       const scoreKey = scoreSnapshot(match);
       const previous = previousScores.get(match.id);
       if (previous && didScoreIncrease(previous, scoreKey)) {
-        nextHighlights[match.id] = now + 33_000;
+        nextHighlights[match.id] = now + 32_000;
       }
       nextScores.set(match.id, scoreKey);
     }
@@ -122,7 +122,7 @@ export default function App() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader footballCount={counts.all} />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canli skorlar">
         <header className="topNav">
@@ -158,6 +158,9 @@ export default function App() {
 
         <div className="filters">
           <div className="chipRow">
+            <button className={view === "all" ? "chip active" : "chip"} type="button" onClick={() => selectView("all")}>
+              Tümü
+            </button>
             <button className={view === "live" && !sortByTime ? "chip active liveChip" : "chip liveChip"} type="button" onClick={() => selectView("live")}>
               Canlı ({counts.live})
             </button>
@@ -166,9 +169,6 @@ export default function App() {
             </button>
             <button className={view === "upcoming" && !sortByTime ? "chip active" : "chip"} type="button" onClick={() => selectView("upcoming")}>
               Yaklaşan
-            </button>
-            <button className={view === "all" ? "chip active" : "chip"} type="button" onClick={() => selectView("all")}>
-              Tümü
             </button>
           </div>
         </div>

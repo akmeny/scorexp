@@ -30,7 +30,8 @@ button {
 }
 
 .siteHeader {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   min-height: 116px;
   background: #090d0f;
@@ -103,7 +104,7 @@ button {
   justify-self: end;
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 8px;
 }
 
 .loginButton,
@@ -128,11 +129,18 @@ button {
 }
 
 .headerIcon {
-  width: 22px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 5px;
+  color: #dce5e8;
+}
+
+.headerIcon:hover {
+  background: #151b1f;
+  color: #fff;
 }
 
 .sportsBar {
@@ -528,6 +536,11 @@ button {
   padding: 7px 0 7px 12px;
   border-top: 1px solid #29353a;
   background: #151d20;
+  transition: background-color 140ms ease;
+}
+
+.matchRow:hover {
+  background: #090e10;
 }
 
 .matchRow > * {
@@ -539,14 +552,18 @@ button {
   background: #131b1e;
 }
 
+.matchRow.live:hover {
+  background: #080d0f;
+}
+
 .matchRow.goalFlash::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(255, 51, 70, 0.33);
+  background: rgba(255, 51, 70, 0.18);
   transform-origin: left center;
-  animation: goalSweep 3s ease-out forwards;
+  animation: goalSweep 2s ease-out forwards;
 }
 
 .matchTime {

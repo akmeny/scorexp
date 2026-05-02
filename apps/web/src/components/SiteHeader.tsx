@@ -1,56 +1,69 @@
 import {
-  Bike,
-  CircleDot,
   CircleUserRound,
-  Dumbbell,
-  Gamepad2,
-  Goal,
   Menu,
   Newspaper,
   Search,
   Settings,
-  Shield,
-  Sparkles,
   Star,
-  Trophy,
-  Volleyball,
   Zap
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
+interface SiteHeaderProps {
+  footballCount: number;
+}
+
+interface SportIconProps {
+  size?: number;
+}
+
 const primarySports = [
-  { label: "Futbol", icon: Goal, active: true },
-  { label: "Basketbol", icon: CircleDot, badge: "107" },
-  { label: "Voleybol", icon: Volleyball },
-  { label: "Tenis", icon: Trophy, badge: "22" },
-  { label: "Motor Sporları", icon: Bike },
-  { label: "MMA", icon: Dumbbell },
-  { label: "Amerikan futbolu", icon: Shield },
-  { label: "Hentbol", icon: CircleDot },
-  { label: "E-spor", icon: Gamepad2, badge: "6" },
-  { label: "Dart", icon: Sparkles },
-  { label: "Ice hockey", icon: Zap, badge: "1" }
+  { key: "football", label: "Futbol", icon: FootballIcon, active: true },
+  { key: "basketball", label: "Basketbol", icon: BasketballIcon },
+  { key: "volleyball", label: "Voleybol", icon: VolleyballIcon },
+  { key: "tennis", label: "Tenis", icon: TennisIcon },
+  { key: "motorsport", label: "Motor Sporları", icon: RacingIcon },
+  { key: "mma", label: "MMA", icon: MmaIcon },
+  { key: "americanFootball", label: "Amerikan futbolu", icon: AmericanFootballIcon },
+  { key: "handball", label: "Hentbol", icon: HandballIcon },
+  { key: "esports", label: "E-spor", icon: EsportsIcon },
+  { key: "darts", label: "Dart", icon: DartsIcon },
+  { key: "iceHockey", label: "Ice hockey", icon: IceHockeyIcon }
 ];
 
 const overflowSports = [
-  ["Table tennis", "15"],
-  ["Beyzbol", "4"],
-  ["Ragbi", "1"],
-  ["Badminton", "5"],
-  ["Kriket", "1"],
-  ["Futsal", "1"],
-  ["Bisiklet", ""],
-  ["Snooker", ""],
-  ["Su Topu", "1"],
-  ["Aussie rules", "1"],
-  ["Beach volleyball", "2"],
-  ["Mini Futbol", ""],
-  ["Florbol", ""],
-  ["Bandy", ""]
+  "Table tennis",
+  "Beyzbol",
+  "Ragbi",
+  "Badminton",
+  "Kriket",
+  "Futsal",
+  "Bisiklet",
+  "Snooker",
+  "Su Topu",
+  "Aussie rules",
+  "Beach volleyball",
+  "Mini Futbol",
+  "Florbol",
+  "Bandy"
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ footballCount }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const counts = {
+    football: footballCount,
+    basketball: 0,
+    volleyball: 0,
+    tennis: 0,
+    motorsport: 0,
+    mma: 0,
+    americanFootball: 0,
+    handball: 0,
+    esports: 0,
+    darts: 0,
+    iceHockey: 0
+  };
 
   return (
     <header className="siteHeader">
@@ -71,13 +84,13 @@ export function SiteHeader() {
             OTURUM AÇ
           </button>
           <button className="headerIcon" type="button" aria-label="Favoriler">
-            <Star size={18} />
+            <Star size={20} />
           </button>
           <button className="headerIcon" type="button" aria-label="Hızlı erişim">
-            <Zap size={18} />
+            <Zap size={20} />
           </button>
           <button className="headerIcon" type="button" aria-label="Ayarlar">
-            <Settings size={18} />
+            <Settings size={20} />
           </button>
         </div>
       </div>
@@ -89,8 +102,8 @@ export function SiteHeader() {
             return (
               <button className={sport.active ? "sportItem active" : "sportItem"} type="button" key={sport.label}>
                 <span className="sportIconWrap">
-                  <Icon size={16} />
-                  {sport.badge ? <span className="sportBadge">{sport.badge}</span> : null}
+                  <Icon size={18} />
+                  <span className="sportBadge">{counts[sport.key as keyof typeof counts]}</span>
                 </span>
                 <span>{sport.label}</span>
               </button>
@@ -112,16 +125,163 @@ export function SiteHeader() {
 
         {menuOpen ? (
           <div className="sportsMenu">
-            {overflowSports.map(([label, count]) => (
+            {overflowSports.map((label) => (
               <button type="button" key={label}>
-                <CircleDot size={18} />
+                <MoreSportIcon size={18} />
                 <span>{label}</span>
-                {count ? <strong>{count}</strong> : null}
+                <strong>0</strong>
               </button>
             ))}
           </div>
         ) : null}
       </div>
     </header>
+  );
+}
+
+function SvgRoot({ size = 18, children }: SportIconProps & { children: ReactNode }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+
+function FootballIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m9 9 3-2 3 2-1 4h-4z" />
+      <path d="m10 13-3 2" />
+      <path d="m14 13 3 2" />
+      <path d="m8 6 1 3" />
+      <path d="m16 6-1 3" />
+      <path d="m9 18 1-5" />
+      <path d="m15 18-1-5" />
+    </SvgRoot>
+  );
+}
+
+function BasketballIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.6 2.5 4 5.5 4 9s-1.4 6.5-4 9" />
+      <path d="M12 3c-2.6 2.5-4 5.5-4 9s1.4 6.5 4 9" />
+    </SvgRoot>
+  );
+}
+
+function VolleyballIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3c1.4 3.8.6 6.7-2.2 8.8" />
+      <path d="M20.2 8.5c-3.9-.5-6.7.6-8.3 3.4" />
+      <path d="M5 17.6c2.9-2.8 6-3.5 9.4-2" />
+    </SvgRoot>
+  );
+}
+
+function TennisIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <ellipse cx="10" cy="8" rx="5" ry="6.5" transform="rotate(-35 10 8)" />
+      <path d="m14 13 6 6" />
+      <path d="M6 7c2.5.2 5.2 1.3 7.8 3.4" />
+      <path d="M9 3.4c.3 2.8 1.5 5.5 3.7 8.1" />
+    </SvgRoot>
+  );
+}
+
+function RacingIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <path d="M5 20V4" />
+      <path d="M5 5c4-2 6 2 10 0v9c-4 2-6-2-10 0" />
+      <path d="M9 4.3v9.4" />
+      <path d="M13 5.4v9.2" />
+    </SvgRoot>
+  );
+}
+
+function MmaIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <path d="M7 11V7a2 2 0 0 1 4 0v3" />
+      <path d="M11 10V6a2 2 0 0 1 4 0v5" />
+      <path d="M15 11V8a2 2 0 0 1 4 0v5" />
+      <path d="M5 12v2a6 6 0 0 0 6 6h3a5 5 0 0 0 5-5v-2" />
+      <path d="M5 12h14" />
+    </SvgRoot>
+  );
+}
+
+function AmericanFootballIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <path d="M4 12c2-6 10-9 16-8 1 6-2 14-8 16-4 .8-7.2-.8-8-8Z" />
+      <path d="m8 16 8-8" />
+      <path d="m10.5 13.5 2 2" />
+      <path d="m12.5 11.5 2 2" />
+    </SvgRoot>
+  );
+}
+
+function HandballIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="16.5" cy="6.5" r="3" />
+      <path d="M7 20v-5l3-3 4 2" />
+      <path d="M10 12 8 8" />
+      <path d="m12 15 4 5" />
+    </SvgRoot>
+  );
+}
+
+function EsportsIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <rect x="3" y="9" width="18" height="9" rx="3" />
+      <path d="M8 13v2" />
+      <path d="M7 14h2" />
+      <path d="M15 14h.01" />
+      <path d="M18 14h.01" />
+    </SvgRoot>
+  );
+}
+
+function DartsIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="10" cy="14" r="6" />
+      <circle cx="10" cy="14" r="2" />
+      <path d="m14 10 6-6" />
+      <path d="m18 4 2 2" />
+      <path d="M20 4v4h-4" />
+    </SvgRoot>
+  );
+}
+
+function IceHockeyIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <path d="M7 3v12c0 2 1 3 3 3h5" />
+      <path d="M17 3v12" />
+      <path d="M10 18h8" />
+      <path d="M16 21h5" />
+    </SvgRoot>
+  );
+}
+
+function MoreSportIcon({ size }: SportIconProps) {
+  return (
+    <SvgRoot size={size}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M8 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M16 12h.01" />
+    </SvgRoot>
   );
 }
