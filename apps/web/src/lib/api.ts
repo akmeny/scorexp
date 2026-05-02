@@ -2,7 +2,7 @@ import type { ScoreboardSnapshot, ScoreboardView } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
 const configuredBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
-const apiBase = (configuredBase && configuredBase.trim()) || fallbackProductionApi;
+const apiBase = resolveApiBase(configuredBase);
 
 export interface FetchScoreboardOptions {
   date: string;
@@ -46,4 +46,28 @@ export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<
     etag: response.headers.get("ETag"),
     notModified: false
   };
+}
+
+function resolveApiBase(value: string | undefined) {
+  const configured = value?.trim();
+
+  if (configured && (!isLocalOnlyUrl(configured) || isBrowserOnLocalhost())) {
+    return configured;
+  }
+
+  return fallbackProductionApi;
+}
+
+function isBrowserOnLocalhost() {
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+}
+
+function isLocalOnlyUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
 }
