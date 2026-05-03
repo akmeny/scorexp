@@ -1982,6 +1982,8 @@ button:disabled {
   position: fixed;
   inset: 0;
   z-index: 85;
+  height: var(--scorexp-viewport-height);
+  overflow: hidden;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 0;
@@ -2060,6 +2062,9 @@ button:disabled {
 
 .highlightsStage {
   min-width: 0;
+  min-height: 0;
+  height: var(--scorexp-viewport-height);
+  overflow: hidden;
   position: relative;
   display: grid;
   grid-template-rows: 64px minmax(0, 1fr);
@@ -2112,6 +2117,7 @@ button:disabled {
 
 .highlightReel {
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   scrollbar-width: thin;
@@ -2121,10 +2127,109 @@ button:disabled {
     #080c0e;
 }
 
+.highlightReel::-webkit-scrollbar {
+  width: 16px;
+}
+
+.highlightReel::-webkit-scrollbar-track {
+  background: #10171a;
+}
+
+.highlightReel::-webkit-scrollbar-thumb {
+  border: 4px solid #10171a;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #7c83ff, #3fe0a0);
+}
+
+.highlightScrollDock {
+  position: absolute;
+  top: 9px;
+  right: 72px;
+  z-index: 4;
+  width: 304px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid #394a50;
+  border-radius: 10px;
+  background: rgba(8, 13, 15, 0.92);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(10px);
+}
+
+.highlightScrollDock button,
+.highlightNextCue {
+  border: 1px solid #4a557c;
+  background: #f1f7f8;
+  color: #0a1012;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+.highlightScrollDock button {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.highlightScrollDock button:disabled {
+  opacity: 0.34;
+}
+
+.highlightScrollMeter {
+  min-height: 42px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #2d3b41;
+  border-radius: 8px;
+  background: #10191c;
+  color: #8fa2aa;
+}
+
+.highlightScrollMeter strong {
+  color: #95ffe0;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.highlightScrollMeter b,
+.highlightScrollMeter span {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.highlightNextCue {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 4;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 950;
+  transform: translateX(-50%);
+  animation: nextCuePulse 1.65s ease-in-out infinite;
+}
+
 .highlightPost {
   min-height: calc(var(--scorexp-viewport-height) - 64px);
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(340px, 58vw) minmax(260px, 360px) 86px;
+  grid-template-columns: minmax(340px, 1.6fr) minmax(260px, 0.9fr) 86px;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
@@ -2857,6 +2962,17 @@ button:disabled {
   }
 }
 
+@keyframes nextCuePulse {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(5px);
+  }
+}
+
 @keyframes minuteBlink {
   50% {
     opacity: 0;
@@ -3395,7 +3511,7 @@ button:disabled {
     grid-template-rows: auto auto auto;
     align-content: center;
     gap: 10px;
-    padding: 12px 10px 16px;
+    padding: 12px 10px 106px;
   }
 
   .highlightVideoFrame {
@@ -3433,6 +3549,32 @@ button:disabled {
   .highlightComments {
     grid-column: 1;
     padding: 12px;
+  }
+
+  .highlightScrollDock {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 7px;
+    padding: 7px;
+    border-radius: 14px;
+  }
+
+  .highlightScrollDock button {
+    min-height: 48px;
+  }
+
+  .highlightScrollMeter {
+    min-height: 48px;
+  }
+
+  .highlightNextCue {
+    bottom: max(78px, calc(env(safe-area-inset-bottom) + 78px));
   }
 
   .highlightCommentList {

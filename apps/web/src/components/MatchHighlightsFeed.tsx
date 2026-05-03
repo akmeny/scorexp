@@ -1,4 +1,6 @@
 import {
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Heart,
   LoaderCircle,
@@ -11,7 +13,7 @@ import {
   Trophy,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchHighlights } from "../lib/api";
 import { localizeCountryName } from "../lib/localization";
 import type { HighlightsSnapshot, MatchHighlight } from "../types";
@@ -34,6 +36,8 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
   const [likedIds, setLikedIds] = useState<Set<string>>(() => readLikedHighlights());
   const [comments, setComments] = useState<Record<string, string[]>>(() => readHighlightComments());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [activeIndex, setActiveIndex] = useState(0);
+  const reelRef = useRef<HTMLDivElement | null>(null);
 
   const load = async (offset = 0, mode: "replace" | "append" = "replace") => {
     const controller = new AbortController();
@@ -63,14 +67,53 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
   }, [date, timezone]);
 
   useEffect(() => {
+    const bodyOverflow = document.body.style.overflow;
+    const htmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = htmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onRequestClose();
+      if (event.key === "ArrowDown") scrollToHighlight(activeIndex + 1);
+      if (event.key === "ArrowUp") scrollToHighlight(activeIndex - 1);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onRequestClose]);
+  }, [activeIndex, items.length, onRequestClose]);
+
+  useEffect(() => {
+    const reel = reelRef.current;
+    if (!reel) return;
+
+    const updateActiveHighlight = () => {
+      const posts = Array.from(reel.querySelectorAll<HTMLElement>(".highlightPost"));
+      const reelTop = reel.getBoundingClientRect().top;
+      const closest = posts.reduce(
+        (best, post, index) => {
+          const distance = Math.abs(post.getBoundingClientRect().top - reelTop);
+          return distance < best.distance ? { index, distance } : best;
+        },
+        { index: 0, distance: Number.POSITIVE_INFINITY }
+      );
+      setActiveIndex(closest.index);
+    };
+
+    updateActiveHighlight();
+    reel.addEventListener("scroll", updateActiveHighlight, { passive: true });
+    return () => reel.removeEventListener("scroll", updateActiveHighlight);
+  }, [items.length]);
 
   const featuredCount = useMemo(() => items.filter((item) => item.type === "VERIFIED").length, [items]);
+  const canNavigate = items.length > 1;
+  const canGoPrevious = activeIndex > 0;
+  const canGoNext = activeIndex < items.length - 1;
 
   const applySnapshot = (snapshot: HighlightsSnapshot, mode: "replace" | "append") => {
     setTotalCount(snapshot.pagination.totalCount);
@@ -79,6 +122,17 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
       const merged = mode === "append" ? [...current, ...snapshot.highlights] : snapshot.highlights;
       return Array.from(new Map(merged.map((item) => [item.id, item])).values());
     });
+    if (mode === "replace") setActiveIndex(0);
+  };
+
+  const scrollToHighlight = (index: number) => {
+    const reel = reelRef.current;
+    if (!reel || items.length === 0) return;
+
+    const nextIndex = Math.max(0, Math.min(index, items.length - 1));
+    const post = reel.querySelectorAll<HTMLElement>(".highlightPost")[nextIndex];
+    post?.scrollIntoView({ block: "start", behavior: "smooth" });
+    setActiveIndex(nextIndex);
   };
 
   const toggleLike = (id: string) => {
@@ -160,6 +214,24 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
           </button>
         </header>
 
+        {!loading && !error && canNavigate ? (
+          <div className="highlightScrollDock" aria-label="Özet akışı gezinme">
+            <button type="button" onClick={() => scrollToHighlight(activeIndex - 1)} disabled={!canGoPrevious} aria-label="Önceki özet">
+              <ChevronUp size={18} />
+              <span>Önceki</span>
+            </button>
+            <div className="highlightScrollMeter" aria-label={`Özet ${activeIndex + 1} / ${items.length}`}>
+              <strong>{activeIndex + 1}</strong>
+              <span>/</span>
+              <b>{items.length}</b>
+            </div>
+            <button type="button" onClick={() => scrollToHighlight(activeIndex + 1)} disabled={!canGoNext} aria-label="Sonraki özet">
+              <ChevronDown size={18} />
+              <span>Sonraki</span>
+            </button>
+          </div>
+        ) : null}
+
         {loading ? (
           <div className="highlightsState">
             <LoaderCircle className="syncSpin" size={24} />
@@ -184,7 +256,7 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
         ) : null}
 
         {!loading && !error && items.length > 0 ? (
-          <div className="highlightReel" aria-label="Kaydırmalı maç özeti akışı">
+          <div className="highlightReel" ref={reelRef} aria-label="Kaydırmalı maç özeti akışı">
             {items.map((highlight, index) => (
               <article className="highlightPost" key={highlight.id}>
                 <div className="highlightVideoFrame">
@@ -280,6 +352,13 @@ export function MatchHighlightsFeed({ date, timezone, onRequestClose }: MatchHig
               </button>
             ) : null}
           </div>
+        ) : null}
+
+        {!loading && !error && canGoNext ? (
+          <button className="highlightNextCue" type="button" onClick={() => scrollToHighlight(activeIndex + 1)}>
+            <ChevronDown size={18} />
+            Sonraki özet
+          </button>
         ) : null}
       </section>
     </div>

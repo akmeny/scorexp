@@ -105,7 +105,7 @@ export async function fetchHighlights(options: FetchHighlightsOptions): Promise<
   url.searchParams.set("limit", String(options.limit ?? 20));
   url.searchParams.set("offset", String(options.offset ?? 0));
 
-  const response = await fetch(url, { signal: options.signal });
+  const response = await fetch(url, { signal: options.signal, cache: "no-store" });
 
   if (!response.ok) {
     throw new Error(`Highlights request failed (${response.status})`);
