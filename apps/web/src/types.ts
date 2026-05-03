@@ -196,3 +196,33 @@ export interface MatchDetail {
     latestPrematch: MatchDetailPrediction | null;
   };
 }
+
+export interface MatchHighlight {
+  id: string;
+  type: string | null;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  url: string | null;
+  embedUrl: string | null;
+  source: string | null;
+  channel: string | null;
+  match: NormalizedMatch | null;
+}
+
+export interface HighlightsSnapshot {
+  id: string;
+  date: string;
+  timezone: string;
+  generatedAt: string;
+  fetchedAt: string;
+  expiresAt: string;
+  checksum: string;
+  highlights: MatchHighlight[];
+  pagination: {
+    totalCount: number;
+    offset: number;
+    limit: number;
+    nextOffset: number | null;
+  };
+}

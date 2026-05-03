@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
 import type {
   LeagueGroup,
+  MatchHighlight,
   MatchDetail,
   MatchDetailPrediction,
   MatchScore,
   NormalizedMatch,
+  ProviderHighlight,
   ProviderMatchDetail,
   ProviderMatchEvent,
   ProviderPrediction,
@@ -123,6 +125,21 @@ export function normalizeMatch(raw: ProviderMatch, timezone: string, updatedAt =
     isTopTier: isTopTier(countryName, leagueName),
     lastUpdatedAt: updatedAt,
     source: "highlightly"
+  };
+}
+
+export function normalizeHighlight(raw: ProviderHighlight, timezone: string, updatedAt = new Date().toISOString()): MatchHighlight {
+  return {
+    id: String(raw.id),
+    type: cleanString(raw.type),
+    title: cleanString(raw.title) ?? "Maç özeti",
+    description: cleanString(raw.description),
+    imageUrl: cleanString(raw.imgUrl),
+    url: cleanString(raw.url),
+    embedUrl: cleanString(raw.embedUrl),
+    source: cleanString(raw.source),
+    channel: cleanString(raw.channel),
+    match: raw.match ? normalizeMatch(raw.match, timezone, updatedAt) : null
   };
 }
 
@@ -280,6 +297,19 @@ export function createSnapshotChecksum(snapshot: Omit<ScoreboardSnapshot, "check
       }))
     }))
   };
+
+  return createHash("sha256").update(JSON.stringify(stableShape)).digest("hex").slice(0, 16);
+}
+
+export function createHighlightsChecksum(highlights: MatchHighlight[]): string {
+  const stableShape = highlights.map((highlight) => ({
+    id: highlight.id,
+    title: highlight.title,
+    embedUrl: highlight.embedUrl,
+    url: highlight.url,
+    imageUrl: highlight.imageUrl,
+    matchId: highlight.match?.id ?? null
+  }));
 
   return createHash("sha256").update(JSON.stringify(stableShape)).digest("hex").slice(0, 16);
 }

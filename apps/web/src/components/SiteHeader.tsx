@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface SiteHeaderProps {
   footballCount: number;
+  onOpenHighlights: () => void;
 }
 
 interface SportIconProps {
@@ -51,7 +52,7 @@ const overflowSports = [
   "Bandy"
 ];
 
-export function SiteHeader({ footballCount }: SiteHeaderProps) {
+export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -125,6 +126,18 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
             }}
           >
             {mobileSearchOpen ? <X size={19} /> : <Search size={19} />}
+          </button>
+          <button
+            className="mobileHeaderIcon"
+            type="button"
+            aria-label="Maç özetleri"
+            onClick={() => {
+              setMobileSearchOpen(false);
+              setProfileMenuOpen(false);
+              onOpenHighlights();
+            }}
+          >
+            <Newspaper size={19} />
           </button>
           <button
             className="mobileHeaderIcon"
@@ -207,9 +220,9 @@ export function SiteHeader({ footballCount }: SiteHeaderProps) {
           </button>
         </nav>
 
-        <button className="newsButton" type="button">
+        <button className="newsButton" type="button" onClick={onOpenHighlights}>
           <Newspaper size={15} />
-          HABERLER
+          MAÇ ÖZETLERİ
         </button>
 
         {menuOpen ? (

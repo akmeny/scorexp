@@ -1,13 +1,17 @@
 import type { AppEnv } from "../config/env.js";
 import {
+  createHighlightsChecksum,
   countMatches,
   createSnapshotChecksum,
   filterSnapshot,
   groupMatches,
+  normalizeHighlight,
   normalizeMatch,
   normalizeMatchDetail
 } from "../domain/normalize.js";
 import type {
+  HighlightsCacheEntry,
+  HighlightsSnapshot,
   MatchDetail,
   MatchDetailCacheEntry,
   NormalizedMatch,
@@ -26,6 +30,7 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
 const LIVE_REFRESH_SECONDS = 100;
+const HIGHLIGHTS_REFRESH_SECONDS = 60;
 
 interface ScoreboardQuery {
   date: string;
@@ -36,6 +41,13 @@ interface ScoreboardQuery {
 interface MatchDetailQuery {
   matchId: string;
   timezone: string;
+}
+
+interface HighlightsQuery {
+  date: string;
+  timezone: string;
+  limit: number;
+  offset: number;
 }
 
 export class ScoreboardService {
@@ -94,6 +106,54 @@ export class ScoreboardService {
 
     const fresh = await this.refreshMatchDetail(key, query.matchId, query.timezone);
     return fresh.detail;
+  }
+
+  async getHighlights(query: HighlightsQuery): Promise<HighlightsSnapshot> {
+    const key = highlightsKey(query.date, query.timezone, query.limit, query.offset);
+    const cached = await this.cache.get<HighlightsCacheEntry>(key);
+
+    if (cached && new Date(cached.expiresAt).getTime() > Date.now()) {
+      return cached.snapshot;
+    }
+
+    const fetchedAt = new Date().toISOString();
+    const response = await this.highlightly.getHighlights(query);
+    const highlights = response.highlights.map((highlight) => normalizeHighlight(highlight, query.timezone, fetchedAt));
+    const now = new Date();
+    const expiresAt = addSeconds(now, HIGHLIGHTS_REFRESH_SECONDS).toISOString();
+    const nextOffset =
+      response.pagination.offset + response.pagination.limit < response.pagination.totalCount
+        ? response.pagination.offset + response.pagination.limit
+        : null;
+
+    const withoutChecksum = {
+      id: `${query.date}:${query.timezone}:${query.offset}:${query.limit}`,
+      date: query.date,
+      timezone: query.timezone,
+      generatedAt: now.toISOString(),
+      fetchedAt,
+      expiresAt,
+      highlights,
+      pagination: {
+        totalCount: response.pagination.totalCount,
+        offset: response.pagination.offset,
+        limit: response.pagination.limit,
+        nextOffset
+      }
+    };
+    const snapshot: HighlightsSnapshot = {
+      ...withoutChecksum,
+      checksum: createHighlightsChecksum(highlights)
+    };
+    const entry: HighlightsCacheEntry = {
+      snapshot,
+      fetchedAt,
+      expiresAt,
+      providerRequestCount: response.requestCount
+    };
+
+    await this.cache.set(key, entry, ttlFromEntry(entry));
+    return snapshot;
   }
 
   async warmScoreboard(date: string, timezone: string): Promise<void> {
@@ -355,6 +415,10 @@ function snapshotKey(date: string, timezone: string) {
 
 function matchDetailKey(matchId: string, timezone: string) {
   return `football:match-detail:v5:${matchId}:${timezone}`;
+}
+
+function highlightsKey(date: string, timezone: string, limit: number, offset: number) {
+  return `football:highlights:v1:${date}:${timezone}:${limit}:${offset}`;
 }
 
 function teamId(value: number | string | null | undefined) {

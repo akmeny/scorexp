@@ -118,6 +118,19 @@ export interface ProviderMatchDetail extends ProviderMatch {
   predictions?: ProviderMatchPredictions | null;
 }
 
+export interface ProviderHighlight {
+  id: number | string;
+  type?: string | null;
+  imgUrl?: string | null;
+  title?: string | null;
+  description?: string | null;
+  url?: string | null;
+  embedUrl?: string | null;
+  match?: ProviderMatch | null;
+  channel?: string | null;
+  source?: string | null;
+}
+
 export interface ProviderStandingRecord {
   wins?: number | null;
   draws?: number | null;
@@ -347,6 +360,43 @@ export interface MatchDetail {
 
 export interface MatchDetailCacheEntry {
   detail: MatchDetail;
+  fetchedAt: string;
+  expiresAt: string;
+  providerRequestCount: number;
+}
+
+export interface MatchHighlight {
+  id: string;
+  type: string | null;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  url: string | null;
+  embedUrl: string | null;
+  source: string | null;
+  channel: string | null;
+  match: NormalizedMatch | null;
+}
+
+export interface HighlightsSnapshot {
+  id: string;
+  date: string;
+  timezone: string;
+  generatedAt: string;
+  fetchedAt: string;
+  expiresAt: string;
+  checksum: string;
+  highlights: MatchHighlight[];
+  pagination: {
+    totalCount: number;
+    offset: number;
+    limit: number;
+    nextOffset: number | null;
+  };
+}
+
+export interface HighlightsCacheEntry {
+  snapshot: HighlightsSnapshot;
   fetchedAt: string;
   expiresAt: string;
   providerRequestCount: number;

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AiPredictionModal } from "./components/AiPredictionModal";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { LeagueCard } from "./components/LeagueCard";
+import { MatchHighlightsFeed } from "./components/MatchHighlightsFeed";
 import { MatchDetailPanel } from "./components/MatchDetailPanel";
 import { SiteHeader } from "./components/SiteHeader";
 import { SortedMatchList } from "./components/SortedMatchList";
@@ -57,6 +58,7 @@ export default function App() {
   const [pinnedLeagueOverrides, setPinnedLeagueOverrides] = useState<PinOverrides>(() => readPinnedLeagueOverrides());
   const [selectedMatch, setSelectedMatch] = useState<NormalizedMatch | null>(null);
   const [predictionMatch, setPredictionMatch] = useState<NormalizedMatch | null>(null);
+  const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
@@ -340,7 +342,7 @@ export default function App() {
 
   return (
     <>
-      <SiteHeader footballCount={counts.all} />
+      <SiteHeader footballCount={counts.all} onOpenHighlights={() => setHighlightsOpen(true)} />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canlı skorlar">
           <header className="topNav">
@@ -488,6 +490,10 @@ export default function App() {
 
       {predictionMatch ? (
         <AiPredictionModal match={predictionMatch} timezone={timezone} onRequestClose={() => setPredictionMatch(null)} />
+      ) : null}
+
+      {highlightsOpen ? (
+        <MatchHighlightsFeed date={date} timezone={timezone} onRequestClose={() => setHighlightsOpen(false)} />
       ) : null}
 
       <InstallPrompt />

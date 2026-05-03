@@ -1,4 +1,4 @@
-import type { MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
+import type { HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
 const fallbackLocalApi = "http://localhost:4000";
@@ -30,6 +30,14 @@ export interface FetchMatchDetailResult {
   detail: MatchDetail | null;
   etag: string | null;
   notModified: boolean;
+}
+
+export interface FetchHighlightsOptions {
+  date: string;
+  timezone: string;
+  limit?: number;
+  offset?: number;
+  signal?: AbortSignal;
 }
 
 export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<FetchScoreboardResult> {
@@ -88,6 +96,22 @@ export async function fetchMatchDetail(options: FetchMatchDetailOptions): Promis
     etag: response.headers.get("ETag"),
     notModified: false
   };
+}
+
+export async function fetchHighlights(options: FetchHighlightsOptions): Promise<HighlightsSnapshot> {
+  const url = new URL("/api/v1/football/highlights", apiBase);
+  url.searchParams.set("date", options.date);
+  url.searchParams.set("timezone", options.timezone);
+  url.searchParams.set("limit", String(options.limit ?? 20));
+  url.searchParams.set("offset", String(options.offset ?? 0));
+
+  const response = await fetch(url, { signal: options.signal });
+
+  if (!response.ok) {
+    throw new Error(`Highlights request failed (${response.status})`);
+  }
+
+  return (await response.json()) as HighlightsSnapshot;
 }
 
 function resolveApiBase(value: string | undefined) {

@@ -19,6 +19,13 @@ const detailQuerySchema = z.object({
   timezone: z.string().optional()
 });
 
+const highlightsQuerySchema = z.object({
+  date: z.string().optional(),
+  timezone: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(40).optional(),
+  offset: z.coerce.number().int().min(0).optional()
+});
+
 export async function registerFootballRoutes(app: FastifyInstance, service: ScoreboardService, appEnv: AppEnv) {
   app.get("/api/v1/football/scoreboard", async (request, reply) => {
     const parsed = querySchema.parse(request.query);
@@ -59,6 +66,30 @@ export async function registerFootballRoutes(app: FastifyInstance, service: Scor
     }
 
     return detail;
+  });
+
+  app.get("/api/v1/football/highlights", async (request, reply) => {
+    const parsed = highlightsQuerySchema.parse(request.query);
+    const timezone = parsed.timezone ?? appEnv.defaultTimezone;
+    const date = parsed.date ?? localDate(timezone);
+    const limit = parsed.limit ?? 20;
+    const offset = parsed.offset ?? 0;
+
+    if (!isValidDateString(date)) {
+      return reply.code(400).send({ message: "date must be YYYY-MM-DD" });
+    }
+
+    const snapshot = await service.getHighlights({ date, timezone, limit, offset });
+    const etag = `"${snapshot.checksum}:${snapshot.pagination.offset}:${snapshot.pagination.limit}"`;
+
+    reply.header("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+    reply.header("ETag", etag);
+
+    if (request.headers["if-none-match"] === etag) {
+      return reply.code(304).send();
+    }
+
+    return snapshot;
   });
 
   app.get("/api/v1/football/flow", async () => ({

@@ -1,5 +1,5 @@
 import type { AppEnv } from "../config/env.js";
-import type { ProviderMatch, ProviderMatchDetail, ProviderStandingsResponse } from "../domain/types.js";
+import type { ProviderHighlight, ProviderMatch, ProviderMatchDetail, ProviderStandingsResponse } from "../domain/types.js";
 
 export interface HighlightlyFetchResult {
   matches: ProviderMatch[];
@@ -19,8 +19,31 @@ export interface HighlightlyMatchDetailResult {
   };
 }
 
+export interface HighlightlyHighlightsResult {
+  highlights: ProviderHighlight[];
+  pagination: {
+    totalCount: number;
+    offset: number;
+    limit: number;
+  };
+  requestCount: number;
+  rateLimit: {
+    limit: string | null;
+    remaining: string | null;
+  };
+}
+
 interface MatchesResponse {
   data?: ProviderMatch[];
+  pagination?: {
+    totalCount?: number;
+    offset?: number;
+    limit?: number;
+  };
+}
+
+interface HighlightsResponse {
+  data?: ProviderHighlight[];
   pagination?: {
     totalCount?: number;
     offset?: number;
@@ -107,6 +130,46 @@ export class HighlightlyClient {
     const matches = Array.isArray(payload) ? payload : payload.data ?? [];
 
     return { match: matches[0] ?? null, requestCount: 1, rateLimit };
+  }
+
+  async getHighlights(options: {
+    date: string;
+    timezone: string;
+    limit: number;
+    offset: number;
+  }): Promise<HighlightlyHighlightsResult> {
+    const url = new URL(`${this.appEnv.highlightlyApiBaseUrl}/highlights`);
+    url.searchParams.set("date", options.date);
+    url.searchParams.set("timezone", options.timezone);
+    url.searchParams.set("limit", String(options.limit));
+    url.searchParams.set("offset", String(options.offset));
+
+    const response = await fetch(url, {
+      headers: {
+        "x-rapidapi-key": this.appEnv.highlightlyApiKey
+      },
+      signal: AbortSignal.timeout(30_000)
+    });
+
+    const rateLimit = {
+      limit: response.headers.get("x-ratelimit-requests-limit"),
+      remaining: response.headers.get("x-ratelimit-requests-remaining")
+    };
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Highlightly /highlights failed (${response.status}): ${body.slice(0, 400)}`);
+    }
+
+    const payload = (await response.json()) as HighlightsResponse;
+    const highlights = payload.data ?? [];
+    const pagination = {
+      totalCount: payload.pagination?.totalCount ?? highlights.length,
+      offset: payload.pagination?.offset ?? options.offset,
+      limit: payload.pagination?.limit ?? options.limit
+    };
+
+    return { highlights, pagination, requestCount: 1, rateLimit };
   }
 
   async getHeadToHead(teamIdOne: string, teamIdTwo: string): Promise<ProviderMatch[]> {
