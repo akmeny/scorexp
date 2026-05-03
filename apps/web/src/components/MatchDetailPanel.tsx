@@ -38,9 +38,11 @@ interface MatchDetailPanelProps {
   error: string | null;
   onClose: () => void;
   onReload: () => void;
+  onOpenAtmosphere: () => void;
+  chatSlot?: ReactNode;
 }
 
-type DetailTab = "details" | "events" | "stats" | "h2h" | "form" | "standings";
+type DetailTab = "details" | "chat" | "events" | "stats" | "h2h" | "form" | "standings";
 type AiStatus = "idle" | "analyzing" | "done";
 
 const analysisSteps = [
@@ -116,7 +118,9 @@ export function MatchDetailPanel({
   refreshing,
   error,
   onClose,
-  onReload
+  onReload,
+  onOpenAtmosphere,
+  chatSlot
 }: MatchDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>("details");
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
@@ -124,7 +128,8 @@ export function MatchDetailPanel({
   const activeMatch = detail?.match ?? match;
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
-  const visibleTabs = useMemo(() => buildTabs(activeMatch, detail, statisticRows.length), [activeMatch, detail, statisticRows.length]);
+  const hasChatTab = Boolean(chatSlot);
+  const visibleTabs = useMemo(() => buildTabs(activeMatch, detail, statisticRows.length, hasChatTab), [activeMatch, detail, statisticRows.length, hasChatTab]);
   const aiResult = useMemo(() => buildAiResult(activeMatch, detail, prediction), [activeMatch, detail, prediction]);
   const tabStyle = { "--tab-count": visibleTabs.length } as CSSProperties;
 
@@ -195,6 +200,13 @@ export function MatchDetailPanel({
         <TeamSummary match={activeMatch} side="away" />
       </section>
 
+      <div className="detailAtmosphereAction">
+        <button className="detailAtmosphereButton" type="button" onClick={onOpenAtmosphere}>
+          <Sparkles size={15} />
+          <span>Maç Atmosferine Git</span>
+        </button>
+      </div>
+
       {loading ? <div className="detailNotice">Detaylar yükleniyor</div> : null}
       {error ? <div className="detailNotice">{error}</div> : null}
 
@@ -221,6 +233,8 @@ export function MatchDetailPanel({
           <AiPredictionCard status={aiStatus} step={aiStep} result={aiResult} onStart={startAiPrediction} />
         </div>
       ) : null}
+
+      {tab === "chat" && chatSlot ? <div className="detailContent detailChatContent">{chatSlot}</div> : null}
 
       {tab === "events" ? (
         <div className="detailContent">
@@ -259,9 +273,11 @@ export function MatchDetailPanel({
   );
 }
 
-function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statisticRowCount: number) {
+function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statisticRowCount: number, hasChat: boolean) {
   const tabs: { key: DetailTab; label: string }[] = [{ key: "details", label: "Ayrıntılar" }];
   const isUpcoming = match.status.group === "upcoming";
+
+  if (hasChat) tabs.push({ key: "chat", label: "Sohbet" });
 
   if (!isUpcoming && (detail?.events?.length ?? 0) > 0) tabs.push({ key: "events", label: "Özet" });
   if (!isUpcoming && statisticRowCount > 0) tabs.push({ key: "stats", label: "İstatistik" });

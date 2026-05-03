@@ -226,3 +226,19 @@ export interface HighlightsSnapshot {
     nextOffset: number | null;
   };
 }
+
+export interface ChatMessage {
+  id: string;
+  matchId: string;
+  authorId: string;
+  nickname: string;
+  color: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ChatRoomSnapshot {
+  roomId: string;
+  generatedAt: string;
+  messages: ChatMessage[];
+}

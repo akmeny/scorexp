@@ -28,6 +28,66 @@ body {
   overflow-x: hidden;
 }
 
+html,
+body,
+.scorePanel,
+.leagueStack,
+.sortedMatchList,
+.matchDetailPane,
+.matchChatRoom,
+.chatMessages {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(213, 229, 234, 0.16) transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.scorePanel::-webkit-scrollbar,
+.leagueStack::-webkit-scrollbar,
+.sortedMatchList::-webkit-scrollbar,
+.matchDetailPane::-webkit-scrollbar,
+.matchChatRoom::-webkit-scrollbar,
+.chatMessages::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.scorePanel::-webkit-scrollbar-track,
+.leagueStack::-webkit-scrollbar-track,
+.sortedMatchList::-webkit-scrollbar-track,
+.matchDetailPane::-webkit-scrollbar-track,
+.matchChatRoom::-webkit-scrollbar-track,
+.chatMessages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.scorePanel::-webkit-scrollbar-thumb,
+.leagueStack::-webkit-scrollbar-thumb,
+.sortedMatchList::-webkit-scrollbar-thumb,
+.matchDetailPane::-webkit-scrollbar-thumb,
+.matchChatRoom::-webkit-scrollbar-thumb,
+.chatMessages::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: rgba(213, 229, 234, 0.14);
+  background-clip: content-box;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.scorePanel::-webkit-scrollbar-thumb:hover,
+.leagueStack::-webkit-scrollbar-thumb:hover,
+.sortedMatchList::-webkit-scrollbar-thumb:hover,
+.matchDetailPane::-webkit-scrollbar-thumb:hover,
+.matchChatRoom::-webkit-scrollbar-thumb:hover,
+.chatMessages::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(213, 229, 234, 0.24);
+}
+
 @media (min-width: 981px) {
   :root {
     --scorexp-viewport-width: calc(100vw / var(--scorexp-display-scale));
@@ -315,6 +375,12 @@ button:disabled {
   border-right: 1px solid #283238;
 }
 
+.sportsMenu button.active {
+  border-color: #4854c9;
+  background: #171d3b;
+  color: #fff;
+}
+
 .sportsMenu strong {
   min-width: 20px;
   height: 20px;
@@ -445,6 +511,10 @@ button:disabled {
 
 .chip {
   min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: 0;
   border-radius: 999px;
   background: #080d0f;
@@ -452,6 +522,22 @@ button:disabled {
   padding: 0 15px;
   font-size: 11px;
   font-weight: 900;
+}
+
+.chip svg {
+  display: none;
+}
+
+.chip strong {
+  font: inherit;
+}
+
+.chip.liveChip strong::before {
+  content: "(";
+}
+
+.chip.liveChip strong::after {
+  content: ")";
 }
 
 .chip.active {
@@ -823,12 +909,335 @@ button:disabled {
   top: 126px;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   flex: 0 0 min(480px, calc(var(--scorexp-viewport-width) - 24px));
   border: 1px solid #253136;
   border-radius: 8px;
   background: #11181b;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
   animation: detailPaneEnter 180ms ease-out;
+}
+
+.matchChatRoom {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid #253136;
+  border-radius: 8px;
+  background: #11181b;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+  color: #eef6f8;
+}
+
+.matchChatRoom.panel {
+  position: sticky;
+  top: 126px;
+  flex: 1 1 360px;
+  width: clamp(320px, calc(var(--scorexp-viewport-width) - 1060px), 540px);
+  min-width: 320px;
+  max-width: 540px;
+  height: calc(var(--scorexp-viewport-height) - 136px);
+  max-height: calc(var(--scorexp-viewport-height) - 136px);
+  animation: detailPaneEnter 180ms ease-out;
+}
+
+.matchChatRoom.embedded {
+  height: min(620px, calc(var(--scorexp-viewport-height) - 170px));
+  min-height: 420px;
+  box-shadow: none;
+}
+
+.chatTop {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 13px;
+  border-bottom: 1px solid #27343a;
+  background: linear-gradient(180deg, #121b1f 0%, #0f171a 100%);
+}
+
+.chatTitleBlock {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.chatTitleBlock span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.chatTitleBlock strong {
+  overflow: hidden;
+  color: #eef7fa;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatTopActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chatConnection {
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid #2d3c42;
+  border-radius: 999px;
+  background: #0d1417;
+  color: #9dafb6;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.chatConnection.online {
+  border-color: rgba(82, 214, 160, 0.26);
+  color: #9af0c7;
+  background: rgba(82, 214, 160, 0.07);
+}
+
+.chatConnection.offline {
+  border-color: rgba(255, 98, 112, 0.24);
+  color: #ff9aa3;
+  background: rgba(255, 98, 112, 0.07);
+}
+
+.chatMessages {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 13px 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 120px),
+    #0d1417;
+  scroll-behavior: smooth;
+}
+
+.chatEmptyState {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  margin: auto 0;
+  color: #8fa2aa;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.chatEmptyState svg {
+  color: #7c83ff;
+}
+
+.chatMessage {
+  width: min(82%, 390px);
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background: #121b1f;
+}
+
+.chatMessage.other {
+  align-self: flex-start;
+  border-top-left-radius: 3px;
+}
+
+.chatMessage.mine {
+  align-self: flex-end;
+  border-color: rgba(138, 145, 255, 0.32);
+  border-top-right-radius: 3px;
+  background: rgba(138, 145, 255, 0.12);
+}
+
+.chatMessageHeader {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chatMessageHeader strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #b8c8cf;
+  font-size: 11px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatMessage.mine .chatMessageHeader strong {
+  color: #dfe4ff;
+}
+
+.chatMessageHeader time {
+  flex: 0 0 auto;
+  color: #72858d;
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.chatMessage p {
+  margin: 0;
+  color: #edf5f7;
+  font-size: 12.5px;
+  font-weight: 560;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.chatComposerWrap {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px max(9px, env(safe-area-inset-bottom));
+  border-top: 1px solid #27343a;
+  background: #10171a;
+}
+
+.chatNewMessageNotice {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(-50%);
+  padding: 0 12px;
+  border: 1px solid rgba(138, 145, 255, 0.42);
+  border-radius: 999px;
+  background: #edf5f7;
+  color: #0c1214;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.chatNotice {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 98, 112, 0.28);
+  border-radius: 7px;
+  background: rgba(255, 98, 112, 0.08);
+  color: #ffb8bd;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chatComposer {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: end;
+  gap: 8px;
+}
+
+.chatComposer textarea {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  max-height: 92px;
+  resize: none;
+  outline: 0;
+  border: 1px solid #2d3c42;
+  border-radius: 8px;
+  background: #0d1417;
+  color: #edf5f7;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.chatComposer textarea::placeholder {
+  color: #778991;
+}
+
+.chatComposer textarea:focus {
+  border-color: rgba(138, 145, 255, 0.52);
+  background: #111a1e;
+}
+
+.chatComposer button,
+.chatReopenButton {
+  border: 1px solid rgba(138, 145, 255, 0.32);
+  background: rgba(138, 145, 255, 0.12);
+  color: #edf0ff;
+}
+
+.chatComposer button {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.chatComposer button:hover,
+.chatReopenButton:hover {
+  border-color: rgba(138, 145, 255, 0.52);
+  background: rgba(138, 145, 255, 0.18);
+  color: #ffffff;
+}
+
+.chatComposer button:focus-visible,
+.chatNewMessageNotice:focus-visible,
+.chatReopenButton:focus-visible,
+.matchChatRoom .iconButton:focus-visible {
+  outline: 2px solid rgba(138, 145, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.chatReopenButton {
+  position: sticky;
+  top: 126px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.detailChatContent {
+  padding: 8px;
 }
 
 .detailTop {
@@ -965,6 +1374,35 @@ button:disabled {
   font-size: 11px;
   font-weight: 800;
   text-align: center;
+}
+
+.detailAtmosphereAction {
+  padding: 10px 12px 0;
+  background: #151d20;
+}
+
+.detailAtmosphereButton {
+  width: 100%;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #5660d8;
+  border-radius: 999px;
+  background: #eef6f8;
+  color: #0b1114;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.detailAtmosphereButton svg {
+  color: #4b55d4;
+}
+
+.detailAtmosphereButton:hover {
+  background: #ffffff;
 }
 
 .detailNotice {
@@ -1978,6 +2416,1353 @@ button:disabled {
   font-weight: 600;
 }
 
+.matchAtmosphereOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  height: var(--scorexp-viewport-height);
+  overflow: hidden;
+  background: #0c1113;
+  color: #eef7fa;
+}
+
+.matchAtmosphereShell {
+  height: var(--scorexp-viewport-height);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 62px minmax(0, 1fr);
+  background:
+    linear-gradient(180deg, rgba(29, 40, 43, 0.9), rgba(12, 17, 19, 0.98) 310px),
+    #0c1113;
+}
+
+.atmosphereTopbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid #26343a;
+  background: rgba(9, 13, 15, 0.96);
+}
+
+.atmosphereBackButton,
+.atmosphereTopActions button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #334249;
+  border-radius: 7px;
+  background: #10171a;
+  color: #e6f0f3;
+}
+
+.atmosphereBackButton {
+  gap: 8px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.atmosphereBackButton:hover,
+.atmosphereTopActions button:hover {
+  border-color: #5660d8;
+  background: #171d3b;
+  color: #fff;
+}
+
+.atmosphereLeagueTitle {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8fa2aa;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.atmosphereLeagueTitle strong,
+.atmosphereLeagueTitle em,
+.atmosphereLeagueTitle span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereLeagueTitle strong {
+  max-width: min(320px, 42vw);
+  color: #f2f9fb;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.atmosphereLeagueTitle em {
+  max-width: 220px;
+  color: #dfe4ff;
+  font-style: normal;
+}
+
+.atmosphereTopActions {
+  display: inline-flex;
+  gap: 7px;
+}
+
+.atmosphereTopActions button {
+  width: 38px;
+}
+
+.atmosphereBody {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+}
+
+.atmosphereRail {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 18px 14px;
+  border-right: 1px solid #26343a;
+  background: #090d0f;
+}
+
+.atmosphereBrand {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 7px;
+}
+
+.atmosphereBrand div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.atmosphereBrand strong {
+  color: #f4fafc;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.atmosphereBrand span:not(.brandMark) {
+  color: #93a6ae;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.atmosphereRail nav {
+  display: grid;
+  gap: 7px;
+}
+
+.atmosphereRail nav a {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid #243239;
+  border-radius: 7px;
+  background: #10171a;
+  color: #dce8ec;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.atmosphereRail nav a:hover {
+  border-color: #5660d8;
+  background: #171d3b;
+  color: #fff;
+}
+
+.atmosphereRailMetric {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid #364164;
+  border-radius: 7px;
+  background: #11171a;
+  color: #dfe4ff;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.atmosphereRailMetric svg {
+  color: #7c83ff;
+}
+
+.atmosphereScroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 0 0 26px;
+}
+
+.atmosphereHero {
+  min-height: 286px;
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(340px, 560px) minmax(160px, 1fr);
+  align-items: center;
+  gap: 22px;
+  padding: 28px;
+  border-bottom: 1px solid #26343a;
+  background: linear-gradient(135deg, rgba(20, 27, 30, 0.92), rgba(14, 22, 26, 0.96));
+}
+
+.atmosphereTeam {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.atmosphereTeam strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #f4fbfd;
+  font-size: 18px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereTeam span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid #344249;
+  border-radius: 999px;
+  background: #10171a;
+  color: #b4c6cd;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.atmosphereScoreStage {
+  width: 100%;
+  max-width: 560px;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 22px 24px;
+  border: 1px solid #314148;
+  border-radius: 8px;
+  background: rgba(17, 24, 27, 0.82);
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34);
+  text-align: center;
+}
+
+.atmosphereStatusPill {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #0b1114;
+  background: #eef6f8;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.atmosphereStatusPill.live {
+  background: #ff5360;
+  color: #fff;
+}
+
+.atmosphereStatusPill.finished {
+  background: #dfe4ff;
+}
+
+.atmosphereScoreline {
+  color: #ff5360;
+  font-size: 44px;
+  font-weight: 950;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.atmosphereScoreStage strong {
+  color: #f5fbfd;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.atmosphereScoreStage p {
+  width: 100%;
+  max-width: 520px;
+  margin: 0;
+  color: #b8c9cf;
+  font-size: 13px;
+  font-weight: 620;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+.atmosphereNotice {
+  margin: 14px 20px 0;
+  padding: 11px 13px;
+  border: 1px solid #304047;
+  border-radius: 7px;
+  background: #11181b;
+  color: #c7d7dd;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.atmosphereNotice.error {
+  border-color: #76353c;
+  background: #261115;
+  color: #ffb8bd;
+}
+
+.atmosphereSignalStrip,
+.atmosphereChatSection,
+.atmosphereGrid,
+.atmosphereTwinGrid,
+.atmospherePanel {
+  width: min(1180px, calc(100% - 40px));
+  margin: 18px auto 0;
+}
+
+.atmosphereSignalStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.atmosphereChatSection {
+  display: grid;
+  gap: 10px;
+}
+
+.atmosphereChatSection .matchChatRoom.embedded {
+  height: min(560px, calc(var(--scorexp-viewport-height) - 190px));
+}
+
+.atmosphereSignalMetric {
+  min-width: 0;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-content: center;
+  gap: 4px 8px;
+  padding: 11px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background: #11181b;
+}
+
+.atmosphereSignalMetric svg {
+  color: #7c83ff;
+}
+
+.atmosphereSignalMetric span {
+  color: #8fa2aa;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.atmosphereSignalMetric strong {
+  grid-column: 2;
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereGrid,
+.atmosphereTwinGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.atmospherePanel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background: #141b1e;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.atmosphereGrid .atmospherePanel,
+.atmosphereTwinGrid .atmospherePanel {
+  width: auto;
+  margin: 0;
+}
+
+.atmospherePanelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: #edf7fa;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.atmospherePanelTitle svg {
+  color: #7c83ff;
+}
+
+.atmosphereAiPanel {
+  min-height: 258px;
+  border-color: #4650a9;
+  background:
+    linear-gradient(135deg, rgba(23, 29, 59, 0.56), rgba(17, 24, 27, 0.96)),
+    #11181b;
+}
+
+.atmosphereAiPanel > strong {
+  display: block;
+  color: #f4fffb;
+  font-size: 21px;
+  font-weight: 950;
+  line-height: 1.25;
+}
+
+.atmosphereAiPanel > p {
+  margin: 8px 0 14px;
+  color: #c7d0e6;
+  font-size: 13px;
+  font-weight: 620;
+  line-height: 1.55;
+}
+
+.atmosphereProbabilityBars {
+  display: grid;
+  gap: 9px;
+}
+
+.atmosphereProbabilityBars div {
+  position: relative;
+  overflow: hidden;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid #364164;
+  border-radius: 7px;
+  background: #11171a;
+}
+
+.atmosphereProbabilityBars i {
+  position: absolute;
+  inset: auto auto 0 0;
+  height: 3px;
+  background: #7c83ff;
+}
+
+.atmosphereProbabilityBars span,
+.atmosphereProbabilityBars strong {
+  position: relative;
+  z-index: 1;
+  color: #eef1ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.atmosphereInsightList {
+  display: grid;
+  gap: 9px;
+}
+
+.atmosphereInsight {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #2b3940;
+  border-radius: 7px;
+  background: #10171a;
+}
+
+.atmosphereInsight span {
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.atmosphereInsight strong {
+  overflow: hidden;
+  color: #f1f8fa;
+  font-size: 13px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereInsight p {
+  margin: 0;
+  color: #aebfc6;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.atmosphereStatList {
+  display: grid;
+  gap: 9px;
+}
+
+.atmosphereStatTeams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: #e6f0f3;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.atmosphereStatTeams span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereStatTeams svg {
+  color: #7c83ff;
+}
+
+.atmosphereStatRow {
+  padding: 9px 10px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+}
+
+.atmosphereStatValues {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.atmosphereStatValues span {
+  overflow: hidden;
+  color: #aebfc6;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereStatValues strong:last-child {
+  text-align: right;
+}
+
+.atmosphereStatBars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  height: 7px;
+}
+
+.atmosphereStatBars i,
+.atmosphereStatBars b {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.atmosphereStatBars i {
+  justify-self: end;
+  background: #7c83ff;
+}
+
+.atmosphereStatBars b {
+  justify-self: start;
+  background: #ff5360;
+}
+
+.atmosphereHistorySummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.atmosphereSummaryMetric {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  min-height: 54px;
+  padding: 8px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+}
+
+.atmosphereSummaryMetric span {
+  overflow: hidden;
+  color: #9dafb6;
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereSummaryMetric strong {
+  color: #f1f8fa;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.atmosphereFormGrid,
+.atmospherePlayerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.atmosphereFormColumn,
+.atmospherePlayerColumn {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.atmosphereFormTitle,
+.atmospherePlayerTeam {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.atmosphereFormTitle span,
+.atmospherePlayerTeam span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereFormChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.atmosphereFormChips em {
+  color: #8fa2aa;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.atmosphereMiniList,
+.atmospherePlayerList,
+.atmosphereStandingTable,
+.atmosphereTimeline {
+  display: grid;
+  gap: 7px;
+}
+
+.atmosphereHeadToHeadList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #26343a;
+}
+
+.atmosphereHeadToHeadList > span {
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.atmosphereStandingHead {
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 36px 42px 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  color: #8fa2aa;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.atmosphereStandingHead span:not(:nth-child(2)) {
+  text-align: right;
+}
+
+.atmosphereMiniRow {
+  min-width: 0;
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 44px 18px minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+  color: #a9bbc2;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.atmosphereMiniRow strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereMiniRow b {
+  color: #ff6570;
+  font-size: 11px;
+  font-weight: 950;
+  text-align: right;
+}
+
+.atmosphereStandingRow {
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 28px 18px minmax(0, 1fr) 36px 42px 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+  color: #a9bbc2;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.atmosphereStandingRow.highlighted {
+  border-color: #5660d8;
+  background: linear-gradient(90deg, rgba(124, 131, 255, 0.18), #10171a 46%);
+}
+
+.atmosphereStandingRow > span:first-child,
+.atmosphereStandingRow em,
+.atmosphereStandingRow b {
+  text-align: right;
+}
+
+.atmosphereStandingRow strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereStandingRow b,
+.atmosphereStandingRow em {
+  color: #dfe4ff;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.atmosphereStandingRow em {
+  color: #8fa2aa;
+}
+
+.atmospherePlayerRow {
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 3px 10px;
+  padding: 8px 10px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+}
+
+.atmospherePlayerRow strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmospherePlayerRow span {
+  color: #9dafb6;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.atmospherePlayerRow b {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  max-width: 128px;
+  overflow: hidden;
+  color: #ffd166;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereTimeline {
+  position: relative;
+}
+
+.atmosphereTimeline::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, #344249 10%, #344249 90%, transparent);
+  transform: translateX(-50%);
+}
+
+.atmosphereTimelineItem {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.atmosphereTimelineItem.home .atmosphereTimelineMinute,
+.atmosphereTimelineItem.neutral .atmosphereTimelineMinute {
+  grid-column: 2;
+}
+
+.atmosphereTimelineItem.away .atmosphereTimelineMinute {
+  grid-column: 2;
+}
+
+.atmosphereTimelineItem.home .atmosphereTimelineCard {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+}
+
+.atmosphereTimelineItem.away .atmosphereTimelineCard {
+  grid-column: 3;
+  justify-self: start;
+}
+
+.atmosphereTimelineItem.neutral .atmosphereTimelineCard {
+  grid-column: 1 / -1;
+  width: min(520px, calc(100% - 54px));
+  justify-self: center;
+}
+
+.atmosphereTimelineMinute {
+  position: relative;
+  z-index: 1;
+  min-width: 34px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #344249;
+  border-radius: 999px;
+  background: #0d1417;
+  color: #e6f0f3;
+  font-size: 11px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.atmosphereTimelineCard {
+  min-width: 0;
+  width: min(100%, 360px);
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+}
+
+.atmosphereTimelineItem.home .atmosphereTimelineCard {
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.atmosphereTimelineItem.home .atmosphereTimelineCard i {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.atmosphereTimelineItem.home .atmosphereTimelineCard div {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.atmosphereTimelineCard i {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #dce8ec;
+  background: #1d282d;
+  font-style: normal;
+}
+
+.atmosphereTimelineCard.goal {
+  border-color: #287a5e;
+  background: #0f1a18;
+}
+
+.atmosphereTimelineCard.goal i {
+  color: #0d1517;
+  background: #3fe0a0;
+}
+
+.atmosphereTimelineCard.yellow i {
+  color: #15170d;
+  background: #f5d33d;
+}
+
+.atmosphereTimelineCard.red i {
+  color: #fff;
+  background: #f14f5c;
+}
+
+.atmosphereTimelineCard.substitution i {
+  color: #e7ecff;
+  background: #253049;
+}
+
+.atmosphereTimelineCard strong {
+  display: block;
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereTimelineCard p,
+.atmosphereTimelineCard em {
+  display: block;
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: #9dafb6;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereTimelineCard em {
+  color: #71858e;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.atmosphereEmptyState {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+  color: #9dafb6;
+  font-size: 12px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.atmosphereEmptyState svg {
+  color: #7c83ff;
+}
+
+@media (max-width: 980px) {
+  html.scorexpRoutePage,
+  body.scorexpRoutePage {
+    min-height: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  body.scorexpRoutePage {
+    overflow-y: auto;
+    padding-bottom: 0;
+  }
+
+  body.scorexpRoutePage #root {
+    min-height: 100dvh;
+  }
+
+  .routeMatchPage {
+    min-height: 100dvh;
+    background: #0c1113;
+  }
+
+  .routeMatchPage .siteHeader,
+  .routeMatchPage .scorePanel,
+  .routeMatchPage .installPrompt,
+  .routeMatchPage .scrollTopButton {
+    display: none;
+  }
+
+  .routeMatchPage .appShell {
+    min-height: 100dvh;
+    display: block;
+    padding: 0;
+    background: #0c1113;
+  }
+
+  .routeAtmospherePage .appShell {
+    display: none;
+  }
+
+  .routeDetailPage .matchDetailPane {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    width: 100vw;
+    min-height: 100dvh;
+    height: auto;
+    max-height: none;
+    flex-basis: auto;
+    overflow: visible;
+    overscroll-behavior-y: auto;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .matchAtmosphereOverlay {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .routeAtmospherePage .matchAtmosphereOverlay {
+    position: relative;
+    inset: auto;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  .matchAtmosphereShell {
+    height: auto;
+    min-height: 100dvh;
+    display: block;
+  }
+
+  .atmosphereTopbar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    min-height: 58px;
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .atmosphereBackButton {
+    width: 40px;
+    padding: 0;
+  }
+
+  .atmosphereBackButton span,
+  .atmosphereLeagueTitle span,
+  .atmosphereLeagueTitle em {
+    display: none;
+  }
+
+  .atmosphereLeagueTitle {
+    justify-content: flex-start;
+  }
+
+  .atmosphereLeagueTitle strong {
+    max-width: 100%;
+  }
+
+  .atmosphereBody {
+    display: block;
+    min-height: auto;
+  }
+
+  .atmosphereRail {
+    display: none;
+  }
+
+  .atmosphereScroll {
+    min-height: auto;
+    overflow: visible;
+    padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 72px));
+  }
+
+  .atmosphereHero {
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 10px;
+    overflow: hidden;
+  }
+
+  .atmosphereScoreStage {
+    grid-column: 2;
+    max-width: 100%;
+    min-height: 166px;
+    align-content: center;
+    padding: 13px 10px;
+  }
+
+  .atmosphereScoreline {
+    font-size: 34px;
+  }
+
+  .atmosphereScoreStage strong {
+    font-size: 16px;
+  }
+
+  .atmosphereTeam {
+    min-width: 0;
+    overflow: hidden;
+    align-content: center;
+    align-self: stretch;
+    gap: 6px;
+    padding: 8px 4px;
+    border: 1px solid rgba(52, 66, 73, 0.72);
+    border-radius: 8px;
+    background: rgba(17, 24, 27, 0.58);
+  }
+
+  .atmosphereTeam strong {
+    display: -webkit-box;
+    min-height: 31px;
+    color: #edf7fa;
+    font-size: 13px;
+    line-height: 1.18;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .atmosphereSignalStrip,
+  .atmosphereGrid,
+  .atmosphereTwinGrid,
+  .atmospherePanel {
+    width: calc(100% - 20px);
+    margin-top: 10px;
+  }
+
+  .atmosphereSignalStrip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .atmosphereGrid,
+  .atmosphereTwinGrid,
+  .atmosphereFormGrid,
+  .atmospherePlayerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .atmosphereTimelineItem {
+    grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .atmosphereTimelineMinute {
+    min-width: 32px;
+    min-height: 26px;
+    font-size: 10px;
+  }
+
+  .atmosphereTimelineCard {
+    width: 100%;
+    min-height: 44px;
+    grid-template-columns: 25px minmax(0, 1fr);
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .atmosphereTimelineItem.home .atmosphereTimelineCard {
+    grid-template-columns: minmax(0, 1fr) 25px;
+  }
+
+  .atmosphereTimelineCard i {
+    width: 25px;
+    height: 25px;
+  }
+
+  .atmosphereTimelineCard strong {
+    font-size: 11px;
+  }
+
+  .atmosphereTimelineCard p,
+  .atmosphereTimelineCard em {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 560px) {
+  .atmosphereTopActions {
+    gap: 5px;
+  }
+
+  .atmosphereTopActions button {
+    width: 36px;
+    min-height: 36px;
+  }
+
+  .atmosphereHero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 6px;
+    padding: 10px 8px;
+  }
+
+  .atmosphereScoreStage p {
+    display: none;
+  }
+
+  .atmosphereScoreStage {
+    min-height: 144px;
+    gap: 6px;
+    padding: 12px 7px;
+  }
+
+  .atmosphereStatusPill {
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .atmosphereScoreline {
+    font-size: 31px;
+  }
+
+  .atmosphereScoreStage strong {
+    font-size: 15px;
+  }
+
+  .atmosphereTeam {
+    padding: 7px 3px;
+  }
+
+  .atmosphereTeam .teamLogo.lg,
+  .atmosphereTeam .logoFallback.lg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .atmosphereTeam strong {
+    min-height: 28px;
+    font-size: 11.5px;
+  }
+
+  .atmosphereTeam span {
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .atmosphereSignalStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .atmosphereTimelineItem {
+    grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .atmosphereTimelineItem.neutral .atmosphereTimelineCard {
+    width: calc(100% - 42px);
+  }
+
+  .atmosphereStatValues {
+    grid-template-columns: 54px minmax(0, 1fr) 54px;
+    gap: 7px;
+    font-size: 11px;
+  }
+
+  .atmosphereHistorySummary {
+    grid-template-columns: 1fr;
+  }
+
+  .atmosphereStandingHead {
+    grid-template-columns: 24px minmax(0, 1fr) 34px 36px;
+  }
+
+  .atmosphereStandingHead span:nth-child(4) {
+    display: none;
+  }
+
+  .atmosphereStandingRow {
+    grid-template-columns: 24px 18px minmax(0, 1fr) 34px 36px;
+  }
+
+  .atmosphereStandingRow em:nth-of-type(2) {
+    display: none;
+  }
+
+  .atmospherePlayerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .atmospherePlayerRow b {
+    grid-row: auto;
+    grid-column: auto;
+    max-width: 100%;
+    text-align: left;
+  }
+}
+
 .highlightsOverlay {
   position: fixed;
   inset: 0;
@@ -2726,6 +4511,64 @@ button:disabled {
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
   }
 
+  .mobileSportsMenu {
+    position: absolute;
+    right: 0;
+    top: 44px;
+    z-index: 48;
+    width: min(310px, calc(100vw - 20px));
+    max-height: min(70vh, 520px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid #344249;
+    border-radius: 8px;
+    background: #0e1518;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobileSportsMenu button {
+    width: 100%;
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-bottom-color: #26343a;
+    border-radius: 6px;
+    background: transparent;
+    color: #eaf2f5;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .mobileSportsMenu button + button {
+    margin-top: 4px;
+  }
+
+  .mobileSportsMenu button.active {
+    border-color: #5a65df;
+    background: #171d3b;
+    color: #fff;
+  }
+
+  .mobileSportsMenu strong {
+    min-width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #20292e;
+    color: #dbe5e8;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
   .mobileProfileMenu button {
     width: 100%;
     min-height: 38px;
@@ -2885,6 +4728,882 @@ button:disabled {
   }
 }
 
+@media (max-width: 760px) {
+  .siteHeader {
+    min-height: 54px;
+  }
+
+  .sportsBar {
+    display: none;
+  }
+
+  .mobileHeaderActions {
+    gap: 6px;
+  }
+
+  .mobileHeaderIcon {
+    width: 35px;
+    height: 35px;
+  }
+
+  .appShell {
+    min-height: calc(100vh - 54px);
+  }
+
+  .scorePanel {
+    min-height: calc(100vh - 54px);
+  }
+}
+
+/* First phase: quieter match list and detail surfaces. */
+:root {
+  --sx-bg: #0b1012;
+  --sx-surface: #11181b;
+  --sx-surface-soft: #141c20;
+  --sx-surface-lift: #182126;
+  --sx-line: rgba(180, 202, 211, 0.13);
+  --sx-line-strong: rgba(204, 224, 231, 0.2);
+  --sx-text: #edf5f7;
+  --sx-muted: #93a5ad;
+  --sx-soft: #bfccd1;
+  --sx-accent: #8a91ff;
+  --sx-live: #ff6270;
+  --sx-good: #52d6a0;
+  --sx-warn: #f2ca5b;
+}
+
+.appShell {
+  gap: 10px;
+  background:
+    linear-gradient(180deg, rgba(18, 27, 30, 0.88), rgba(11, 16, 18, 0.98) 260px),
+    var(--sx-bg);
+}
+
+.scorePanel,
+.matchDetailPane,
+.matchChatRoom {
+  border-color: var(--sx-line);
+  background: var(--sx-surface);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.topNav,
+.detailTop {
+  border-bottom-color: var(--sx-line);
+  background: rgba(13, 19, 22, 0.94);
+}
+
+.tabs button,
+.detailTabs button {
+  color: #9ba1ff;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.tabs button:hover,
+.detailTabs button:hover {
+  color: #e2e5ff;
+  background: rgba(138, 145, 255, 0.08);
+}
+
+.tabs button.active,
+.detailTabs button.active {
+  color: #f2f4ff;
+}
+
+.tabs button.active::after,
+.detailTabs button.active::after {
+  height: 1px;
+  background: var(--sx-accent);
+}
+
+.datePicker {
+  border-color: var(--sx-line-strong);
+  background: #0d1417;
+}
+
+.dateButton {
+  color: #d9ddff;
+  border-color: rgba(138, 145, 255, 0.16);
+}
+
+.filters {
+  padding: 9px 9px 10px;
+  border-bottom: 1px solid var(--sx-line);
+  background: #10171a;
+}
+
+.chip {
+  min-height: 29px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #b6c4ca;
+  font-weight: 850;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.chip:hover {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.025);
+  color: #edf5f7;
+}
+
+.chip.active,
+.chip.liveChip.active,
+.favoriteNavChip.active,
+.sortNavChip.active {
+  border-color: rgba(238, 246, 248, 0.12);
+  background: #edf5f7;
+  color: #0c1214;
+}
+
+.chip.liveChip {
+  color: #ff7c87;
+}
+
+.leagueStack {
+  gap: 6px;
+  padding: 6px;
+  background: #0f1518;
+}
+
+.leagueCard {
+  overflow: hidden;
+  border: 1px solid var(--sx-line);
+  border-radius: 8px;
+  background: #12191c;
+}
+
+.leagueCard.pinned {
+  border-color: rgba(138, 145, 255, 0.28);
+  background: #131b20;
+}
+
+.leagueHeader {
+  min-height: 50px;
+  padding: 8px 9px 8px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
+}
+
+.leagueTitleButton:focus-visible,
+.leagueToggleButton:focus-visible,
+.leaguePinButton:focus-visible,
+.matchRow:focus-visible,
+.starButton:focus-visible,
+.aiXpRowButton:focus-visible,
+.detailTopActions .iconButton:focus-visible,
+.detailAtmosphereButton:focus-visible,
+.scrollTopButton:focus-visible {
+  outline: 2px solid rgba(138, 145, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.leagueIdentity {
+  gap: 9px;
+}
+
+.leagueIdentity span {
+  color: #8799a1;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.leagueIdentity strong {
+  color: var(--sx-text);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.leagueActions {
+  gap: 7px;
+}
+
+.leagueMatchCount {
+  min-width: 48px;
+  color: #aabac1;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.leaguePinButton,
+.leagueToggleButton {
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  color: #a6b7be;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.leaguePinButton {
+  border-color: var(--sx-line);
+  background: #0d1417;
+}
+
+.leaguePinButton.active {
+  border-color: rgba(138, 145, 255, 0.38);
+  background: rgba(138, 145, 255, 0.16);
+  color: #dfe2ff;
+}
+
+.leaguePinButton:hover,
+.leagueToggleButton:hover,
+.leaguePinButton.active:hover {
+  border-color: var(--sx-line-strong);
+  background: #172126;
+  color: #f4f8fa;
+}
+
+.matchList,
+.sortedMatchList {
+  background: #0f1518;
+}
+
+.matchRow {
+  isolation: isolate;
+  min-height: 68px;
+  grid-template-columns: 56px minmax(0, 1fr) 32px 36px 60px;
+  gap: 0;
+  padding: 8px 6px 8px 10px;
+  border-top-color: var(--sx-line);
+  background: #12191c;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.matchRow:hover {
+  background: #151e22;
+}
+
+.matchRow.selected {
+  background: #172228;
+  box-shadow: inset 2px 0 0 var(--sx-accent);
+}
+
+.matchRow.live {
+  background: #141c1f;
+}
+
+.matchRow.live:hover,
+.matchRow.live.selected {
+  background: #192327;
+}
+
+.matchRow.finished {
+  background: #111719;
+}
+
+.matchRow.goalFlash::before {
+  background: linear-gradient(90deg, rgba(255, 98, 112, 0.18), transparent 72%);
+  animation: goalSweep 1.4s ease-out forwards;
+}
+
+.matchTime {
+  color: #c8d4d9;
+  font-size: 10.5px;
+  font-weight: 850;
+}
+
+.matchTime > span,
+.liveMinute {
+  min-width: 38px;
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sx-line);
+  border-radius: 999px;
+  background: #0d1417;
+  font-variant-numeric: tabular-nums;
+}
+
+.matchRow.live .matchTime {
+  color: var(--sx-live);
+}
+
+.matchRow.live .matchTime > span,
+.matchRow.live .liveMinute {
+  border-color: rgba(255, 98, 112, 0.28);
+  background: rgba(255, 98, 112, 0.07);
+}
+
+.matchRow.upcoming .matchTime > span {
+  color: #dbe4e8;
+}
+
+.teamsBlock {
+  gap: 6px;
+}
+
+.teamLine {
+  gap: 8px;
+  color: #eef5f7;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.matchRow.finished .teamLine {
+  color: #c0ccd1;
+}
+
+.teamNameCluster {
+  gap: 6px;
+}
+
+.teamNameCluster > span:first-child {
+  letter-spacing: 0;
+}
+
+.scoreBlock {
+  gap: 6px;
+  min-width: 26px;
+  padding-right: 4px;
+  color: #f1f7f9;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreBlock span {
+  min-height: 14px;
+}
+
+.matchRow.live .scoreBlock {
+  color: #ff707b;
+}
+
+.matchRow.finished .matchTime,
+.matchRow.finished .scoreBlock {
+  color: #9fadb4;
+}
+
+.redCardBadge {
+  min-width: 13px;
+  height: 15px;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.goalTag {
+  color: #ff6f7b;
+  font-size: 10px;
+}
+
+.starButton {
+  width: 32px;
+  height: 32px;
+  border-left: 0;
+  border-radius: 999px;
+  color: #788a92;
+}
+
+.starButton:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #d0dbe0;
+}
+
+.starButton.active {
+  color: var(--sx-warn);
+  background: rgba(242, 202, 91, 0.08);
+}
+
+.aiXpRowButton {
+  width: 56px;
+  height: 28px;
+  border-color: var(--sx-line);
+  background: transparent;
+  color: #d7dcff;
+  font-size: 10px;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.aiXpRowButton svg {
+  color: #9da3ff;
+}
+
+.aiXpRowButton:hover {
+  border-color: rgba(138, 145, 255, 0.38);
+  background: rgba(138, 145, 255, 0.1);
+  color: #ffffff;
+}
+
+.matchDetailPane {
+  background: #11181b;
+}
+
+.detailTop {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 62px;
+}
+
+.detailLeagueLogo {
+  border-color: var(--sx-line);
+  background: #0d1417;
+}
+
+.detailLeagueCountry {
+  border-color: var(--sx-line);
+  background: transparent;
+  color: #92a5ad;
+}
+
+.detailTop strong {
+  color: var(--sx-text);
+  font-weight: 850;
+}
+
+.detailTopActions .iconButton {
+  border-radius: 999px;
+  color: #b2c0c6;
+}
+
+.detailTopActions .iconButton:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #f3f7f9;
+}
+
+.detailScoreHero {
+  gap: 12px;
+  padding: 18px 14px 16px;
+  border-bottom: 1px solid var(--sx-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+    #131b1f;
+}
+
+.detailTeamSummary {
+  color: #eef6f8;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.detailTeamSummary .teamLogo.lg,
+.detailTeamSummary .logoFallback.lg {
+  width: 46px;
+  height: 46px;
+}
+
+.detailScoreCenter {
+  min-width: 112px;
+  color: #ff6c78;
+  font-size: 28px;
+  font-weight: 950;
+}
+
+.detailScoreCenter small {
+  width: fit-content;
+  justify-self: center;
+  min-height: 23px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 98, 112, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 98, 112, 0.07);
+  color: #ff8992;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+
+.detailAtmosphereAction {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sx-line);
+  background: #11181b;
+}
+
+.detailAtmosphereButton {
+  min-height: 38px;
+  border-color: rgba(138, 145, 255, 0.3);
+  background: rgba(138, 145, 255, 0.1);
+  color: #edf0ff;
+  box-shadow: none;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.detailAtmosphereButton svg {
+  color: #aeb3ff;
+}
+
+.detailAtmosphereButton:hover {
+  border-color: rgba(138, 145, 255, 0.5);
+  background: rgba(138, 145, 255, 0.16);
+  color: #ffffff;
+}
+
+.detailNotice,
+.emptyDetail {
+  border-color: var(--sx-line);
+  background: #0d1417;
+}
+
+.detailTabs {
+  gap: 4px;
+  padding: 8px;
+  border-bottom-color: var(--sx-line);
+  background: #10171a;
+}
+
+.detailTabs button {
+  height: 34px;
+  border-radius: 7px;
+}
+
+.detailTabs button.active {
+  background: rgba(138, 145, 255, 0.12);
+}
+
+.detailTabs button.active::after {
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+}
+
+.detailContent {
+  padding: 12px;
+}
+
+.detailFactGrid {
+  gap: 9px;
+}
+
+.detailFact,
+.aiPredictionBlock,
+.eventRow,
+.statCompareRow,
+.summaryPill,
+.compactMatchRow,
+.standingsTable {
+  border-color: var(--sx-line);
+  background: #0d1417;
+}
+
+.detailFact {
+  min-height: 62px;
+  padding: 10px;
+}
+
+.detailFact svg,
+.statTeams svg,
+.sectionTitle svg {
+  color: var(--sx-accent);
+}
+
+.detailFact span {
+  color: #8fa1a9;
+  font-weight: 760;
+}
+
+.detailFact strong {
+  color: #eef6f8;
+  font-weight: 650;
+}
+
+.aiPredictionBlock {
+  margin-top: 12px;
+}
+
+.aiPredictionBlock.analyzing {
+  border-color: rgba(138, 145, 255, 0.38);
+  background: #111927;
+}
+
+.aiPredictionBlock.done {
+  border-color: rgba(82, 214, 160, 0.34);
+  background: #0f1a17;
+}
+
+.aiPredictionHeader button,
+.emptyState button {
+  border-color: rgba(138, 145, 255, 0.34);
+  background: rgba(138, 145, 255, 0.12);
+  color: #edf0ff;
+}
+
+.aiPredictionHeader button:hover,
+.emptyState button:hover {
+  background: rgba(138, 145, 255, 0.18);
+}
+
+.aiScanner {
+  border-color: rgba(138, 145, 255, 0.32);
+  background:
+    repeating-linear-gradient(180deg, rgba(138, 145, 255, 0.1) 0 2px, transparent 2px 6px),
+    #101827;
+}
+
+.aiScanner::before {
+  background: var(--sx-good);
+  box-shadow: none;
+}
+
+.aiProgress i,
+.aiProbabilityBars i {
+  background: var(--sx-good);
+}
+
+.eventTimeline,
+.statCompareList,
+.h2hBlock,
+.formGrid,
+.standingsBlock {
+  gap: 8px;
+}
+
+.eventRow.away {
+  background: #10181c;
+}
+
+.eventIcon {
+  background: #192328;
+}
+
+.eventIcon.goal {
+  color: #07110f;
+  background: var(--sx-good);
+}
+
+.eventIcon.yellow {
+  color: #171407;
+  background: var(--sx-warn);
+}
+
+.eventIcon.red {
+  background: var(--sx-live);
+}
+
+.statBars {
+  height: 6px;
+}
+
+.statBars i,
+.statBars b {
+  height: 6px;
+}
+
+.statBars i {
+  background: var(--sx-accent);
+}
+
+.statBars b {
+  background: var(--sx-good);
+}
+
+.formChip {
+  border-radius: 999px;
+}
+
+.formChip.win {
+  background: var(--sx-good);
+}
+
+.formChip.draw {
+  background: #d0d8dc;
+}
+
+.formChip.loss {
+  background: var(--sx-live);
+}
+
+.standingRow.highlighted {
+  background: rgba(138, 145, 255, 0.12);
+}
+
+.scrollTopButton {
+  min-height: 36px;
+  border-color: var(--sx-line-strong);
+  background: rgba(237, 245, 247, 0.92);
+  box-shadow: none;
+}
+
+.scrollTopButton:hover {
+  background: #ffffff;
+}
+
+@media (min-width: 981px) {
+  .scorePanel {
+    width: min(548px, calc(var(--scorexp-viewport-width) - 20px));
+  }
+
+  .matchDetailPane {
+    width: min(492px, calc(var(--scorexp-viewport-width) - 24px));
+    flex-basis: min(492px, calc(var(--scorexp-viewport-width) - 24px));
+  }
+
+  .appRoot.chatPanelVisible .installPrompt {
+    right: auto;
+    left: 18px;
+    bottom: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    background: #0b1012;
+  }
+
+  .scorePanel {
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .topNav {
+    min-height: 48px;
+  }
+
+  .filters {
+    border-color: rgba(180, 202, 211, 0.18);
+  }
+
+  .chipRow {
+    grid-auto-rows: 40px;
+  }
+
+  .chip {
+    min-height: 40px;
+    height: 40px;
+    font-size: 9.5px;
+  }
+
+  .leagueStack {
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .leagueCard {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .leagueHeader {
+    min-height: 48px;
+    padding-left: 10px;
+  }
+
+  .leagueMatchCount {
+    display: none;
+  }
+
+  .matchRow {
+    min-height: 66px;
+    grid-template-columns: 46px minmax(0, 1fr) 24px 32px 50px;
+    padding: 7px 5px 7px 8px;
+  }
+
+  .matchTime > span,
+  .liveMinute {
+    min-width: 34px;
+    min-height: 23px;
+    font-size: 9.5px;
+  }
+
+  .teamLine {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 6px;
+    font-size: 11.5px;
+  }
+
+  .scoreBlock {
+    font-size: 12px;
+  }
+
+  .starButton {
+    width: 30px;
+    height: 30px;
+  }
+
+  .aiXpRowButton {
+    width: 48px;
+    height: 28px;
+    font-size: 9px;
+  }
+
+  .matchDetailPane {
+    box-shadow: none;
+  }
+
+  .detailTop {
+    min-height: 58px;
+  }
+
+  .detailScoreHero {
+    grid-template-columns: minmax(0, 1fr) 94px minmax(0, 1fr);
+    gap: 8px;
+    padding: 14px 10px;
+  }
+
+  .detailTeamSummary {
+    font-size: 11px;
+  }
+
+  .detailTeamSummary .teamLogo.lg,
+  .detailTeamSummary .logoFallback.lg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .detailScoreCenter {
+    min-width: 94px;
+    font-size: 23px;
+  }
+
+  .detailScoreCenter small {
+    min-height: 21px;
+    padding: 0 7px;
+    font-size: 9.5px;
+  }
+
+  .detailAtmosphereAction,
+  .detailContent {
+    padding: 10px;
+  }
+
+  .detailTabs {
+    gap: 3px;
+    padding: 7px 5px;
+  }
+
+  .detailTabs button,
+  .detailTabs.dense button {
+    height: 34px;
+    font-size: 9.5px;
+  }
+
+  .detailFact {
+    min-height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchRow,
+  .chip,
+  .tabs button,
+  .detailTabs button,
+  .aiXpRowButton,
+  .detailAtmosphereButton {
+    transition: none;
+  }
+}
+
 @keyframes shimmer {
   to {
     background-position: -220% 0;
@@ -3013,7 +5732,7 @@ button:disabled {
   .matchDetailPane {
     position: fixed;
     inset: 126px 12px 12px;
-    z-index: 30;
+    z-index: 70;
     width: auto;
     max-height: none;
     flex-basis: auto;
@@ -3195,11 +5914,13 @@ button:disabled {
 
   .matchDetailPane {
     position: fixed;
-    inset: 8px;
-    z-index: 30;
+    inset: 0;
+    z-index: 70;
     width: auto;
-    max-height: none;
+    height: 100dvh;
+    max-height: 100dvh;
     flex-basis: auto;
+    border-radius: 0;
   }
 
   .detailTop {
@@ -3404,6 +6125,16 @@ button:disabled {
     display: inline-flex;
   }
 
+  .matchDetailPane {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    width: auto;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
   .topNav {
     grid-template-columns: 1fr;
     padding: 8px 10px;
@@ -3583,5 +6314,718 @@ button:disabled {
 
   .highlightsState {
     min-height: calc(100vh - 58px);
+  }
+}
+
+@media (max-width: 760px) {
+  .siteHeader {
+    min-height: 54px;
+  }
+
+  .sportsBar {
+    display: none;
+  }
+
+  .mobileHeaderActions {
+    gap: 6px;
+  }
+
+  .mobileHeaderIcon {
+    width: 35px;
+    height: 35px;
+  }
+
+  .appShell {
+    min-height: calc(100vh - 54px);
+  }
+
+  .scorePanel {
+    min-height: calc(100vh - 54px);
+  }
+}
+
+/* Final cascade guard for the first-phase mobile refinements. */
+@media (max-width: 760px) {
+  .appShell {
+    background: #0b1012;
+  }
+
+  .scorePanel,
+  .matchDetailPane,
+  .matchChatRoom {
+    box-shadow: none;
+  }
+
+  .scorePanel {
+    border-color: transparent;
+  }
+
+  .filters {
+    border-color: rgba(180, 202, 211, 0.18);
+    background: rgba(11, 17, 20, 0.94);
+    box-shadow: none;
+  }
+
+  .chip {
+    height: 40px;
+    min-height: 40px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #b6c4ca;
+    font-size: 9.5px;
+    font-weight: 900;
+  }
+
+  .chip.active,
+  .chip.liveChip.active,
+  .favoriteNavChip.active,
+  .sortNavChip.active {
+    border-color: rgba(238, 246, 248, 0.12);
+    background: #edf5f7;
+    color: #0c1214;
+  }
+
+  .leagueStack {
+    gap: 5px;
+    padding: 5px;
+    background: #0f1518;
+  }
+
+  .leagueCard {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    background: #12191c;
+  }
+
+  .leagueHeader {
+    min-height: 48px;
+    padding-left: 10px;
+  }
+
+  .leagueMatchCount {
+    display: none;
+  }
+
+  .matchRow {
+    min-height: 66px;
+    grid-template-columns: 46px minmax(0, 1fr) 24px 32px 50px;
+    padding: 7px 5px 7px 8px;
+    background: #12191c;
+  }
+
+  .matchTime > span,
+  .liveMinute {
+    min-width: 34px;
+    min-height: 23px;
+    font-size: 9.5px;
+  }
+
+  .teamLine {
+    gap: 6px;
+    font-size: 11.5px;
+  }
+
+  .scoreBlock {
+    font-size: 12px;
+  }
+
+  .starButton {
+    width: 30px;
+    height: 30px;
+  }
+
+  .aiXpRowButton {
+    width: 48px;
+    height: 28px;
+    font-size: 9px;
+  }
+
+  .detailTop {
+    min-height: 58px;
+  }
+
+  .detailScoreHero {
+    grid-template-columns: minmax(0, 1fr) 94px minmax(0, 1fr);
+    gap: 8px;
+    padding: 14px 10px;
+  }
+
+  .detailTeamSummary {
+    font-size: 11px;
+  }
+
+  .detailTeamSummary .teamLogo.lg,
+  .detailTeamSummary .logoFallback.lg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .detailScoreCenter {
+    min-width: 94px;
+    font-size: 23px;
+  }
+
+  .detailScoreCenter small {
+    min-height: 21px;
+    padding: 0 7px;
+    font-size: 9.5px;
+  }
+
+  .detailAtmosphereAction,
+  .detailContent {
+    padding: 10px;
+  }
+
+  .detailTabs {
+    gap: 3px;
+    padding: 7px 5px;
+  }
+
+  .detailTabs button,
+  .detailTabs.dense button {
+    height: 34px;
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --sx-mobile-header-height: 56px;
+    --sx-mobile-nav-height: 66px;
+  }
+
+  body {
+    padding-bottom: calc(var(--sx-mobile-nav-height) + 18px + env(safe-area-inset-bottom));
+  }
+
+  .siteHeader {
+    min-height: var(--sx-mobile-header-height);
+    border-top: 0;
+    border-bottom-color: rgba(180, 202, 211, 0.12);
+    background: #090d0f;
+  }
+
+  .headerTop {
+    height: var(--sx-mobile-header-height);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .brand {
+    min-width: 0;
+    gap: 7px;
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 780;
+  }
+
+  .brand span:not(.brandMark) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .brandMark {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 7px;
+    font-size: 15px;
+  }
+
+  .mobileHeaderActions {
+    position: relative;
+    max-width: calc(100vw - 122px);
+    gap: 5px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobileHeaderIcon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    border-color: rgba(180, 202, 211, 0.13);
+    border-radius: 8px;
+    background: #12191c;
+    color: #e8f1f4;
+    transition:
+      background-color 130ms ease,
+      border-color 130ms ease,
+      color 130ms ease,
+      transform 130ms ease;
+  }
+
+  .mobileHeaderIcon:active {
+    transform: scale(0.96);
+  }
+
+  .mobileHeaderIcon[aria-expanded="true"],
+  .mobileHeaderIcon:hover {
+    border-color: rgba(138, 145, 255, 0.5);
+    background: #181f34;
+    color: #ffffff;
+  }
+
+  .mobileSportSelectButton {
+    width: auto;
+    min-width: 88px;
+    max-width: 116px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 0 7px;
+  }
+
+  .mobileSportLabel {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileSportSelectButton strong {
+    min-width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #edf5f7;
+    color: #0b1113;
+    font-size: 9.5px;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .mobileSearchPanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--sx-mobile-header-height);
+    z-index: 64;
+    display: block;
+    padding: 0 10px 10px;
+    border-bottom: 1px solid rgba(180, 202, 211, 0.12);
+    background: #090d0f;
+    animation: mobilePanelIn 150ms ease-out;
+  }
+
+  .mobileSearchInput {
+    height: 42px;
+    border-color: rgba(180, 202, 211, 0.16);
+    border-radius: 8px;
+    background: #12191c;
+  }
+
+  .mobileSportsMenu,
+  .mobileProfileMenu {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: calc(var(--sx-mobile-nav-height) + 18px + env(safe-area-inset-bottom));
+    z-index: 75;
+    width: auto;
+    border: 1px solid rgba(180, 202, 211, 0.16);
+    border-radius: 8px;
+    background: #0d1417;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.36);
+    animation: mobileSheetIn 160ms ease-out;
+  }
+
+  .mobileSportsMenu {
+    max-height: min(58dvh, 460px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .mobileSportsMenu button {
+    min-height: 42px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: #11191d;
+    color: #e8f1f4;
+  }
+
+  .mobileSportsMenu button + button {
+    margin-top: 0;
+  }
+
+  .mobileSportsMenu button.active {
+    border-color: rgba(138, 145, 255, 0.52);
+    background: #1a2139;
+  }
+
+  .mobileSportsMenu strong {
+    background: #edf5f7;
+    color: #0b1113;
+  }
+
+  .mobileProfileMenu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .mobileProfileMenu button {
+    min-height: 42px;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: #11191d;
+  }
+
+  .mobileProfileMenu button:last-child {
+    border-bottom: 1px solid transparent;
+  }
+
+  .appShell {
+    min-height: calc(100vh - var(--sx-mobile-header-height));
+    padding-bottom: calc(var(--sx-mobile-nav-height) + 16px + env(safe-area-inset-bottom));
+  }
+
+  .scorePanel {
+    min-height: calc(100vh - var(--sx-mobile-header-height));
+  }
+
+  .filters {
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 60;
+    padding: 5px;
+    border-color: rgba(180, 202, 211, 0.14);
+    border-radius: 8px;
+    background: #0b1114;
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.32);
+    backdrop-filter: none;
+  }
+
+  .chipRow {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-auto-rows: 46px;
+    gap: 4px;
+  }
+
+  .chip {
+    position: relative;
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 2px 4px;
+    border-radius: 7px;
+    color: #aebfc6;
+    font-size: 9px;
+    line-height: 1;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .chip svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .chip span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chip.liveChip strong {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 15px;
+    height: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ff5360;
+    color: #ffffff;
+    font-size: 8.5px;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .chip.liveChip strong::before,
+  .chip.liveChip strong::after {
+    content: "";
+  }
+
+  .chip.active,
+  .chip.liveChip.active,
+  .favoriteNavChip.active,
+  .sortNavChip.active {
+    border-color: rgba(238, 246, 248, 0.13);
+    background: #edf5f7;
+    color: #0c1214;
+  }
+
+  .chip.liveChip {
+    color: #ff7c87;
+  }
+
+  .chip.liveChip.active {
+    background: #f04d5b;
+    color: #ffffff;
+  }
+
+  .chip.liveChip.active strong {
+    background: #ffffff;
+    color: #111518;
+  }
+
+  .favoriteNavChip {
+    color: #f4ca4e;
+  }
+
+  .favoriteNavChip.active {
+    background: #f4ca4e;
+    color: #11150a;
+  }
+
+  .sortNavChip.active {
+    background: #dfe4ff;
+    color: #10161a;
+  }
+
+  .scrollTopButton {
+    bottom: calc(var(--sx-mobile-nav-height) + 20px + env(safe-area-inset-bottom));
+  }
+
+  .installPrompt {
+    bottom: calc(var(--sx-mobile-nav-height) + 20px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  .mobileHeaderActions {
+    max-width: calc(100vw - 108px);
+  }
+
+  .mobileHeaderIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobileSportSelectButton {
+    min-width: 34px;
+    max-width: 34px;
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .mobileSportLabel,
+  .mobileSportSelectButton strong {
+    display: none;
+  }
+
+  .chipRow {
+    gap: 3px;
+  }
+
+  .chip {
+    font-size: 8.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileHeaderIcon,
+  .mobileSearchPanel,
+  .mobileSportsMenu,
+  .mobileProfileMenu {
+    animation: none;
+    transition: none;
+  }
+}
+
+@keyframes mobileSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Route pages must use native document scrolling on mobile. Keeping them in
+   fixed 100dvh panes can trap touch scrolling under Android browser chrome. */
+@media (max-width: 980px) {
+  html.scorexpRoutePage,
+  body.scorexpRoutePage,
+  body.scorexpRoutePage #root {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: pan-y !important;
+  }
+
+  body.scorexpRoutePage {
+    position: static !important;
+    padding-bottom: 0 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.scorexpRoutePage .routeMatchPage,
+  body.scorexpRoutePage .routeMatchPage .appShell {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane {
+    position: static !important;
+    inset: auto !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    flex-basis: auto !important;
+    overflow: visible !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom) + 76px));
+  }
+
+  body.scorexpRoutePage .routeDetailPage .detailTop {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .detailTabs {
+    position: sticky;
+    top: 58px;
+    z-index: 3;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereOverlay,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell,
+  body.scorexpRoutePage .routeAtmospherePage .atmosphereBody,
+  body.scorexpRoutePage .routeAtmospherePage .atmosphereScroll {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: pan-y !important;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereOverlay {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    min-height: 100dvh !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell {
+    display: block !important;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .atmosphereScroll {
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom) + 76px));
+    scroll-behavior: auto;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .detailChatContent {
+    padding: 8px;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .matchChatRoom.embedded {
+    height: calc(100dvh - 124px - env(safe-area-inset-bottom));
+    min-height: 430px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .matchChatRoom.panel,
+  .chatReopenButton {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .matchChatRoom.embedded {
+    min-height: 420px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .atmosphereChatSection .matchChatRoom.embedded {
+    height: calc(100dvh - 116px - env(safe-area-inset-bottom));
+    min-height: 420px;
+  }
+
+  .chatTop {
+    min-height: 52px;
+    padding: 8px 8px 8px 10px;
+  }
+
+  .chatConnection {
+    width: 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .chatConnection svg {
+    flex: 0 0 auto;
+  }
+
+  .chatConnection {
+    font-size: 0;
+  }
+
+  .chatMessages {
+    gap: 8px;
+    padding: 10px 9px;
+  }
+
+  .chatMessage {
+    width: min(86%, 340px);
+  }
+
+  .chatComposerWrap {
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes mobilePanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

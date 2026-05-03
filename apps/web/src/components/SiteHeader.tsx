@@ -22,7 +22,7 @@ interface SportIconProps {
 }
 
 const primarySports = [
-  { key: "football", label: "Futbol", icon: FootballIcon, active: true },
+  { key: "football", label: "Futbol", icon: FootballIcon },
   { key: "basketball", label: "Basketbol", icon: BasketballIcon },
   { key: "volleyball", label: "Voleybol", icon: VolleyballIcon },
   { key: "tennis", label: "Tenis", icon: TennisIcon },
@@ -54,9 +54,12 @@ const overflowSports = [
 
 export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSportsOpen, setMobileSportsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [selectedSportLabel, setSelectedSportLabel] = useState("Futbol");
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const headerRef = useRef<HTMLElement>(null);
   const sportsBarRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const counts = {
@@ -72,6 +75,56 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
     darts: 0,
     iceHockey: 0
   };
+  const overflowSportItems = overflowSports.map((label) => ({
+    key: label,
+    label,
+    icon: MoreSportIcon,
+    count: 0
+  }));
+  const mobileSports = [
+    ...primarySports.map((sport) => ({
+      ...sport,
+      count: counts[sport.key as keyof typeof counts]
+    })),
+    ...overflowSportItems
+  ];
+  const selectedMobileSport = mobileSports.find((sport) => sport.label === selectedSportLabel) ?? mobileSports[0];
+  const SelectedMobileSportIcon = selectedMobileSport.icon;
+  const hasSelectedOverflowSport = overflowSports.includes(selectedSportLabel);
+
+  const selectSport = (label: string) => {
+    setSelectedSportLabel(label);
+    setMenuOpen(false);
+    setMobileSportsOpen(false);
+  };
+
+  useEffect(() => {
+    if (!mobileSportsOpen && !mobileSearchOpen && !profileMenuOpen) return;
+
+    const closeMobilePanels = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && headerRef.current?.contains(target)) return;
+
+      setMobileSportsOpen(false);
+      setMobileSearchOpen(false);
+      setProfileMenuOpen(false);
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      setMobileSportsOpen(false);
+      setMobileSearchOpen(false);
+      setProfileMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeMobilePanels);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMobilePanels);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileSportsOpen, mobileSearchOpen, profileMenuOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -102,7 +155,7 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
   }, [menuOpen]);
 
   return (
-    <header className="siteHeader">
+    <header className="siteHeader" ref={headerRef}>
       <div className="headerTop">
         <a className="brand" href="/" aria-label="Scorexp ana sayfa">
           <span className="brandMark">S</span>
@@ -116,12 +169,29 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
 
         <div className="mobileHeaderActions">
           <button
+            className="mobileHeaderIcon mobileSportSelectButton"
+            type="button"
+            aria-label="Spor dalı seç"
+            aria-haspopup="listbox"
+            aria-expanded={mobileSportsOpen}
+            onClick={() => {
+              setMobileSportsOpen((open) => !open);
+              setMobileSearchOpen(false);
+              setProfileMenuOpen(false);
+            }}
+          >
+            <SelectedMobileSportIcon size={19} />
+            <span className="mobileSportLabel">{selectedMobileSport.label}</span>
+            <strong>{selectedMobileSport.count}</strong>
+          </button>
+          <button
             className="mobileHeaderIcon"
             type="button"
             aria-label="Ara"
             aria-expanded={mobileSearchOpen}
             onClick={() => {
               setMobileSearchOpen((open) => !open);
+              setMobileSportsOpen(false);
               setProfileMenuOpen(false);
             }}
           >
@@ -132,6 +202,7 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
             type="button"
             aria-label="Maç özetleri"
             onClick={() => {
+              setMobileSportsOpen(false);
               setMobileSearchOpen(false);
               setProfileMenuOpen(false);
               onOpenHighlights();
@@ -143,14 +214,40 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
             className="mobileHeaderIcon"
             type="button"
             aria-label="Profil ve ayarlar"
+            aria-haspopup="menu"
             aria-expanded={profileMenuOpen}
             onClick={() => {
+              setMobileSportsOpen(false);
               setMobileSearchOpen(false);
               setProfileMenuOpen((open) => !open);
             }}
           >
             <CircleUserRound size={20} />
           </button>
+
+          {mobileSportsOpen ? (
+            <div className="mobileSportsMenu" role="listbox" aria-label="Spor dalları">
+              {mobileSports.map((sport) => {
+                const Icon = sport.icon;
+                const active = selectedSportLabel === sport.label;
+
+                return (
+                  <button
+                    className={active ? "active" : ""}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    key={sport.key}
+                    onClick={() => selectSport(sport.label)}
+                  >
+                    <Icon size={18} />
+                    <span>{sport.label}</span>
+                    <strong>{sport.count}</strong>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
 
           {profileMenuOpen ? (
             <div className="mobileProfileMenu">
@@ -197,7 +294,12 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
           {primarySports.map((sport) => {
             const Icon = sport.icon;
             return (
-              <button className={sport.active ? "sportItem active" : "sportItem"} type="button" key={sport.label}>
+              <button
+                className={selectedSportLabel === sport.label ? "sportItem active" : "sportItem"}
+                type="button"
+                key={sport.label}
+                onClick={() => selectSport(sport.label)}
+              >
                 <span className="sportIconWrap">
                   <Icon size={18} />
                   <span className="sportBadge">{counts[sport.key as keyof typeof counts]}</span>
@@ -208,10 +310,13 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
           })}
 
           <button
-            className="sportItem moreSportsButton"
+            className={hasSelectedOverflowSport ? "sportItem moreSportsButton active" : "sportItem moreSportsButton"}
             type="button"
             ref={moreButtonRef}
-            onClick={() => setMenuOpen((open) => !open)}
+            onClick={() => {
+              setMenuOpen((open) => !open);
+              setMobileSportsOpen(false);
+            }}
           >
             <span className="sportIconWrap">
               <Menu size={16} />
@@ -228,7 +333,12 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
         {menuOpen ? (
           <div className="sportsMenu" style={menuStyle}>
             {overflowSports.map((label) => (
-              <button type="button" key={label}>
+              <button
+                className={selectedSportLabel === label ? "active" : ""}
+                type="button"
+                key={label}
+                onClick={() => selectSport(label)}
+              >
                 <MoreSportIcon size={18} />
                 <span>{label}</span>
                 <strong>0</strong>

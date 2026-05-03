@@ -30,12 +30,17 @@ export function MatchRow({
   const awayGoal = isLive && (goalHighlightSide === "away" || goalHighlightSide === "both");
   const homeRedCards = match.redCards?.home ?? 0;
   const awayRedCards = match.redCards?.away ?? 0;
+  const statusText = formatMatchStatusLabel(match);
+  const scoreText = isUpcoming ? "" : `${homeScore}-${awayScore}`;
+  const rowLabel = [match.homeTeam.name, match.awayTeam.name, scoreText, statusText].filter(Boolean).join(", ");
 
   return (
     <article
       className={`matchRow ${match.status.group} ${selected ? "selected" : ""} ${goalHighlightSide ? "goalFlash" : ""}`}
       role="button"
       tabIndex={0}
+      aria-current={selected ? "true" : undefined}
+      aria-label={rowLabel}
       onClick={() => onSelect(match)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -45,7 +50,7 @@ export function MatchRow({
       }}
     >
       <div className="matchTime">
-        {statusLabel(match)}
+        {statusLabel(match, statusText)}
       </div>
 
       <div className="teamsBlock">
@@ -76,6 +81,7 @@ export function MatchRow({
         className={`iconButton starButton ${favorite ? "active" : ""}`}
         type="button"
         aria-label="Favori"
+        aria-pressed={favorite}
         onClick={(event) => {
           event.stopPropagation();
           onToggleFavorite(match.id);
@@ -105,9 +111,7 @@ function formatScore(value: number | null, upcoming: boolean) {
   return value === null ? "-" : String(value);
 }
 
-function statusLabel(match: NormalizedMatch) {
-  const label = formatMatchStatusLabel(match);
-
+function statusLabel(match: NormalizedMatch, label: string) {
   if (shouldShowLiveMinuteTick(match)) {
     return (
       <span className="liveMinute">

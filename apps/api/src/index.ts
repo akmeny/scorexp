@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import Fastify from "fastify";
 import { env } from "./config/env.js";
 import { HighlightlyClient } from "./provider/highlightly.js";
+import { registerChatRoutes } from "./routes/chat.js";
 import { registerFootballRoutes } from "./routes/football.js";
 import { ScoreboardService } from "./services/scoreboard.js";
 import { createHotCache } from "./storage/cache.js";
@@ -44,6 +45,7 @@ app.get("/api/health", async () => ({
 }));
 
 await registerFootballRoutes(app, scoreboard, env);
+await registerChatRoutes(app);
 
 const stopPoller = startScoreboardPoller(scoreboard, env, console);
 

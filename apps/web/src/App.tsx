@@ -1,9 +1,24 @@
-import { ArrowUp, CalendarDays, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  ArrowDownUp,
+  ArrowUp,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  Clock3,
+  ListFilter,
+  MessageCircle,
+  Radio,
+  Search,
+  Star
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AiPredictionModal } from "./components/AiPredictionModal";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { LeagueCard } from "./components/LeagueCard";
 import { MatchHighlightsFeed } from "./components/MatchHighlightsFeed";
+import { MatchAtmosphereOverlay } from "./components/MatchAtmosphereOverlay";
+import { MatchChatRoom } from "./components/MatchChatRoom";
 import { MatchDetailPanel } from "./components/MatchDetailPanel";
 import { SiteHeader } from "./components/SiteHeader";
 import { SortedMatchList } from "./components/SortedMatchList";
@@ -34,6 +49,12 @@ type FavoriteMatchSnapshot = {
   statusGroup: NormalizedMatch["status"]["group"];
   statusDescription: string;
 };
+type MatchRoute =
+  | { kind: "list" }
+  | { kind: "detail"; slug: string }
+  | { kind: "atmosphere"; slug: string };
+
+const atmosphereRouteSuffix = "-mac-atmosferi";
 
 const defaultPinnedLeagues = [
   { countries: ["turkey", "turkiye", "türkiye"], leagues: ["super lig", "süper lig"] },
@@ -58,6 +79,9 @@ export default function App() {
   const [pinnedLeagueOverrides, setPinnedLeagueOverrides] = useState<PinOverrides>(() => readPinnedLeagueOverrides());
   const [selectedMatch, setSelectedMatch] = useState<NormalizedMatch | null>(null);
   const [predictionMatch, setPredictionMatch] = useState<NormalizedMatch | null>(null);
+  const [atmosphereOpen, setAtmosphereOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(true);
+  const [route, setRoute] = useState<MatchRoute>(() => readRouteFromLocation());
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const previousScoresRef = useRef<Map<string, string>>(new Map());
@@ -177,6 +201,53 @@ export default function App() {
   }, [allMatches, selectedMatch]);
 
   useEffect(() => {
+    if (!selectedMatch) setAtmosphereOpen(false);
+  }, [selectedMatch]);
+
+  useEffect(() => {
+    const isRoutePage = route.kind !== "list";
+    document.documentElement.classList.toggle("scorexpRoutePage", isRoutePage);
+    document.body.classList.toggle("scorexpRoutePage", isRoutePage);
+
+    return () => {
+      document.documentElement.classList.remove("scorexpRoutePage");
+      document.body.classList.remove("scorexpRoutePage");
+    };
+  }, [route.kind]);
+
+  useEffect(() => {
+    const syncRoute = () => {
+      setRoute(readRouteFromLocation());
+    };
+
+    window.addEventListener("popstate", syncRoute);
+    return () => window.removeEventListener("popstate", syncRoute);
+  }, []);
+
+  useEffect(() => {
+    if (route.kind === "list") {
+      setAtmosphereOpen(false);
+      if (!isDesktopViewport()) setSelectedMatch(null);
+      return;
+    }
+
+    if (!allMatches.length) return;
+
+    const routeMatch = findMatchByRouteSlug(allMatches, route.slug);
+    if (!routeMatch) {
+      const nextRoute: MatchRoute = { kind: "list" };
+      setSelectedMatch(null);
+      setAtmosphereOpen(false);
+      setRoute(nextRoute);
+      writeRouteToHistory(nextRoute, "replace");
+      return;
+    }
+
+    setSelectedMatch(routeMatch);
+    setAtmosphereOpen(route.kind === "atmosphere");
+  }, [allMatches, route]);
+
+  useEffect(() => {
     if (predictionMatch) {
       const updated = allMatches.find((match) => match.id === predictionMatch.id);
       if (updated && updated !== predictionMatch) {
@@ -186,14 +257,14 @@ export default function App() {
   }, [allMatches, predictionMatch]);
 
   useEffect(() => {
-    if (hasAutoSelectedInitialMatchRef.current || !isDesktopViewport()) return;
+    if (hasAutoSelectedInitialMatchRef.current || route.kind !== "list" || !isDesktopViewport()) return;
 
     const firstMatch = sortByTime ? sortedMatches[0] : groups[0]?.matches[0];
     if (!firstMatch) return;
 
     hasAutoSelectedInitialMatchRef.current = true;
     setSelectedMatch(firstMatch);
-  }, [groups, sortByTime, sortedMatches]);
+  }, [groups, route.kind, sortByTime, sortedMatches]);
 
   useEffect(() => {
     const hasHighlights = Object.keys(goalHighlights).length > 0;
@@ -340,8 +411,55 @@ export default function App() {
     setDate(clampDate(nextDate, minDate, maxDate));
   };
 
+  const openMatchDetail = (match: NormalizedMatch) => {
+    const nextRoute: MatchRoute = { kind: "detail", slug: matchRouteSlug(match) };
+    setSelectedMatch(match);
+    setAtmosphereOpen(false);
+    setRoute(nextRoute);
+    writeRouteToHistory(nextRoute, "push");
+    scrollToDocumentTop();
+  };
+
+  const closeMatchDetail = () => {
+    const nextRoute: MatchRoute = { kind: "list" };
+    setSelectedMatch(null);
+    setAtmosphereOpen(false);
+    setRoute(nextRoute);
+    writeRouteToHistory(nextRoute, "replace");
+  };
+
+  const openAtmosphere = () => {
+    if (!selectedMatch) return;
+
+    const nextRoute: MatchRoute = { kind: "atmosphere", slug: matchRouteSlug(selectedMatch) };
+    setAtmosphereOpen(true);
+    setRoute(nextRoute);
+    writeRouteToHistory(nextRoute, "push");
+    scrollToDocumentTop();
+  };
+
+  const closeAtmosphere = () => {
+    const nextRoute: MatchRoute = selectedMatch ? { kind: "detail", slug: matchRouteSlug(selectedMatch) } : { kind: "list" };
+    setAtmosphereOpen(false);
+    setRoute(nextRoute);
+    writeRouteToHistory(nextRoute, "replace");
+  };
+
+  const desktopLayout = isDesktopViewport();
+  const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
+  const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel);
+  const rootClassName = [
+    "appRoot",
+    route.kind !== "list" ? "routeMatchPage" : "",
+    route.kind === "detail" ? "routeDetailPage" : "",
+    route.kind === "atmosphere" ? "routeAtmospherePage" : "",
+    shouldRenderDesktopChat && chatOpen ? "chatPanelVisible" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <>
+    <div className={rootClassName}>
       <SiteHeader footballCount={counts.all} onOpenHighlights={() => setHighlightsOpen(true)} />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canlı skorlar">
@@ -386,7 +504,8 @@ export default function App() {
                   selectView("all");
                 }}
               >
-                Tümü
+                <ListFilter size={15} />
+                <span>Tümü</span>
               </button>
               <button
                 className={view === "live" && tab === "all" && !sortByTime ? "chip active liveChip" : "chip liveChip"}
@@ -396,7 +515,9 @@ export default function App() {
                   selectView("live");
                 }}
               >
-                Canlı ({visibleLiveCount})
+                <Radio size={15} />
+                <span>Canlı</span>
+                <strong>{visibleLiveCount}</strong>
               </button>
               <button
                 className={tab === "favorites" && !sortByTime ? "chip active favoriteNavChip mobileOnly" : "chip favoriteNavChip mobileOnly"}
@@ -406,7 +527,8 @@ export default function App() {
                   selectTab("favorites");
                 }}
               >
-                Favoriler
+                <Star size={15} />
+                <span>Favoriler</span>
               </button>
               <button
                 className={view === "finished" && tab === "all" && !sortByTime ? "chip active" : "chip"}
@@ -416,7 +538,8 @@ export default function App() {
                   selectView("finished");
                 }}
               >
-                Bitti
+                <CircleCheck size={15} />
+                <span>Bitti</span>
               </button>
               <button
                 className={view === "upcoming" && tab === "all" && !sortByTime ? "chip active" : "chip"}
@@ -426,10 +549,16 @@ export default function App() {
                   selectView("upcoming");
                 }}
               >
-                Yaklaşan
+                <Clock3 size={15} />
+                <span>Yaklaşan</span>
               </button>
-              <button className={sortByTime ? "chip active sortNavChip mobileOnly" : "chip sortNavChip mobileOnly"} type="button" onClick={toggleSortByTime}>
-                Sırala
+              <button
+                className={sortByTime ? "chip active sortNavChip mobileOnly" : "chip sortNavChip mobileOnly"}
+                type="button"
+                onClick={toggleSortByTime}
+              >
+                <ArrowDownUp size={15} />
+                <span>Sırala</span>
               </button>
             </div>
           </div>
@@ -446,7 +575,7 @@ export default function App() {
                 goalHighlights={activeGoalHighlights}
                 onToggleFavorite={toggleFavorite}
                 onOpenPrediction={setPredictionMatch}
-                onSelectMatch={setSelectedMatch}
+                onSelectMatch={openMatchDetail}
               />
             ) : (
               groups.map((group) => {
@@ -467,14 +596,14 @@ export default function App() {
                     onTogglePinned={togglePinnedLeague}
                     onToggleFavorite={toggleFavorite}
                     onOpenPrediction={setPredictionMatch}
-                    onSelectMatch={setSelectedMatch}
+                    onSelectMatch={openMatchDetail}
                   />
                 );
               })
             )}
           </div>
         </section>
-        {selectedMatch ? (
+        {shouldRenderDetailPanel && selectedMatch ? (
           <MatchDetailPanel
             key={selectedMatch.id}
             match={selectedMatch}
@@ -482,11 +611,35 @@ export default function App() {
             loading={detailState.loading}
             refreshing={detailState.refreshing}
             error={detailState.error}
-            onClose={() => setSelectedMatch(null)}
+            onClose={closeMatchDetail}
             onReload={detailState.reload}
+            onOpenAtmosphere={openAtmosphere}
+            chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" /> : undefined}
           />
         ) : null}
+        {shouldRenderDesktopChat && selectedMatch && chatOpen ? (
+          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} onClose={() => setChatOpen(false)} />
+        ) : null}
+        {shouldRenderDesktopChat && selectedMatch && !chatOpen ? (
+          <button className="chatReopenButton" type="button" onClick={() => setChatOpen(true)}>
+            <MessageCircle size={15} />
+            <span>Sohbet</span>
+          </button>
+        ) : null}
       </main>
+
+      {atmosphereOpen && selectedMatch ? (
+        <MatchAtmosphereOverlay
+          match={selectedMatch}
+          detail={detailState.data}
+          loading={detailState.loading}
+          refreshing={detailState.refreshing}
+          error={detailState.error}
+          onRequestClose={closeAtmosphere}
+          backLabel="Maç detayı"
+          onReload={detailState.reload}
+        />
+      ) : null}
 
       {predictionMatch ? (
         <AiPredictionModal match={predictionMatch} timezone={timezone} onRequestClose={() => setPredictionMatch(null)} />
@@ -504,7 +657,7 @@ export default function App() {
           <span>En üste git</span>
         </button>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -541,6 +694,61 @@ function readFavorites() {
   } catch {
     return new Set<string>();
   }
+}
+
+function readRouteFromLocation(): MatchRoute {
+  if (typeof window === "undefined") return { kind: "list" };
+
+  const url = new URL(window.location.href);
+  const legacyAtmosphereId = url.searchParams.get("atmosphere");
+  if (legacyAtmosphereId) return { kind: "atmosphere", slug: slugifyPathSegment(legacyAtmosphereId) };
+
+  const path = slugifyPathSegment(decodeURIComponent(url.pathname.replace(/^\/+|\/+$/g, "")));
+  if (!path) return { kind: "list" };
+  if (path.endsWith(atmosphereRouteSuffix)) {
+    return { kind: "atmosphere", slug: path.slice(0, -atmosphereRouteSuffix.length) };
+  }
+
+  return { kind: "detail", slug: path };
+}
+
+function writeRouteToHistory(route: MatchRoute, mode: "push" | "replace") {
+  if (typeof window === "undefined") return;
+
+  const nextUrl = routeToPath(route);
+  if (nextUrl === `${window.location.pathname}${window.location.search}${window.location.hash}`) return;
+
+  const method = mode === "push" ? "pushState" : "replaceState";
+  window.history[method]({ scorexpRoute: route }, "", nextUrl);
+}
+
+function routeToPath(route: MatchRoute) {
+  if (route.kind === "list") return "/";
+  if (route.kind === "atmosphere") return `/${route.slug}${atmosphereRouteSuffix}`;
+  return `/${route.slug}`;
+}
+
+function matchRouteSlug(match: NormalizedMatch) {
+  return `${slugifyPathSegment(match.homeTeam.name)}-${slugifyPathSegment(match.awayTeam.name)}`;
+}
+
+function findMatchByRouteSlug(matches: NormalizedMatch[], slug: string) {
+  const normalizedSlug = slugifyPathSegment(slug);
+  return (
+    matches.find((match) => matchRouteSlug(match) === normalizedSlug) ??
+    matches.find((match) => slugifyPathSegment(match.providerId) === normalizedSlug || slugifyPathSegment(match.id) === normalizedSlug) ??
+    null
+  );
+}
+
+function slugifyPathSegment(value: string) {
+  return normalizeName(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function scrollToDocumentTop() {
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 function readPinnedLeagueOverrides(): PinOverrides {

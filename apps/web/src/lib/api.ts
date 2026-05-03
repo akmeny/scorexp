@@ -1,4 +1,4 @@
-import type { HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
+import type { ChatMessage, ChatRoomSnapshot, HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
 const fallbackLocalApi = "http://localhost:4000";
@@ -37,6 +37,20 @@ export interface FetchHighlightsOptions {
   timezone: string;
   limit?: number;
   offset?: number;
+  signal?: AbortSignal;
+}
+
+export interface FetchChatMessagesOptions {
+  matchId: string;
+  signal?: AbortSignal;
+}
+
+export interface SendChatMessageOptions {
+  matchId: string;
+  authorId: string;
+  nickname: string;
+  color: string;
+  body: string;
   signal?: AbortSignal;
 }
 
@@ -112,6 +126,50 @@ export async function fetchHighlights(options: FetchHighlightsOptions): Promise<
   }
 
   return (await response.json()) as HighlightsSnapshot;
+}
+
+export async function fetchChatMessages(options: FetchChatMessagesOptions): Promise<ChatRoomSnapshot> {
+  const url = new URL(`/api/v1/chat/rooms/${encodeURIComponent(options.matchId)}/messages`, apiBase);
+
+  const response = await fetch(url, {
+    signal: options.signal,
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Chat messages request failed (${response.status})`);
+  }
+
+  return (await response.json()) as ChatRoomSnapshot;
+}
+
+export async function sendChatMessage(options: SendChatMessageOptions): Promise<ChatMessage> {
+  const url = new URL(`/api/v1/chat/rooms/${encodeURIComponent(options.matchId)}/messages`, apiBase);
+
+  const response = await fetch(url, {
+    method: "POST",
+    signal: options.signal,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      authorId: options.authorId,
+      nickname: options.nickname,
+      color: options.color,
+      body: options.body
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Send chat message failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as { message: ChatMessage };
+  return payload.message;
+}
+
+export function chatEventsUrl(matchId: string) {
+  return new URL(`/api/v1/chat/rooms/${encodeURIComponent(matchId)}/events`, apiBase).toString();
 }
 
 function resolveApiBase(value: string | undefined) {
