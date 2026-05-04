@@ -29,8 +29,8 @@ import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, MatchScore, No
 import "./styles/app.css";
 
 const timezone = "Europe/Istanbul";
-const GOAL_PENDING_MS = 8_000;
-const GOAL_CONFIRMED_MS = 10_000;
+const GOAL_PENDING_MS = 16_000;
+const GOAL_CONFIRMED_MS = 20_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
 const notificationIcon = "/icons/icon-192.png";
 const notificationBadge = "/icons/notification-badge.png";
