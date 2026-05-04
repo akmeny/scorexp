@@ -7596,6 +7596,11 @@ body,
     background: var(--sx-bg);
   }
 
+  .leagueStack {
+    padding-left: 0;
+    padding-right: 5px;
+  }
+
   .filters {
     border-color: var(--sx-line);
     background: var(--sx-surface);
@@ -7635,20 +7640,24 @@ body,
 
   .matchRow {
     min-height: 68px;
-    grid-template-columns: 68px minmax(0, 1fr) 24px 32px 50px;
-    padding: 12px 16px;
+    grid-template-columns: 56px minmax(0, 1fr) 24px 32px 50px;
+    padding: 12px 12px 12px 1px;
+  }
+
+  .matchTime {
+    align-items: flex-start;
   }
 
   .matchRow.live .matchTime {
     align-items: flex-start;
-    padding-right: 10px;
+    padding-right: 4px;
   }
 
   .matchRow.live .matchTime::after {
     content: "";
     position: absolute;
     top: 50%;
-    right: 0;
+    right: 2px;
     width: 1px;
     height: 28px;
     border-radius: 999px;
@@ -7658,19 +7667,31 @@ body,
 
   .matchTime > span,
   .liveMinute {
-    min-width: 34px;
+    min-width: 0;
+    max-width: 52px;
     min-height: 24px;
-    font-size: 13px;
+    justify-content: flex-start;
+    gap: 3px;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .matchRow.live .liveMinute {
-    width: 100%;
+    width: auto;
     min-width: 0;
     justify-content: flex-start;
   }
 
   .matchRow.live .teamsBlock {
-    padding-left: 10px;
+    padding-left: 4px;
+  }
+
+  .livePulseDot {
+    width: 5px;
+    height: 5px;
+    flex-basis: 5px;
   }
 
   .teamLine {
