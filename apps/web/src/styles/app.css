@@ -7059,7 +7059,12 @@ body,
 .leagueHeader,
 .detailScoreHero,
 .chatTop,
-.chatMessages {
+.chatMessages,
+.skeletonRow,
+.installPrompt,
+.favoriteNotificationToast,
+.scrollTopButton,
+.aiPredictionModal {
   background-image: none;
 }
 
@@ -7069,7 +7074,11 @@ body,
 .filters,
 .sportsMenu,
 .mobileSportsMenu,
-.mobileProfileMenu {
+.mobileProfileMenu,
+.installPrompt,
+.favoriteNotificationToast,
+.scrollTopButton,
+.aiPredictionModal {
   box-shadow: none;
 }
 
@@ -7402,7 +7411,13 @@ body,
 .mobileSportsMenu button,
 .mobileProfileMenu button,
 .leaguePinButton,
-.leagueToggleButton {
+.leagueToggleButton,
+.datePicker .iconButton,
+.dateButton,
+.emptyState button,
+.scrollTopButton,
+.installDownloadButton,
+.installCloseButton {
   transition:
     background-color 120ms ease-out,
     border-color 120ms ease-out,
@@ -7414,8 +7429,34 @@ body,
 .mobileSportsMenu button:active,
 .mobileProfileMenu button:active,
 .leaguePinButton:active,
-.leagueToggleButton:active {
+.leagueToggleButton:active,
+.datePicker .iconButton:active,
+.dateButton:active,
+.emptyState button:active,
+.scrollTopButton:active,
+.installDownloadButton:active,
+.installCloseButton:active {
   transform: scale(0.97);
+}
+
+.skeletonRow {
+  background: var(--sx-surface-hover);
+  animation: none;
+}
+
+.installPrompt,
+.favoriteNotificationToast,
+.aiPredictionModal,
+.matchDetailPane {
+  animation-duration: 140ms;
+  animation-timing-function: ease-out;
+}
+
+.installPrompt,
+.favoriteNotificationToast {
+  border-color: var(--sx-line);
+  background: var(--sx-surface);
+  backdrop-filter: none;
 }
 
 @media (max-width: 760px) {
@@ -7500,6 +7541,12 @@ body,
   .mobileProfileMenu button,
   .leaguePinButton,
   .leagueToggleButton,
+  .datePicker .iconButton,
+  .dateButton,
+  .emptyState button,
+  .scrollTopButton,
+  .installDownloadButton,
+  .installCloseButton,
   .momentumFill {
     transition: none;
   }
@@ -7509,7 +7556,12 @@ body,
   .minuteTick,
   .mobileSearchPanel,
   .mobileSportsMenu,
-  .mobileProfileMenu {
+  .mobileProfileMenu,
+  .skeletonRow,
+  .installPrompt,
+  .favoriteNotificationToast,
+  .aiPredictionModal,
+  .matchDetailPane {
     animation: none;
   }
 }

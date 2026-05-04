@@ -56,6 +56,7 @@ export function MatchRow({
   const momentum = isLive ? readLiveMetric(match, "momentum") : null;
   const liveIndicatorColor = isLive ? intensityColor(pressure ?? 100) : null;
   const momentumColor = momentum === null ? null : intensityColor(momentum);
+  const scoreFlashKey = showScoreFlash ? `${homeScore}:${awayScore}:${goalHighlightSide}` : "score";
 
   return (
     <article
@@ -95,7 +96,7 @@ export function MatchRow({
         </div>
       </div>
 
-      <div className={showScoreFlash ? "scoreBlock scoreFlash" : "scoreBlock"}>
+      <div key={scoreFlashKey} className={showScoreFlash ? "scoreBlock scoreFlash" : "scoreBlock"}>
         <span>{homeScore}</span>
         <span>{awayScore}</span>
       </div>
