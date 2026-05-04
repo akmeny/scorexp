@@ -2,7 +2,7 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { MatchRow } from "./MatchRow";
 import { TeamLogo } from "./TeamLogo";
 import { localizeCountryName } from "../lib/localization";
-import type { GoalHighlightSide, LeagueGroup, NormalizedMatch } from "../types";
+import type { LeagueGroup, MatchGoalHighlight, NormalizedMatch } from "../types";
 
 interface LeagueCardProps {
   group: LeagueGroup;
@@ -11,7 +11,7 @@ interface LeagueCardProps {
   showMatchCount: boolean;
   selectedMatchId: string | null;
   favoriteIds: Set<string>;
-  goalHighlights: Record<string, GoalHighlightSide>;
+  goalHighlights: Record<string, MatchGoalHighlight>;
   onToggle: (key: string) => void;
   onTogglePinned: (group: LeagueGroup) => void;
   onToggleFavorite: (id: string) => void;
@@ -72,7 +72,7 @@ export function LeagueCard({
               match={match}
               selected={selectedMatchId === match.id}
               favorite={favoriteIds.has(match.id)}
-              goalHighlightSide={goalHighlights[match.id] ?? null}
+              goalHighlight={goalHighlights[match.id] ?? null}
               onToggleFavorite={onToggleFavorite}
               onOpenPrediction={onOpenPrediction}
               onSelect={onSelectMatch}

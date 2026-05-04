@@ -7324,6 +7324,35 @@ body,
   content: none;
 }
 
+.matchRow.goalPending {
+  border-color: rgba(239, 68, 68, 0.48);
+  background: #181116;
+}
+
+.matchRow.goalPending::before {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(239, 68, 68, 0.24) 0 5%, transparent 6% 100%),
+    repeating-radial-gradient(circle at center, transparent 0 13%, rgba(239, 68, 68, 0.2) 14%, transparent 17%);
+  opacity: 0;
+  transform: scale(0.2);
+  animation: goalRadioWave 8s ease-out forwards;
+}
+
+.matchRow.goalPending:hover,
+.matchRow.goalPending.selected {
+  border-color: rgba(239, 68, 68, 0.54);
+  background: #1b1218;
+}
+
+.matchRow.goalConfirmed .teamLine.goalTeam {
+  color: var(--sx-live);
+}
+
 .matchTime {
   color: var(--sx-muted);
   font-size: 13px;
@@ -7474,6 +7503,16 @@ body,
 
 .goalTag {
   display: none;
+}
+
+.matchRow.goalConfirmed .goalTag {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--sx-live);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .mobileHeaderIcon,
@@ -7656,6 +7695,7 @@ body,
   }
 
   .livePulseDot,
+  .matchRow.goalPending::before,
   .scoreBlock.scoreFlash,
   .minuteTick,
   .mobileSearchPanel,
@@ -7667,6 +7707,31 @@ body,
   .aiPredictionModal,
   .matchDetailPane {
     animation: none;
+  }
+
+  .matchRow.goalPending::before {
+    opacity: 0.26;
+    transform: scale(1);
+  }
+}
+
+@keyframes goalRadioWave {
+  0% {
+    opacity: 0;
+    transform: scale(0.18);
+  }
+
+  12% {
+    opacity: 0.72;
+  }
+
+  68% {
+    opacity: 0.38;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
   }
 }
 

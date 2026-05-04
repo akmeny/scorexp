@@ -1,7 +1,7 @@
 import { BrainCircuit, Star } from "lucide-react";
 import { TeamLogo } from "./TeamLogo";
 import { formatMatchStatusLabel, shouldShowLiveMinuteTick } from "../lib/matchStatus";
-import type { GoalHighlightSide, NormalizedMatch } from "../types";
+import type { MatchGoalHighlight, NormalizedMatch } from "../types";
 
 type LiveMetricValue = number | string | null | undefined;
 type MatchLiveMetrics = {
@@ -27,7 +27,7 @@ interface MatchRowProps {
   match: NormalizedMatch;
   favorite: boolean;
   selected?: boolean;
-  goalHighlightSide?: GoalHighlightSide | null;
+  goalHighlight?: MatchGoalHighlight | null;
   onToggleFavorite: (id: string) => void;
   onOpenPrediction: (match: NormalizedMatch) => void;
   onSelect: (match: NormalizedMatch) => void;
@@ -37,7 +37,7 @@ export function MatchRow({
   match,
   favorite,
   selected = false,
-  goalHighlightSide = null,
+  goalHighlight = null,
   onToggleFavorite,
   onOpenPrediction,
   onSelect
@@ -46,7 +46,9 @@ export function MatchRow({
   const isUpcoming = match.status.group === "upcoming";
   const homeScore = formatScore(match.score.home, isUpcoming);
   const awayScore = formatScore(match.score.away, isUpcoming);
-  const showScoreFlash = isLive && Boolean(goalHighlightSide);
+  const activeGoalHighlight = isLive ? goalHighlight : null;
+  const isGoalPending = activeGoalHighlight?.phase === "pending";
+  const isGoalConfirmed = activeGoalHighlight?.phase === "confirmed";
   const homeRedCards = match.redCards?.home ?? 0;
   const awayRedCards = match.redCards?.away ?? 0;
   const statusText = formatMatchStatusLabel(match);
@@ -56,11 +58,21 @@ export function MatchRow({
   const momentum = isLive ? readLiveMetric(match, "momentum") : null;
   const liveIndicatorColor = isLive ? intensityColor(pressure ?? 100) : null;
   const momentumColor = momentum === null ? null : intensityColor(momentum);
-  const scoreFlashKey = showScoreFlash ? `${homeScore}:${awayScore}:${goalHighlightSide}` : "score";
+  const homeGoalActive = isGoalConfirmed && isGoalSide(activeGoalHighlight?.side ?? null, "home");
+  const awayGoalActive = isGoalConfirmed && isGoalSide(activeGoalHighlight?.side ?? null, "away");
+  const rowClassName = [
+    "matchRow",
+    match.status.group,
+    selected ? "selected" : "",
+    isGoalPending ? "goalPending" : "",
+    isGoalConfirmed ? "goalConfirmed" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article
-      className={`matchRow ${match.status.group} ${selected ? "selected" : ""}`}
+      className={rowClassName}
       role="button"
       tabIndex={0}
       aria-current={selected ? "true" : undefined}
@@ -80,23 +92,25 @@ export function MatchRow({
       </div>
 
       <div className="teamsBlock">
-        <div className="teamLine">
+        <div className={homeGoalActive ? "teamLine goalTeam" : "teamLine"}>
           <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
           <div className="teamNameCluster">
             <span>{match.homeTeam.name}</span>
+            {homeGoalActive ? <span className="goalTag">Gol</span> : null}
             {homeRedCards > 0 ? <span className="redCardBadge">{homeRedCards}</span> : null}
           </div>
         </div>
-        <div className="teamLine">
+        <div className={awayGoalActive ? "teamLine goalTeam" : "teamLine"}>
           <TeamLogo src={match.awayTeam.logo} label={match.awayTeam.name} size="sm" />
           <div className="teamNameCluster">
             <span>{match.awayTeam.name}</span>
+            {awayGoalActive ? <span className="goalTag">Gol</span> : null}
             {awayRedCards > 0 ? <span className="redCardBadge">{awayRedCards}</span> : null}
           </div>
         </div>
       </div>
 
-      <div key={scoreFlashKey} className={showScoreFlash ? "scoreBlock scoreFlash" : "scoreBlock"}>
+      <div className="scoreBlock">
         <span>{homeScore}</span>
         <span>{awayScore}</span>
       </div>
@@ -195,4 +209,8 @@ function intensityColor(value: number) {
   if (value < 40) return "#22C55E";
   if (value < 70) return "#F59E0B";
   return "#EF4444";
+}
+
+function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "away") {
+  return side === target || side === "both";
 }

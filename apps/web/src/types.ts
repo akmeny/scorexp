@@ -1,6 +1,12 @@
 export type StatusGroup = "live" | "finished" | "upcoming" | "unknown";
 export type ScoreboardView = "all" | "live" | "finished" | "upcoming";
 export type GoalHighlightSide = "home" | "away" | "both";
+export type GoalHighlightPhase = "pending" | "confirmed";
+
+export interface MatchGoalHighlight {
+  side: GoalHighlightSide;
+  phase: GoalHighlightPhase;
+}
 
 export interface Team {
   id: string;

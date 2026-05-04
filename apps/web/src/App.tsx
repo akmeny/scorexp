@@ -25,11 +25,12 @@ import { dateLabel, shiftDate, todayInTimezone } from "./lib/date";
 import { compareTr, localizeCountryName, normalizeName } from "./lib/localization";
 import { useMatchDetail } from "./hooks/useMatchDetail";
 import { useScoreboard } from "./hooks/useScoreboard";
-import type { GoalHighlightSide, LeagueGroup, NormalizedMatch, ScoreboardView } from "./types";
+import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, MatchScore, NormalizedMatch, ScoreboardView } from "./types";
 import "./styles/app.css";
 
 const timezone = "Europe/Istanbul";
-const GOAL_HIGHLIGHT_MS = 32_000;
+const GOAL_PENDING_MS = 8_000;
+const GOAL_CONFIRMED_MS = 10_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
 const notificationIcon = "/icons/icon-192.png";
 const notificationBadge = "/icons/notification-badge.png";
@@ -38,7 +39,16 @@ const notificationSound = "/audio/notification.mp3";
 
 let notificationAudioElement: HTMLAudioElement | null = null;
 
-type GoalHighlightRecord = Record<string, { expiresAt: number; side: GoalHighlightSide }>;
+type GoalDisplayScore = Pick<MatchScore, "home" | "away">;
+type GoalPresentation = {
+  side: GoalHighlightSide;
+  previousScore: GoalDisplayScore;
+  nextScore: GoalDisplayScore;
+  revealAt: number;
+  expiresAt: number;
+};
+type GoalPresentationRecord = Record<string, GoalPresentation>;
+type ActiveGoalPresentation = GoalPresentation & MatchGoalHighlight;
 type TimedMatchRecord = Record<string, number>;
 type PinOverrides = Record<string, boolean>;
 type FavoriteMatchSnapshot = {
@@ -87,7 +97,7 @@ export default function App() {
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
   const favoriteSnapshotsRef = useRef<Map<string, FavoriteMatchSnapshot>>(new Map());
   const hasAutoSelectedInitialMatchRef = useRef(false);
-  const [goalHighlights, setGoalHighlights] = useState<GoalHighlightRecord>({});
+  const [goalPresentations, setGoalPresentations] = useState<GoalPresentationRecord>({});
   const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
   const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
@@ -101,7 +111,7 @@ export default function App() {
     );
   }, [recentlyFinishedLiveMatches]);
 
-  const groups = useMemo(() => {
+  const rawGroups = useMemo(() => {
     const source = data?.leagues ?? [];
     return filterGroups(source, {
       view,
@@ -116,18 +126,39 @@ export default function App() {
     return (data?.leagues ?? []).flatMap((league) => league.matches);
   }, [data?.leagues]);
 
-  const sortedMatches = useMemo(() => {
-    return [...allMatches].sort((a, b) => a.timestamp - b.timestamp || compareTr(a.homeTeam.name, b.homeTeam.name));
-  }, [allMatches]);
-
-  const activeGoalHighlights = useMemo(() => {
+  const activeGoalPresentations = useMemo(() => {
     const now = Date.now();
     return Object.fromEntries(
-      Object.entries(goalHighlights)
+      Object.entries(goalPresentations)
         .filter(([, item]) => item.expiresAt > now)
-        .map(([id, item]) => [id, item.side])
-    ) as Record<string, GoalHighlightSide>;
-  }, [goalHighlights]);
+        .map(([id, item]) => [id, { ...item, phase: now < item.revealAt ? "pending" : "confirmed" }])
+    ) as Record<string, ActiveGoalPresentation>;
+  }, [goalPresentations]);
+
+  const displayedAllMatches = useMemo(() => {
+    return allMatches.map((match) => applyGoalPresentation(match, activeGoalPresentations[match.id] ?? null));
+  }, [activeGoalPresentations, allMatches]);
+
+  const displayedMatchById = useMemo(() => {
+    return new Map(displayedAllMatches.map((match) => [match.id, match]));
+  }, [displayedAllMatches]);
+
+  const groups = useMemo(() => {
+    return rawGroups.map((group) => ({
+      ...group,
+      matches: group.matches.map((match) => displayedMatchById.get(match.id) ?? match)
+    }));
+  }, [displayedMatchById, rawGroups]);
+
+  const sortedMatches = useMemo(() => {
+    return [...displayedAllMatches].sort((a, b) => a.timestamp - b.timestamp || compareTr(a.homeTeam.name, b.homeTeam.name));
+  }, [displayedAllMatches]);
+
+  const activeGoalHighlights = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(activeGoalPresentations).map(([id, item]) => [id, { side: item.side, phase: item.phase }])
+    ) as Record<string, MatchGoalHighlight>;
+  }, [activeGoalPresentations]);
 
   const counts = data?.counts ?? { all: 0, live: 0, finished: 0, upcoming: 0, unknown: 0 };
   const visibleLiveCount = counts.live + activeRecentlyFinishedLiveIds.size;
@@ -167,16 +198,34 @@ export default function App() {
     const now = Date.now();
     const previousScores = previousScoresRef.current;
     const nextScores = new Map<string, string>();
-    const nextHighlights: GoalHighlightRecord = {};
+    const nextPresentations: GoalPresentationRecord = {};
+    const stalePresentationIds = new Set<string>();
 
     for (const match of allMatches) {
       const scoreKey = scoreSnapshot(match);
       const previous = previousScores.get(match.id);
       const side = previous ? scoreIncreaseSide(previous, scoreKey) : null;
+
+      const existingPresentation = goalPresentations[match.id];
+      if (existingPresentation && scoreKey !== scoreSnapshotFromScore(existingPresentation.nextScore)) {
+        const changedPastExpectedGoal = Boolean(scoreIncreaseSide(scoreSnapshotFromScore(existingPresentation.nextScore), scoreKey));
+        if (!changedPastExpectedGoal) {
+          stalePresentationIds.add(match.id);
+        }
+      }
+
       if (side && match.status.group === "live") {
-        nextHighlights[match.id] = {
-          expiresAt: now + GOAL_HIGHLIGHT_MS,
-          side
+        const previousScore =
+          existingPresentation && existingPresentation.expiresAt > now
+            ? presentationDisplayScore(existingPresentation, now)
+            : scoreFromSnapshot(previous, match.score);
+
+        nextPresentations[match.id] = {
+          side,
+          previousScore,
+          nextScore: scoreDisplayFromMatch(match),
+          revealAt: now + GOAL_PENDING_MS,
+          expiresAt: now + GOAL_PENDING_MS + GOAL_CONFIRMED_MS
         };
       }
       nextScores.set(match.id, scoreKey);
@@ -184,20 +233,24 @@ export default function App() {
 
     previousScoresRef.current = nextScores;
 
-    if (Object.keys(nextHighlights).length > 0) {
-      setGoalHighlights((current) => ({ ...current, ...nextHighlights }));
+    if (Object.keys(nextPresentations).length > 0 || stalePresentationIds.size > 0) {
+      setGoalPresentations((current) => {
+        const next = { ...current };
+        for (const id of stalePresentationIds) delete next[id];
+        return { ...next, ...nextPresentations };
+      });
     }
-  }, [allMatches]);
+  }, [allMatches, goalPresentations]);
 
   useEffect(() => {
     if (!selectedMatch) return;
-    const updated = allMatches.find((match) => match.id === selectedMatch.id);
+    const updated = displayedAllMatches.find((match) => match.id === selectedMatch.id);
     if (updated && updated !== selectedMatch) {
       setSelectedMatch(updated);
-    } else if (!updated && allMatches.length > 0) {
+    } else if (!updated && displayedAllMatches.length > 0) {
       setSelectedMatch(null);
     }
-  }, [allMatches, selectedMatch]);
+  }, [displayedAllMatches, selectedMatch]);
 
   useEffect(() => {
     if (!selectedMatch) setAtmosphereOpen(false);
@@ -230,9 +283,9 @@ export default function App() {
       return;
     }
 
-    if (!allMatches.length) return;
+    if (!displayedAllMatches.length) return;
 
-    const routeMatch = findMatchByRouteSlug(allMatches, route.slug);
+    const routeMatch = findMatchByRouteSlug(displayedAllMatches, route.slug);
     if (!routeMatch) {
       const nextRoute: MatchRoute = { kind: "list" };
       setSelectedMatch(null);
@@ -244,16 +297,16 @@ export default function App() {
 
     setSelectedMatch(routeMatch);
     setAtmosphereOpen(route.kind === "atmosphere");
-  }, [allMatches, desktopLayout, route]);
+  }, [desktopLayout, displayedAllMatches, route]);
 
   useEffect(() => {
     if (predictionMatch) {
-      const updated = allMatches.find((match) => match.id === predictionMatch.id);
+      const updated = displayedAllMatches.find((match) => match.id === predictionMatch.id);
       if (updated && updated !== predictionMatch) {
         setPredictionMatch(updated);
       }
     }
-  }, [allMatches, predictionMatch]);
+  }, [displayedAllMatches, predictionMatch]);
 
   useEffect(() => {
     if (hasAutoSelectedInitialMatchRef.current || route.kind !== "list" || !desktopLayout) return;
@@ -266,18 +319,24 @@ export default function App() {
   }, [desktopLayout, groups, route.kind, sortByTime, sortedMatches]);
 
   useEffect(() => {
-    const hasHighlights = Object.keys(goalHighlights).length > 0;
-    if (!hasHighlights) return;
+    const entries = Object.values(goalPresentations);
+    if (entries.length === 0) return;
+
+    const now = Date.now();
+    const nextBoundary = Math.min(
+      ...entries.flatMap((item) => [item.revealAt, item.expiresAt]).filter((timestamp) => timestamp > now)
+    );
+    const delay = Number.isFinite(nextBoundary) ? Math.max(25, nextBoundary - now + 20) : 25;
 
     const timeout = window.setTimeout(() => {
       const now = Date.now();
-      setGoalHighlights((current) =>
+      setGoalPresentations((current) =>
         Object.fromEntries(Object.entries(current).filter(([, item]) => item.expiresAt > now))
       );
-    }, 250);
+    }, delay);
 
     return () => window.clearTimeout(timeout);
-  }, [goalHighlights]);
+  }, [goalPresentations]);
 
   useEffect(() => {
     if (!allMatches.length) return;
@@ -805,8 +864,55 @@ function leagueNameMatches(league: string, candidate: string) {
   return league === candidate || league.includes(candidate);
 }
 
+function applyGoalPresentation(match: NormalizedMatch, presentation: ActiveGoalPresentation | null) {
+  if (!presentation || match.status.group !== "live") return match;
+
+  const displayScore = presentation.phase === "pending" ? presentation.previousScore : presentation.nextScore;
+  return {
+    ...match,
+    score: {
+      ...match.score,
+      home: displayScore.home,
+      away: displayScore.away,
+      raw: formatScoreRaw(displayScore)
+    }
+  };
+}
+
+function presentationDisplayScore(presentation: GoalPresentation, now: number): GoalDisplayScore {
+  return now < presentation.revealAt ? presentation.previousScore : presentation.nextScore;
+}
+
+function scoreDisplayFromMatch(match: NormalizedMatch): GoalDisplayScore {
+  return {
+    home: match.score.home,
+    away: match.score.away
+  };
+}
+
+function scoreFromSnapshot(snapshot: string | undefined, fallback: MatchScore): GoalDisplayScore {
+  if (!snapshot) {
+    return {
+      home: fallback.home,
+      away: fallback.away
+    };
+  }
+
+  const [home, away] = snapshot.split(":").map(toNullableScoreNumber);
+  return { home, away };
+}
+
 function scoreSnapshot(match: NormalizedMatch) {
-  return `${match.score.home ?? ""}:${match.score.away ?? ""}`;
+  return scoreSnapshotFromScore(match.score);
+}
+
+function scoreSnapshotFromScore(score: GoalDisplayScore) {
+  return `${score.home ?? ""}:${score.away ?? ""}`;
+}
+
+function formatScoreRaw(score: GoalDisplayScore) {
+  if (score.home === null || score.away === null) return null;
+  return `${score.home}-${score.away}`;
 }
 
 function scoreIncreaseSide(previous: string, current: string): GoalHighlightSide | null {
@@ -824,6 +930,12 @@ function scoreIncreaseSide(previous: string, current: string): GoalHighlightSide
 function toScoreNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toNullableScoreNumber(value: string | undefined) {
+  if (value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function useDesktopLayout() {
