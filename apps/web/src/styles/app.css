@@ -7715,6 +7715,287 @@ body,
   }
 }
 
+.atmosphereMobileTabs {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane.chatTabActive,
+  .routeDetailPage .matchDetailPane.chatTabActive {
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    display: grid !important;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+    background: #0a1114;
+  }
+
+  .matchDetailPane.chatTabActive .detailTop {
+    position: relative;
+    top: auto;
+    z-index: 6;
+    min-height: 54px;
+  }
+
+  .matchDetailPane.chatTabActive .detailScoreHero {
+    min-height: 150px;
+    gap: 8px;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--sx-line);
+  }
+
+  .matchDetailPane.chatTabActive .detailTeamSummary {
+    gap: 6px;
+  }
+
+  .matchDetailPane.chatTabActive .detailTeamSummary .teamLogo.lg,
+  .matchDetailPane.chatTabActive .detailTeamSummary .logoFallback.lg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .matchDetailPane.chatTabActive .detailAtmosphereAction,
+  .matchDetailPane.chatTabActive .detailNotice {
+    display: none;
+  }
+
+  .matchDetailPane.chatTabActive .detailTabs {
+    position: relative !important;
+    top: auto !important;
+    z-index: 7;
+    min-height: 46px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 8px;
+    border-top: 1px solid var(--sx-line);
+    border-bottom: 1px solid var(--sx-line);
+    background: #11181b;
+    scrollbar-width: none;
+  }
+
+  .matchDetailPane.chatTabActive .detailTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .matchDetailPane.chatTabActive .detailTabs button,
+  .matchDetailPane.chatTabActive .detailTabs.dense button {
+    flex: 0 0 auto;
+    min-width: 88px;
+    height: 46px;
+    padding: 0 12px;
+    border-radius: 0;
+    color: var(--sx-muted);
+    font-size: 13px;
+    font-weight: 780;
+  }
+
+  .matchDetailPane.chatTabActive .detailTabs button.active {
+    background: transparent;
+    color: var(--sx-accent);
+  }
+
+  .matchDetailPane.chatTabActive .detailTabs button.active::after {
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 3px;
+  }
+
+  .matchDetailPane.chatTabActive .detailChatContent {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .atmosphereMobileTabs {
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 0 8px;
+    border-top: 1px solid var(--sx-line);
+    border-bottom: 1px solid var(--sx-line);
+    background: #11181b;
+  }
+
+  .atmosphereMobileTabs button {
+    position: relative;
+    min-width: 0;
+    height: 46px;
+    border: 0;
+    background: transparent;
+    color: var(--sx-muted);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .atmosphereMobileTabs button.active {
+    color: var(--sx-accent);
+  }
+
+  .atmosphereMobileTabs button.active::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 0;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: var(--sx-accent);
+  }
+
+  .matchAtmosphereShell.mobileOverviewActive .atmosphereChatSection {
+    display: none;
+  }
+
+  .matchAtmosphereShell.mobileChatActive .atmosphereMobileOverviewOnly {
+    display: none !important;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive,
+  .matchAtmosphereShell.mobileChatActive {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    display: grid !important;
+    grid-template-rows: 58px minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    background: #0a1114;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive .atmosphereBody,
+  .matchAtmosphereShell.mobileChatActive .atmosphereBody {
+    min-height: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+  }
+
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive .atmosphereScroll,
+  .matchAtmosphereShell.mobileChatActive .atmosphereScroll {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  .matchAtmosphereShell.mobileChatActive .atmosphereHero {
+    min-height: 150px;
+    border-bottom: 0;
+  }
+
+  .matchAtmosphereShell.mobileChatActive .atmosphereScoreStage {
+    min-height: 132px;
+  }
+
+  .matchAtmosphereShell.mobileChatActive .atmosphereChatSection {
+    width: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #0a1114;
+  }
+
+  .matchAtmosphereShell.mobileChatActive .atmosphereChatSection .atmospherePanelTitle {
+    display: none;
+  }
+
+  .matchDetailPane.chatTabActive .matchChatRoom.embedded,
+  .matchAtmosphereShell.mobileChatActive .matchChatRoom.embedded {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+    background: #0a1114;
+  }
+
+  .matchDetailPane.chatTabActive .matchChatRoom.embedded .chatTop,
+  .matchAtmosphereShell.mobileChatActive .matchChatRoom.embedded .chatTop {
+    display: none;
+  }
+
+  .matchDetailPane.chatTabActive .chatMessages,
+  .matchAtmosphereShell.mobileChatActive .chatMessages {
+    min-height: 0;
+    height: 100%;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 12px 10px calc(96px + env(safe-area-inset-bottom));
+    background: #0d1417;
+  }
+
+  .matchDetailPane.chatTabActive .chatMessage,
+  .matchAtmosphereShell.mobileChatActive .chatMessage {
+    width: 100%;
+  }
+
+  .matchDetailPane.chatTabActive .chatMessage.mine,
+  .matchAtmosphereShell.mobileChatActive .chatMessage.mine {
+    max-width: 92%;
+    justify-self: end;
+  }
+
+  .matchDetailPane.chatTabActive .chatComposerWrap,
+  .matchAtmosphereShell.mobileChatActive .chatComposerWrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 98;
+    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(180, 202, 211, 0.16);
+    background: rgba(16, 23, 26, 0.98);
+  }
+
+  .matchDetailPane.chatTabActive .chatComposer,
+  .matchAtmosphereShell.mobileChatActive .chatComposer {
+    max-width: 760px;
+    margin: 0 auto;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+  }
+
+  .matchDetailPane.chatTabActive .chatComposer textarea,
+  .matchAtmosphereShell.mobileChatActive .chatComposer textarea {
+    height: 44px;
+    padding: 11px 16px;
+    border-color: #1f2d33;
+    border-radius: 999px;
+    background: #030506;
+    font-size: 14px;
+  }
+
+  .matchDetailPane.chatTabActive .chatComposer button,
+  .matchAtmosphereShell.mobileChatActive .chatComposer button {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border-color: rgba(59, 130, 246, 0.54);
+    background: rgba(59, 130, 246, 0.2);
+    color: #eaf1ff;
+  }
+
+  .matchDetailPane.chatTabActive .chatNewMessageNotice,
+  .matchAtmosphereShell.mobileChatActive .chatNewMessageNotice {
+    bottom: calc(100% + 10px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .matchRow,
   .chip,

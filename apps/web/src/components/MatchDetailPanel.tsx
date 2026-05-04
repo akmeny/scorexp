@@ -169,7 +169,7 @@ export function MatchDetailPanel({
   };
 
   return (
-    <aside className="matchDetailPane" aria-label="Maç detayı">
+    <aside className={tab === "chat" ? "matchDetailPane chatTabActive" : "matchDetailPane"} aria-label="Maç detayı" data-active-tab={tab}>
       <header className="detailTop">
         <div className="detailLeagueIdentity">
           <LeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />

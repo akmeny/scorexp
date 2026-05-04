@@ -299,7 +299,7 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
             value={body}
             maxLength={280}
             rows={1}
-            placeholder="Mesajini yaz"
+            placeholder="Fikrini paylaş"
             onChange={(event) => setBody(event.target.value)}
             onKeyDown={onComposerKeyDown}
           />

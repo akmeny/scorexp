@@ -18,7 +18,7 @@ import {
   X,
   Zap
 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { MatchChatRoom } from "./MatchChatRoom";
 import { TeamLogo } from "./TeamLogo";
@@ -98,6 +98,8 @@ const eventLabels: Record<string, string> = {
   "VAR Goal Cancelled - Offside": "VAR ofsayt"
 };
 
+type AtmosphereMobileTab = "overview" | "chat";
+
 export function MatchAtmosphereOverlay({
   match,
   detail,
@@ -108,6 +110,7 @@ export function MatchAtmosphereOverlay({
   onReload,
   backLabel = "Maç listesi"
 }: MatchAtmosphereOverlayProps) {
+  const [mobileTab, setMobileTab] = useState<AtmosphereMobileTab>("overview");
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
@@ -118,6 +121,10 @@ export function MatchAtmosphereOverlay({
   const h2hSummary = useMemo(() => summarizeResults(h2hMatches, activeMatch.homeTeam, activeMatch.awayTeam), [activeMatch, h2hMatches]);
   const homeStanding = useMemo(() => findStandingRow(detail?.standings ?? null, activeMatch.homeTeam.id), [activeMatch.homeTeam.id, detail?.standings]);
   const awayStanding = useMemo(() => findStandingRow(detail?.standings ?? null, activeMatch.awayTeam.id), [activeMatch.awayTeam.id, detail?.standings]);
+
+  useEffect(() => {
+    setMobileTab("overview");
+  }, [match.id]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -142,9 +149,15 @@ export function MatchAtmosphereOverlay({
     };
   }, [onRequestClose]);
 
+  const shellClassName = [
+    "matchAtmosphereShell",
+    activeMatch.status.group,
+    mobileTab === "chat" ? "mobileChatActive" : "mobileOverviewActive"
+  ].join(" ");
+
   return (
     <div className="matchAtmosphereOverlay" role="dialog" aria-modal="true" aria-label="Maç atmosferi">
-      <section className={`matchAtmosphereShell ${activeMatch.status.group}`}>
+      <section className={shellClassName}>
         <header className="atmosphereTopbar">
           <button className="atmosphereBackButton" type="button" onClick={onRequestClose}>
             <ArrowLeft size={17} />
@@ -206,22 +219,41 @@ export function MatchAtmosphereOverlay({
               <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} />
             </section>
 
-            {loading ? <div className="atmosphereNotice">Detay verileri yükleniyor</div> : null}
-            {error ? <div className="atmosphereNotice error">{error}</div> : null}
+            <nav className="atmosphereMobileTabs" aria-label="Maç atmosferi sekmeleri">
+              <button
+                className={mobileTab === "overview" ? "active" : ""}
+                type="button"
+                aria-selected={mobileTab === "overview"}
+                onClick={() => setMobileTab("overview")}
+              >
+                Genel Bakış
+              </button>
+              <button
+                className={mobileTab === "chat" ? "active" : ""}
+                type="button"
+                aria-selected={mobileTab === "chat"}
+                onClick={() => setMobileTab("chat")}
+              >
+                Sohbet
+              </button>
+            </nav>
 
-            <section className="atmosphereSignalStrip" aria-label="Maç sinyalleri">
+            {loading ? <div className="atmosphereNotice atmosphereMobileOverviewOnly">Detay verileri yükleniyor</div> : null}
+            {error ? <div className="atmosphereNotice error atmosphereMobileOverviewOnly">{error}</div> : null}
+
+            <section className="atmosphereSignalStrip atmosphereMobileOverviewOnly" aria-label="Maç sinyalleri">
               <SignalMetric icon={<CalendarClock size={16} />} label="Başlangıç" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
               <SignalMetric icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail) ?? "Veri yok"} />
               <SignalMetric icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail) ?? "Veri yok"} />
               <SignalMetric icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
             </section>
 
-            <section className="atmosphereChatSection" id="atmosphere-chat">
+            <section className="atmosphereChatSection atmosphereMobileChatOnly" id="atmosphere-chat">
               <PanelTitle icon={<MessageCircle size={17} />} label="Sohbet" />
               <MatchChatRoom match={activeMatch} variant="embedded" />
             </section>
 
-            <section className="atmosphereGrid">
+            <section className="atmosphereGrid atmosphereMobileOverviewOnly">
               <section className="atmospherePanel atmosphereAiPanel" id="atmosphere-ai">
                 <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
                 <strong>{aiSummary.title}</strong>
@@ -253,12 +285,12 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel" id="atmosphere-data">
+            <section className="atmospherePanel atmosphereMobileOverviewOnly" id="atmosphere-data">
               <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
               <StatisticCompare match={activeMatch} rows={statisticRows} />
             </section>
 
-            <section className="atmosphereTwinGrid" id="atmosphere-history">
+            <section className="atmosphereTwinGrid atmosphereMobileOverviewOnly" id="atmosphere-history">
               <section className="atmospherePanel">
                 <PanelTitle icon={<Shield size={17} />} label="Form ve Aralar" />
                 <div className="atmosphereHistorySummary">
@@ -283,7 +315,7 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel" id="atmosphere-players">
+            <section className="atmospherePanel atmosphereMobileOverviewOnly" id="atmosphere-players">
               <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
               <div className="atmospherePlayerGrid">
                 <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
@@ -291,7 +323,7 @@ export function MatchAtmosphereOverlay({
               </div>
             </section>
 
-            <section className="atmospherePanel">
+            <section className="atmospherePanel atmosphereMobileOverviewOnly">
               <PanelTitle icon={<Zap size={17} />} label={activeMatch.status.group === "upcoming" ? "Maç Öncesi Akış" : "Maç Akışı"} />
               <EventTimeline events={detail?.events ?? []} match={activeMatch} />
             </section>
