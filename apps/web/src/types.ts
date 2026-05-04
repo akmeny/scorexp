@@ -240,5 +240,6 @@ export interface ChatMessage {
 export interface ChatRoomSnapshot {
   roomId: string;
   generatedAt: string;
+  viewerCount?: number;
   messages: ChatMessage[];
 }

@@ -49,6 +49,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
     return {
       roomId: params.matchId,
       generatedAt: new Date().toISOString(),
+      viewerCount: room.clients.size,
       messages: room.messages
     };
   });
@@ -107,7 +108,9 @@ export async function registerChatRoutes(app: FastifyInstance) {
       },
       close: () => {
         if (heartbeat) windowSafeClearInterval(heartbeat);
-        room.clients.delete(clientId);
+        heartbeat = null;
+        const removed = room.clients.delete(clientId);
+        if (removed) broadcastPresence(room);
       }
     };
 
@@ -115,8 +118,10 @@ export async function registerChatRoutes(app: FastifyInstance) {
     client.write("ready", {
       roomId: params.matchId,
       connectedAt: new Date().toISOString(),
+      viewerCount: room.clients.size,
       messages: room.messages
     });
+    broadcastPresence(room);
 
     heartbeat = setInterval(() => {
       client.write("ping", { now: new Date().toISOString() });
@@ -143,6 +148,13 @@ function broadcast(room: ChatRoom, event: string, data: unknown) {
   for (const client of room.clients.values()) {
     client.write(event, data);
   }
+}
+
+function broadcastPresence(room: ChatRoom) {
+  broadcast(room, "presence", {
+    viewerCount: room.clients.size,
+    updatedAt: new Date().toISOString()
+  });
 }
 
 function normalizeRoomKey(matchId: string) {

@@ -1,4 +1,4 @@
-import { MessageCircle, Send, UsersRound, Wifi, WifiOff, X } from "lucide-react";
+import { MessageCircle, Send, UsersRound, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { chatEventsUrl, fetchChatMessages, sendChatMessage } from "../lib/api";
@@ -10,8 +10,6 @@ interface MatchChatRoomProps {
   onClose?: () => void;
 }
 
-type ConnectionState = "connecting" | "online" | "offline";
-
 interface ChatUser {
   id: string;
   nickname: string;
@@ -22,26 +20,46 @@ const chatUserKey = "scorexp:chatUser";
 const maxLocalMessages = 150;
 
 const nicknameColors = [
-  "#8a91ff",
-  "#52d6a0",
-  "#ff7c87",
-  "#f2ca5b",
-  "#6dd6ff",
-  "#c58cff",
-  "#ff9f68",
-  "#5eead4",
-  "#f472b6",
-  "#a3e635",
-  "#93c5fd",
-  "#fda4af",
-  "#fbbf24",
-  "#34d399",
-  "#818cf8",
-  "#fb7185",
-  "#2dd4bf",
-  "#e879f9",
-  "#60a5fa",
-  "#f97316"
+  "#8A91FF",
+  "#52D6A0",
+  "#FF7C87",
+  "#F2CA5B",
+  "#6DD6FF",
+  "#C58CFF",
+  "#FF9F68",
+  "#5EEAD4",
+  "#F472B6",
+  "#A3E635",
+  "#93C5FD",
+  "#FDA4AF",
+  "#FBBF24",
+  "#34D399",
+  "#818CF8",
+  "#FB7185",
+  "#2DD4BF",
+  "#E879F9",
+  "#60A5FA",
+  "#F97316",
+  "#FACC15",
+  "#22D3EE",
+  "#A78BFA",
+  "#F87171",
+  "#4ADE80",
+  "#38BDF8",
+  "#FB923C",
+  "#EAB308",
+  "#C084FC",
+  "#67E8F9",
+  "#F9A8D4",
+  "#86EFAC",
+  "#7DD3FC",
+  "#FDBA74",
+  "#C4B5FD",
+  "#FDE047",
+  "#99F6E4",
+  "#FCA5A5",
+  "#BFDBFE",
+  "#D8B4FE"
 ];
 
 const nicknameSeeds = [
@@ -63,7 +81,7 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
   const user = useMemo(() => readChatUser(), []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [body, setBody] = useState("");
-  const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
+  const [viewerCount, setViewerCount] = useState(1);
   const [isSending, setIsSending] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -112,12 +130,17 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
     setMessages([]);
     setNotice(null);
     setHasNewMessages(false);
+    setViewerCount(1);
     shouldStickToBottomRef.current = true;
-    setConnectionState("connecting");
 
     const controller = new AbortController();
     void fetchChatMessages({ matchId: match.id, signal: controller.signal })
-      .then((snapshot) => appendMessages(snapshot.messages))
+      .then((snapshot) => {
+        appendMessages(snapshot.messages);
+        if (typeof snapshot.viewerCount === "number") {
+          setViewerCount(normalizeViewerCount(snapshot.viewerCount));
+        }
+      })
       .catch((caught) => {
         if ((caught as Error).name !== "AbortError") {
           setNotice("Sohbet gecmisi alinamadi.");
@@ -127,23 +150,27 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
     const events = new EventSource(chatEventsUrl(match.id));
 
     events.onopen = () => {
-      setConnectionState("online");
       setNotice(null);
     };
 
-    events.onerror = () => {
-      setConnectionState("offline");
-    };
-
     events.addEventListener("ready", (event) => {
-      const payload = parseEventData<{ messages?: ChatMessage[] }>(event);
+      const payload = parseEventData<{ messages?: ChatMessage[]; viewerCount?: number }>(event);
       if (payload?.messages) appendMessages(payload.messages);
-      setConnectionState("online");
+      if (typeof payload?.viewerCount === "number") {
+        setViewerCount(normalizeViewerCount(payload.viewerCount));
+      }
     });
 
     events.addEventListener("message", (event) => {
       const message = parseEventData<ChatMessage>(event);
       if (message) appendMessages([message]);
+    });
+
+    events.addEventListener("presence", (event) => {
+      const payload = parseEventData<{ viewerCount?: number }>(event);
+      if (typeof payload?.viewerCount === "number") {
+        setViewerCount(normalizeViewerCount(payload.viewerCount));
+      }
     });
 
     return () => {
@@ -214,9 +241,13 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
           <strong title={matchTitle}>{matchTitle}</strong>
         </div>
         <div className="chatTopActions">
-          <span className={`chatConnection ${connectionState}`} title={connectionLabel(connectionState)}>
-            {connectionState === "online" ? <Wifi size={14} /> : <WifiOff size={14} />}
-            {connectionLabel(connectionState)}
+          <span
+            className="chatViewerCount"
+            aria-label={`${viewerCount} kisi iceride`}
+            title={`${viewerCount} kisi iceride`}
+          >
+            <UsersRound size={14} />
+            <strong>{viewerCount}</strong>
           </span>
           {onClose ? (
             <button className="iconButton" type="button" aria-label="Sohbeti kapat" onClick={onClose}>
@@ -236,11 +267,12 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
 
         {messages.map((message) => {
           const mine = message.authorId === user.id;
+          const nicknameColor = mine ? user.color : message.color;
 
           return (
             <article className={mine ? "chatMessage mine" : "chatMessage other"} key={message.id}>
               <div className="chatMessageHeader">
-                <strong style={{ color: mine ? undefined : message.color }}>{mine ? "Sen" : message.nickname}</strong>
+                <strong style={{ color: nicknameColor }}>{mine ? "Sen" : message.nickname}</strong>
                 <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
               </div>
               <p>{message.body}</p>
@@ -339,6 +371,11 @@ function timestamp(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizeViewerCount(value: number) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.max(1, Math.floor(value));
+}
+
 function formatMessageTime(value: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "";
@@ -347,10 +384,4 @@ function formatMessageTime(value: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(parsed);
-}
-
-function connectionLabel(state: ConnectionState) {
-  if (state === "online") return "Bagli";
-  if (state === "offline") return "Koptu";
-  return "Baglaniyor";
 }
