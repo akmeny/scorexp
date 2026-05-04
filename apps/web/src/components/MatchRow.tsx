@@ -3,6 +3,26 @@ import { TeamLogo } from "./TeamLogo";
 import { formatMatchStatusLabel, shouldShowLiveMinuteTick } from "../lib/matchStatus";
 import type { GoalHighlightSide, NormalizedMatch } from "../types";
 
+type LiveMetricValue = number | string | null | undefined;
+type MatchLiveMetrics = {
+  pressure?: LiveMetricValue;
+  pressureValue?: LiveMetricValue;
+  momentum?: LiveMetricValue;
+  momentumValue?: LiveMetricValue;
+  metrics?: {
+    pressure?: LiveMetricValue;
+    momentum?: LiveMetricValue;
+  };
+  live?: {
+    pressure?: LiveMetricValue;
+    momentum?: LiveMetricValue;
+  };
+  liveState?: {
+    pressure?: LiveMetricValue;
+    momentum?: LiveMetricValue;
+  };
+};
+
 interface MatchRowProps {
   match: NormalizedMatch;
   favorite: boolean;
@@ -26,17 +46,20 @@ export function MatchRow({
   const isUpcoming = match.status.group === "upcoming";
   const homeScore = formatScore(match.score.home, isUpcoming);
   const awayScore = formatScore(match.score.away, isUpcoming);
-  const homeGoal = isLive && (goalHighlightSide === "home" || goalHighlightSide === "both");
-  const awayGoal = isLive && (goalHighlightSide === "away" || goalHighlightSide === "both");
+  const showScoreFlash = isLive && Boolean(goalHighlightSide);
   const homeRedCards = match.redCards?.home ?? 0;
   const awayRedCards = match.redCards?.away ?? 0;
   const statusText = formatMatchStatusLabel(match);
   const scoreText = isUpcoming ? "" : `${homeScore}-${awayScore}`;
   const rowLabel = [match.homeTeam.name, match.awayTeam.name, scoreText, statusText].filter(Boolean).join(", ");
+  const pressure = isLive ? readLiveMetric(match, "pressure") : null;
+  const momentum = isLive ? readLiveMetric(match, "momentum") : null;
+  const liveIndicatorColor = isLive ? intensityColor(pressure ?? 100) : null;
+  const momentumColor = momentum === null ? null : intensityColor(momentum);
 
   return (
     <article
-      className={`matchRow ${match.status.group} ${selected ? "selected" : ""} ${goalHighlightSide ? "goalFlash" : ""}`}
+      className={`matchRow ${match.status.group} ${selected ? "selected" : ""}`}
       role="button"
       tabIndex={0}
       aria-current={selected ? "true" : undefined}
@@ -49,30 +72,30 @@ export function MatchRow({
         }
       }}
     >
+      {pressure !== null ? <span className="pressureLine" style={{ backgroundColor: intensityColor(pressure) }} aria-hidden="true" /> : null}
+
       <div className="matchTime">
-        {statusLabel(match, statusText)}
+        {statusLabel(match, statusText, liveIndicatorColor)}
       </div>
 
       <div className="teamsBlock">
-        <div className={`teamLine ${homeGoal ? "scoredGoal" : ""}`}>
+        <div className="teamLine">
           <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
           <div className="teamNameCluster">
             <span>{match.homeTeam.name}</span>
             {homeRedCards > 0 ? <span className="redCardBadge">{homeRedCards}</span> : null}
-            {homeGoal ? <b className="goalTag">Goool</b> : null}
           </div>
         </div>
-        <div className={`teamLine ${awayGoal ? "scoredGoal" : ""}`}>
+        <div className="teamLine">
           <TeamLogo src={match.awayTeam.logo} label={match.awayTeam.name} size="sm" />
           <div className="teamNameCluster">
             <span>{match.awayTeam.name}</span>
             {awayRedCards > 0 ? <span className="redCardBadge">{awayRedCards}</span> : null}
-            {awayGoal ? <b className="goalTag">Goool</b> : null}
           </div>
         </div>
       </div>
 
-      <div className="scoreBlock">
+      <div className={showScoreFlash ? "scoreBlock scoreFlash" : "scoreBlock"}>
         <span>{homeScore}</span>
         <span>{awayScore}</span>
       </div>
@@ -102,6 +125,12 @@ export function MatchRow({
         <BrainCircuit size={14} />
         <span>aiXp</span>
       </button>
+
+      {momentum !== null && momentumColor ? (
+        <span className="momentumBar" aria-hidden="true">
+          <span className="momentumFill" style={{ width: `${momentum}%`, backgroundColor: momentumColor }} />
+        </span>
+      ) : null}
     </article>
   );
 }
@@ -111,15 +140,58 @@ function formatScore(value: number | null, upcoming: boolean) {
   return value === null ? "-" : String(value);
 }
 
-function statusLabel(match: NormalizedMatch, label: string) {
+function statusLabel(match: NormalizedMatch, label: string, liveIndicatorColor: string | null) {
+  const pulseDot = liveIndicatorColor ? (
+    <span className="livePulseDot" style={{ backgroundColor: liveIndicatorColor }} aria-hidden="true" />
+  ) : null;
+
   if (shouldShowLiveMinuteTick(match)) {
     return (
       <span className="liveMinute">
+        {pulseDot}
         <span>{label}</span>
         <span className="minuteTick">'</span>
       </span>
     );
   }
 
+  if (pulseDot) {
+    return (
+      <span className="liveMinute">
+        {pulseDot}
+        <span>{label}</span>
+      </span>
+    );
+  }
+
   return <span>{label}</span>;
+}
+
+function readLiveMetric(match: NormalizedMatch, metric: "pressure" | "momentum") {
+  const source = match as NormalizedMatch & MatchLiveMetrics;
+  const value =
+    metric === "pressure"
+      ? firstMetricValue(source.pressure, source.pressureValue, source.metrics?.pressure, source.live?.pressure, source.liveState?.pressure)
+      : firstMetricValue(source.momentum, source.momentumValue, source.metrics?.momentum, source.live?.momentum, source.liveState?.momentum);
+
+  return clampPercent(value);
+}
+
+function firstMetricValue(...values: LiveMetricValue[]) {
+  return values.find((value) => value !== null && value !== undefined) ?? null;
+}
+
+function clampPercent(value: LiveMetricValue) {
+  if (value === null || value === undefined || value === "") return null;
+
+  const numeric = typeof value === "number" ? value : Number.parseFloat(value);
+  if (!Number.isFinite(numeric)) return null;
+
+  return Math.max(0, Math.min(100, numeric));
+}
+
+function intensityColor(value: number) {
+  if (value < 40) return "#22C55E";
+  if (value < 70) return "#F59E0B";
+  return "#EF4444";
 }

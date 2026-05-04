@@ -7029,3 +7029,510 @@ button:disabled {
     transform: translateY(0);
   }
 }
+
+/* Strict mobile interaction layer: flat palette, short transitions, no heavy effects. */
+:root {
+  --sx-bg: #0B0D12;
+  --sx-surface: #0F1115;
+  --sx-surface-hover: #141821;
+  --sx-line: #1C2230;
+  --sx-text: #E6EAF0;
+  --sx-muted: #9AA3B2;
+  --sx-subtle: #6B7280;
+  --sx-accent: #3B82F6;
+  --sx-live: #EF4444;
+  --sx-warn: #F59E0B;
+  --sx-good: #22C55E;
+  background: var(--sx-bg);
+  color: var(--sx-text);
+}
+
+body,
+.appShell,
+.scorePanel,
+.leagueStack {
+  background: var(--sx-bg);
+  color: var(--sx-text);
+}
+
+.appShell,
+.leagueHeader,
+.detailScoreHero,
+.chatTop,
+.chatMessages {
+  background-image: none;
+}
+
+.scorePanel,
+.matchDetailPane,
+.matchChatRoom,
+.filters,
+.sportsMenu,
+.mobileSportsMenu,
+.mobileProfileMenu {
+  box-shadow: none;
+}
+
+.scorePanel,
+.leagueCard,
+.matchDetailPane,
+.matchChatRoom {
+  border-color: var(--sx-line);
+}
+
+.siteHeader,
+.topNav,
+.filters {
+  border-color: var(--sx-line);
+  background: var(--sx-surface);
+}
+
+.tabs button,
+.detailTabs button,
+.sportItem,
+.chip {
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 80ms ease-out;
+}
+
+.tabs button:hover,
+.detailTabs button:hover,
+.sportItem:hover,
+.chip:hover {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+  color: var(--sx-text);
+}
+
+.tabs button:active,
+.detailTabs button:active,
+.sportItem:active,
+.chip:active {
+  transform: scale(0.97);
+}
+
+.tabs button::after,
+.detailTabs button::after,
+.sportItem::after,
+.chip::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  background: var(--sx-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 150ms ease-out;
+}
+
+.tabs button.active,
+.detailTabs button.active,
+.sportItem.active,
+.chip.active,
+.chip.liveChip.active,
+.favoriteNavChip.active,
+.sortNavChip.active {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+  color: var(--sx-text);
+}
+
+.tabs button.active::after,
+.detailTabs button.active::after,
+.sportItem.active::after,
+.chip.active::after,
+.chip.liveChip.active::after,
+.favoriteNavChip.active::after,
+.sortNavChip.active::after {
+  transform: scaleX(1);
+}
+
+.chip.liveChip {
+  color: var(--sx-muted);
+}
+
+.chip.liveChip strong {
+  background: var(--sx-live);
+  color: #E6EAF0;
+}
+
+.chip.liveChip.active strong {
+  background: var(--sx-live);
+  color: #E6EAF0;
+}
+
+.favoriteNavChip {
+  color: var(--sx-muted);
+}
+
+.leagueCard,
+.leagueCard.pinned {
+  background: var(--sx-surface);
+}
+
+.leagueHeader {
+  background: var(--sx-surface);
+}
+
+.leagueIdentity strong {
+  color: var(--sx-text);
+}
+
+.leagueIdentity span,
+.leagueMatchCount,
+.statusLine {
+  color: var(--sx-muted);
+}
+
+.matchList,
+.sortedMatchList {
+  background: var(--sx-bg);
+}
+
+.matchRow {
+  min-height: 68px;
+  grid-template-columns: 56px minmax(0, 1fr) 32px 36px 60px;
+  gap: 0;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--sx-surface);
+  transform: scale(1);
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    transform 80ms ease-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.matchRow:hover,
+.matchRow:focus-visible {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+}
+
+.matchRow:active {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+  transform: scale(0.97);
+}
+
+.matchRow.selected,
+.matchRow.live,
+.matchRow.live:hover,
+.matchRow.live.selected,
+.matchRow.finished {
+  background: var(--sx-surface);
+  box-shadow: none;
+}
+
+.matchRow.selected,
+.matchRow.live:hover,
+.matchRow.live.selected,
+.matchRow.selected:hover {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+}
+
+.matchRow.goalFlash::before {
+  content: none;
+}
+
+.matchTime {
+  color: var(--sx-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.matchTime > span,
+.liveMinute {
+  min-width: 38px;
+  min-height: 24px;
+  gap: 5px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--sx-muted);
+}
+
+.matchRow.live .matchTime,
+.matchRow.live .matchTime > span,
+.matchRow.live .liveMinute,
+.matchRow.upcoming .matchTime > span {
+  border-color: transparent;
+  background: transparent;
+  color: var(--sx-muted);
+}
+
+.livePulseDot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 999px;
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+
+.minuteTick {
+  animation: none;
+}
+
+.teamLine {
+  color: var(--sx-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.matchRow.finished .teamLine {
+  color: var(--sx-muted);
+}
+
+.scoreBlock {
+  color: var(--sx-text);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.matchRow.live .scoreBlock,
+.matchRow.finished .scoreBlock,
+.matchRow.finished .matchTime {
+  color: var(--sx-text);
+}
+
+.scoreBlock.scoreFlash {
+  animation: scoreAreaFlash 650ms ease-out;
+}
+
+.starButton {
+  color: var(--sx-subtle);
+  transition: none;
+}
+
+.starButton svg {
+  transition: none;
+}
+
+.starButton:hover {
+  background: transparent;
+  color: var(--sx-muted);
+}
+
+.starButton.active,
+.starButton.active:hover {
+  background: transparent;
+  color: var(--sx-warn);
+}
+
+.aiXpRowButton {
+  width: auto;
+  min-width: 48px;
+  height: 26px;
+  padding: 4px 8px;
+  border: 1px solid var(--sx-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sx-muted);
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 80ms ease-out;
+}
+
+.aiXpRowButton svg {
+  color: var(--sx-muted);
+}
+
+.aiXpRowButton:hover,
+.aiXpRowButton:active {
+  border-color: var(--sx-line);
+  background: var(--sx-surface-hover);
+  color: var(--sx-text);
+}
+
+.aiXpRowButton:active {
+  transform: scale(0.97);
+}
+
+.matchRow > .pressureLine {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  z-index: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+}
+
+.matchRow > .momentumBar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  z-index: 0;
+  height: 2px;
+  overflow: hidden;
+  background: var(--sx-line);
+}
+
+.momentumFill {
+  display: block;
+  width: 0;
+  height: 100%;
+  transition: width 140ms ease-out;
+}
+
+.redCardBadge {
+  background: var(--sx-live);
+  box-shadow: none;
+}
+
+.goalTag {
+  display: none;
+}
+
+.mobileHeaderIcon,
+.mobileSportsMenu button,
+.mobileProfileMenu button,
+.leaguePinButton,
+.leagueToggleButton {
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 80ms ease-out;
+}
+
+.mobileHeaderIcon:active,
+.mobileSportsMenu button:active,
+.mobileProfileMenu button:active,
+.leaguePinButton:active,
+.leagueToggleButton:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 760px) {
+  .appShell,
+  .scorePanel,
+  .leagueStack {
+    background: var(--sx-bg);
+  }
+
+  .filters {
+    border-color: var(--sx-line);
+    background: var(--sx-surface);
+    box-shadow: none;
+  }
+
+  .chip {
+    border-color: transparent;
+    background: transparent;
+    color: var(--sx-muted);
+  }
+
+  .chip:hover,
+  .chip:active,
+  .chip.active,
+  .chip.liveChip.active,
+  .favoriteNavChip.active,
+  .sortNavChip.active {
+    border-color: var(--sx-line);
+    background: var(--sx-surface-hover);
+    color: var(--sx-text);
+  }
+
+  .chip::after {
+    left: 8px;
+    right: 8px;
+    bottom: 4px;
+  }
+
+  .matchRow {
+    min-height: 68px;
+    grid-template-columns: 46px minmax(0, 1fr) 24px 32px 50px;
+    padding: 12px 16px;
+  }
+
+  .matchTime > span,
+  .liveMinute {
+    min-width: 34px;
+    min-height: 24px;
+    font-size: 13px;
+  }
+
+  .teamLine {
+    font-size: 15px;
+  }
+
+  .scoreBlock {
+    font-size: 13px;
+  }
+
+  .matchRow > .momentumBar {
+    left: 16px;
+    right: 16px;
+  }
+
+  .mobileSearchPanel,
+  .mobileSportsMenu,
+  .mobileProfileMenu {
+    animation-duration: 140ms;
+    animation-timing-function: ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchRow,
+  .chip,
+  .tabs button,
+  .detailTabs button,
+  .sportItem,
+  .aiXpRowButton,
+  .mobileHeaderIcon,
+  .mobileSportsMenu button,
+  .mobileProfileMenu button,
+  .leaguePinButton,
+  .leagueToggleButton,
+  .momentumFill {
+    transition: none;
+  }
+
+  .livePulseDot,
+  .scoreBlock.scoreFlash,
+  .minuteTick,
+  .mobileSearchPanel,
+  .mobileSportsMenu,
+  .mobileProfileMenu {
+    animation: none;
+  }
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes scoreAreaFlash {
+  from {
+    background: rgba(245, 158, 11, 0.16);
+  }
+
+  to {
+    background: transparent;
+  }
+}
