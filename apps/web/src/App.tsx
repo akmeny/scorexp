@@ -499,7 +499,9 @@ export default function App() {
               >
                 <Radio size={15} />
                 <span>Canlı</span>
-                <strong>{visibleLiveCount}</strong>
+                <span className="chipBadge" aria-label={`${visibleLiveCount} canli mac`}>
+                  {visibleLiveCount}
+                </span>
               </button>
               <button
                 className={tab === "favorites" && !sortByTime ? "chip active favoriteNavChip" : "chip favoriteNavChip"}
@@ -511,6 +513,9 @@ export default function App() {
               >
                 <Star size={15} />
                 <span>Favoriler</span>
+                <span className="chipBadge" aria-label={`${favoriteIds.size} favori mac`}>
+                  {favoriteIds.size}
+                </span>
               </button>
               <button
                 className={view === "finished" && tab === "all" && !sortByTime ? "chip active" : "chip"}
