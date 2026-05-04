@@ -7,7 +7,6 @@ import {
   CircleCheck,
   Clock3,
   ListFilter,
-  MessageCircle,
   Radio,
   Search,
   Star
@@ -80,10 +79,10 @@ export default function App() {
   const [selectedMatch, setSelectedMatch] = useState<NormalizedMatch | null>(null);
   const [predictionMatch, setPredictionMatch] = useState<NormalizedMatch | null>(null);
   const [atmosphereOpen, setAtmosphereOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(true);
   const [route, setRoute] = useState<MatchRoute>(() => readRouteFromLocation());
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const desktopLayout = useDesktopLayout();
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
   const favoriteSnapshotsRef = useRef<Map<string, FavoriteMatchSnapshot>>(new Map());
@@ -227,7 +226,7 @@ export default function App() {
   useEffect(() => {
     if (route.kind === "list") {
       setAtmosphereOpen(false);
-      if (!isDesktopViewport()) setSelectedMatch(null);
+      if (!desktopLayout) setSelectedMatch(null);
       return;
     }
 
@@ -245,7 +244,7 @@ export default function App() {
 
     setSelectedMatch(routeMatch);
     setAtmosphereOpen(route.kind === "atmosphere");
-  }, [allMatches, route]);
+  }, [allMatches, desktopLayout, route]);
 
   useEffect(() => {
     if (predictionMatch) {
@@ -257,14 +256,14 @@ export default function App() {
   }, [allMatches, predictionMatch]);
 
   useEffect(() => {
-    if (hasAutoSelectedInitialMatchRef.current || route.kind !== "list" || !isDesktopViewport()) return;
+    if (hasAutoSelectedInitialMatchRef.current || route.kind !== "list" || !desktopLayout) return;
 
     const firstMatch = sortByTime ? sortedMatches[0] : groups[0]?.matches[0];
     if (!firstMatch) return;
 
     hasAutoSelectedInitialMatchRef.current = true;
     setSelectedMatch(firstMatch);
-  }, [groups, route.kind, sortByTime, sortedMatches]);
+  }, [desktopLayout, groups, route.kind, sortByTime, sortedMatches]);
 
   useEffect(() => {
     const hasHighlights = Object.keys(goalHighlights).length > 0;
@@ -445,7 +444,6 @@ export default function App() {
     writeRouteToHistory(nextRoute, "replace");
   };
 
-  const desktopLayout = isDesktopViewport();
   const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
   const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel);
   const rootClassName = [
@@ -453,7 +451,7 @@ export default function App() {
     route.kind !== "list" ? "routeMatchPage" : "",
     route.kind === "detail" ? "routeDetailPage" : "",
     route.kind === "atmosphere" ? "routeAtmospherePage" : "",
-    shouldRenderDesktopChat && chatOpen ? "chatPanelVisible" : ""
+    shouldRenderDesktopChat ? "chatPanelVisible" : ""
   ]
     .filter(Boolean)
     .join(" ");
@@ -463,23 +461,7 @@ export default function App() {
       <SiteHeader footballCount={counts.all} onOpenHighlights={() => setHighlightsOpen(true)} />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canlı skorlar">
-          <header className="topNav">
-            <nav className="tabs" aria-label="Skor sekmeleri">
-              <button className={tab === "all" && !sortByTime ? "active" : ""} type="button" onClick={() => selectTab("all")}>
-                Tümü
-              </button>
-              <button
-                className={tab === "favorites" && !sortByTime ? "active" : ""}
-                type="button"
-                onClick={() => selectTab("favorites")}
-              >
-                Favoriler
-              </button>
-              <button className={sortByTime ? "active" : ""} type="button" onClick={toggleSortByTime}>
-                Zamana göre sırala
-              </button>
-            </nav>
-
+          <header className="topNav dateOnly">
             <div className="datePicker">
               <button className="iconButton" type="button" aria-label="Önceki gün" disabled={!canGoPreviousDay} onClick={() => goToDate(shiftDate(date, -1))}>
                 <ChevronLeft size={18} />
@@ -520,7 +502,7 @@ export default function App() {
                 <strong>{visibleLiveCount}</strong>
               </button>
               <button
-                className={tab === "favorites" && !sortByTime ? "chip active favoriteNavChip mobileOnly" : "chip favoriteNavChip mobileOnly"}
+                className={tab === "favorites" && !sortByTime ? "chip active favoriteNavChip" : "chip favoriteNavChip"}
                 type="button"
                 onClick={() => {
                   selectView("all");
@@ -553,7 +535,7 @@ export default function App() {
                 <span>Yaklaşan</span>
               </button>
               <button
-                className={sortByTime ? "chip active sortNavChip mobileOnly" : "chip sortNavChip mobileOnly"}
+                className={sortByTime ? "chip active sortNavChip" : "chip sortNavChip"}
                 type="button"
                 onClick={toggleSortByTime}
               >
@@ -617,14 +599,8 @@ export default function App() {
             chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" /> : undefined}
           />
         ) : null}
-        {shouldRenderDesktopChat && selectedMatch && chatOpen ? (
-          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} onClose={() => setChatOpen(false)} />
-        ) : null}
-        {shouldRenderDesktopChat && selectedMatch && !chatOpen ? (
-          <button className="chatReopenButton" type="button" onClick={() => setChatOpen(true)}>
-            <MessageCircle size={15} />
-            <span>Sohbet</span>
-          </button>
+        {shouldRenderDesktopChat && selectedMatch ? (
+          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} />
         ) : null}
       </main>
 
@@ -845,9 +821,22 @@ function toScoreNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function isDesktopViewport() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(min-width: 981px) and (pointer: fine)").matches;
+function useDesktopLayout() {
+  const [desktop, setDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 981px)").matches;
+  });
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 981px)");
+    const update = () => setDesktop(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return desktop;
 }
 
 function clampDate(date: string, minDate: string, maxDate: string) {

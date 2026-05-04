@@ -125,7 +125,7 @@ export function MatchDetailPanel({
   const [tab, setTab] = useState<DetailTab>("details");
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
   const [aiStep, setAiStep] = useState(0);
-  const activeMatch = detail?.match ?? match;
+  const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
   const hasChatTab = Boolean(chatSlot);
@@ -286,6 +286,21 @@ function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statistic
   if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan" });
 
   return tabs;
+}
+
+function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch | null | undefined) {
+  if (!detailMatch) return match;
+
+  return {
+    ...detailMatch,
+    date: match.date,
+    localTime: match.localTime,
+    timestamp: match.timestamp,
+    status: match.status,
+    score: match.score,
+    redCards: match.redCards,
+    lastUpdatedAt: match.lastUpdatedAt
+  };
 }
 
 function LeagueLogo({ src, label }: { src: string | null; label: string }) {

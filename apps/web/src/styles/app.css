@@ -425,6 +425,11 @@ button:disabled {
   gap: 10px;
 }
 
+.topNav.dateOnly {
+  grid-template-columns: 1fr;
+  justify-items: end;
+}
+
 .tabs {
   display: flex;
   align-items: stretch;
@@ -7294,7 +7299,7 @@ body,
 
 .teamLine {
   color: var(--sx-text);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -7495,6 +7500,14 @@ body,
     bottom: 4px;
   }
 
+  .topNav.dateOnly {
+    justify-items: stretch;
+  }
+
+  .topNav.dateOnly .datePicker {
+    width: 100%;
+  }
+
   .matchRow {
     min-height: 68px;
     grid-template-columns: 46px minmax(0, 1fr) 24px 32px 50px;
@@ -7509,7 +7522,7 @@ body,
   }
 
   .teamLine {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .scoreBlock {

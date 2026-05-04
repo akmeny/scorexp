@@ -108,7 +108,7 @@ export function MatchAtmosphereOverlay({
   onReload,
   backLabel = "Maç listesi"
 }: MatchAtmosphereOverlayProps) {
-  const activeMatch = detail?.match ?? match;
+  const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
   const predictionRows = useMemo(() => buildPredictionRows(activeMatch, prediction), [activeMatch, prediction]);
@@ -300,6 +300,21 @@ export function MatchAtmosphereOverlay({
       </section>
     </div>
   );
+}
+
+function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch | null | undefined) {
+  if (!detailMatch) return match;
+
+  return {
+    ...detailMatch,
+    date: match.date,
+    localTime: match.localTime,
+    timestamp: match.timestamp,
+    status: match.status,
+    score: match.score,
+    redCards: match.redCards,
+    lastUpdatedAt: match.lastUpdatedAt
+  };
 }
 
 function AtmosphereTeam({
