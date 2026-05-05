@@ -20,6 +20,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { TeamLogo } from "./TeamLogo";
 import { localizeCountryName } from "../lib/localization";
 import { formatMatchStatusLabel } from "../lib/matchStatus";
+import { translateStatisticLabel } from "../lib/statisticsLocalization";
 import type {
   MatchDetail,
   MatchDetailEvent,
@@ -71,30 +72,6 @@ const statisticPriority = [
   "Yellow cards",
   "Red cards"
 ];
-
-const statisticLabels: Record<string, string> = {
-  Possession: "Topa sahip olma",
-  "Shots on target": "İsabetli şut",
-  "Shots off target": "İsabetsiz şut",
-  "Total shots": "Toplam şut",
-  "Blocked shots": "Engellenen şut",
-  "Shots inside box": "Ceza sahası içi şut",
-  "Shots outside box": "Ceza sahası dışı şut",
-  Corners: "Korner",
-  "Free Kicks": "Serbest vuruş",
-  "Throw-Ins": "Taç",
-  "Goal Kicks": "Aut atışı",
-  Offsides: "Ofsayt",
-  Fouls: "Faul",
-  Saves: "Kurtarış",
-  "Goalkeeper saves": "Kaleci kurtarışı",
-  Passes: "Pas",
-  "Accurate passes": "İsabetli pas",
-  "Yellow cards": "Sarı kart",
-  "Red cards": "Kırmızı kart",
-  "Yellow Cards": "Sarı kart",
-  "Red Cards": "Kırmızı kart"
-};
 
 const eventLabels: Record<string, string> = {
   Goal: "Gol",
@@ -169,7 +146,7 @@ export function MatchDetailPanel({
   };
 
   return (
-    <aside className={tab === "chat" ? "matchDetailPane chatTabActive" : "matchDetailPane"} aria-label="Maç detayı" data-active-tab={tab}>
+    <aside className="matchDetailPane" aria-label="Maç detayı" data-active-tab={tab}>
       <header className="detailTop">
         <div className="detailLeagueIdentity">
           <LeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />
@@ -237,8 +214,8 @@ export function MatchDetailPanel({
       {tab === "chat" && chatSlot ? <div className="detailContent detailChatContent">{chatSlot}</div> : null}
 
       {tab === "events" ? (
-        <div className="detailContent">
-          <div className="eventTimeline">
+        <div className="detailContent detailEventContent">
+          <div className="eventTimeline atmosphereTimeline detailEventTimeline">
             {detail?.events.map((event, index) => (
               <EventRow key={`${event.time ?? "na"}:${event.type}:${event.team.id}:${index}`} event={event} match={activeMatch} />
             ))}
@@ -425,17 +402,26 @@ function AiPredictionCard({
 
 function EventRow({ event, match }: { event: MatchDetailEvent; match: NormalizedMatch }) {
   const side = event.team.id === match.homeTeam.id ? "home" : event.team.id === match.awayTeam.id ? "away" : "neutral";
+  const eventTypeClass = eventClass(event.type);
+  const description = eventDescription(event);
 
   return (
-    <div className={`eventRow ${side}`}>
-      <span className="eventMinute">{event.time ? `${event.time}'` : "-"}</span>
-      <span className={`eventIcon ${eventClass(event.type)}`}>{eventIcon(event.type)}</span>
-      <div>
-        <strong>{eventLabels[event.type] ?? event.type}</strong>
-        <span>{[event.player, event.assist ? `Asist: ${event.assist}` : null, event.substituted].filter(Boolean).join(" • ") || event.team.name}</span>
-      </div>
+    <div className={`atmosphereTimelineItem detailEventItem ${side}`}>
+      <span className="atmosphereTimelineMinute eventMinute">{event.time ? `${event.time}'` : "-"}</span>
+      <article className={`atmosphereTimelineCard detailEventCard ${eventTypeClass}`}>
+        <i className={`eventIcon ${eventTypeClass}`}>{eventIcon(event.type)}</i>
+        <div>
+          <strong>{eventLabels[event.type] ?? event.type}</strong>
+          <p title={description}>{description}</p>
+          <em title={event.team.name}>{event.team.name}</em>
+        </div>
+      </article>
     </div>
   );
+}
+
+function eventDescription(event: MatchDetailEvent) {
+  return [event.player, event.assist ? `Asist: ${event.assist}` : null, event.substituted].filter(Boolean).join(" • ") || event.team.name;
 }
 
 function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: ReturnType<typeof buildStatisticRows> }) {
@@ -622,7 +608,7 @@ function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) 
 
       return {
         name,
-        label: statisticLabels[name] ?? name,
+        label: translateStatisticLabel(name),
         homeDisplay: formatStatValue(name, homeValue),
         awayDisplay: formatStatValue(name, awayValue),
         homePercent: total > 0 ? Math.max(6, (homeNumber / total) * 100) : 50,
@@ -671,6 +657,7 @@ function eventClass(type: string) {
   if (type.includes("Red")) return "red";
   if (type.includes("Yellow")) return "yellow";
   if (type.includes("Goal") || type.includes("Penalty")) return "goal";
+  if (type.includes("Substitution")) return "substitution";
   return "";
 }
 

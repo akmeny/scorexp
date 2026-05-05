@@ -87,6 +87,7 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
   const [notice, setNotice] = useState<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
   const matchTitle = `${match.homeTeam.name} - ${match.awayTeam.name}`;
 
@@ -187,6 +188,20 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
       window.requestAnimationFrame(() => scrollToLatest(lastMessage.authorId === user.id ? "smooth" : "auto"));
     }
   }, [messages, scrollToLatest, user.id]);
+
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+
+    const styles = window.getComputedStyle(composer);
+    const minHeight = Number.parseFloat(styles.minHeight) || 40;
+    const maxHeight = Number.parseFloat(styles.getPropertyValue("--chat-composer-max-height")) || 118;
+
+    composer.style.height = "auto";
+    const nextHeight = Math.min(Math.max(composer.scrollHeight, minHeight), maxHeight);
+    composer.style.height = `${nextHeight}px`;
+    composer.style.overflowY = composer.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [body]);
 
   const handleScroll = () => {
     const target = scrollRef.current;
@@ -296,14 +311,18 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
           }}
         >
           <textarea
+            ref={composerRef}
             value={body}
             maxLength={280}
             rows={1}
+            aria-label="Mesaj yaz"
+            autoComplete="off"
+            enterKeyHint="send"
             placeholder="Fikrini paylaş"
             onChange={(event) => setBody(event.target.value)}
             onKeyDown={onComposerKeyDown}
           />
-          <button type="submit" aria-label="Gonder" disabled={!body.trim() || isSending}>
+          <button type="submit" aria-label="Mesaj gonder" disabled={!body.trim() || isSending}>
             <Send size={16} />
           </button>
         </form>

@@ -264,10 +264,6 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
         </div>
 
         <div className="headerActions">
-          <button className="loginButton" type="button">
-            <CircleUserRound size={17} />
-            OTURUM AÇ
-          </button>
           <button className="headerIcon" type="button" aria-label="Favoriler">
             <Star size={20} />
           </button>

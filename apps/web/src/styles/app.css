@@ -103,7 +103,8 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -203,25 +204,11 @@ button:disabled {
   gap: 8px;
 }
 
-.loginButton,
 .headerIcon,
 .newsButton {
   border: 0;
   color: #f5f8fa;
   background: transparent;
-}
-
-.loginButton {
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 15px;
-  border-radius: 4px;
-  background: #f4f6f7;
-  color: #080d0f;
-  font-size: 12px;
-  font-weight: 750;
 }
 
 .headerIcon {
@@ -1179,10 +1166,14 @@ button:disabled {
 }
 
 .chatComposer textarea {
+  --chat-composer-max-height: 96px;
   width: 100%;
   min-width: 0;
-  height: 40px;
-  max-height: 92px;
+  min-height: 40px;
+  height: auto;
+  max-height: var(--chat-composer-max-height);
+  display: block;
+  overflow-y: hidden;
   resize: none;
   outline: 0;
   border: 1px solid #2d3c42;
@@ -1193,6 +1184,10 @@ button:disabled {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.35;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .chatComposer textarea::placeholder {
@@ -1214,10 +1209,16 @@ button:disabled {
 .chatComposer button {
   width: 40px;
   height: 40px;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 .chatComposer button:hover,
@@ -1736,6 +1737,14 @@ button:disabled {
   gap: 7px;
 }
 
+.detailEventTimeline {
+  gap: 8px;
+}
+
+.detailEventCard {
+  width: min(100%, 320px);
+}
+
 .eventRow {
   display: grid;
   grid-template-columns: 44px 28px minmax(0, 1fr);
@@ -1783,6 +1792,11 @@ button:disabled {
 .eventIcon.red {
   color: #fff;
   background: #f14f5c;
+}
+
+.detailEventCard.substitution i {
+  color: #e7ecff;
+  background: #253049;
 }
 
 .eventRow strong,
@@ -2577,7 +2591,9 @@ button:disabled {
   gap: 7px;
 }
 
+.atmosphereRail nav button,
 .atmosphereRail nav a {
+  width: 100%;
   min-height: 36px;
   display: flex;
   align-items: center;
@@ -2588,9 +2604,12 @@ button:disabled {
   color: #dce8ec;
   font-size: 12px;
   font-weight: 850;
+  text-align: left;
   text-decoration: none;
 }
 
+.atmosphereRail nav button:hover,
+.atmosphereRail nav button.active,
 .atmosphereRail nav a:hover {
   border-color: #5660d8;
   background: #171d3b;
@@ -4913,6 +4932,8 @@ button:disabled {
 .aiXpRowButton:focus-visible,
 .detailTopActions .iconButton:focus-visible,
 .detailAtmosphereButton:focus-visible,
+.atmosphereRail nav button:focus-visible,
+.atmosphereTabs button:focus-visible,
 .scrollTopButton:focus-visible {
   outline: 2px solid rgba(138, 145, 255, 0.55);
   outline-offset: 2px;
@@ -7021,7 +7042,28 @@ button:disabled {
   }
 
   .chatComposerWrap {
-    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+    padding: 8px 9px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .chatComposer {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+  }
+
+  .chatComposer textarea {
+    --chat-composer-max-height: 112px;
+    min-height: 44px;
+    padding: 11px 15px;
+    border-radius: 999px;
+    font-size: 16px;
+    line-height: 1.34;
+  }
+
+  .chatComposer button {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
   }
 }
 
@@ -7715,132 +7757,101 @@ body,
   }
 }
 
-.atmosphereMobileTabs {
+.atmosphereTabs {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px;
+  margin: 16px auto 0;
+  padding: 4px;
+  border: 1px solid var(--sx-line);
+  border-radius: 8px;
+  background: #11181b;
+}
+
+.atmosphereTabs button {
+  position: relative;
+  min-width: 0;
+  height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sx-muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.atmosphereTabs button.active {
+  background: rgba(138, 145, 255, 0.1);
+  color: var(--sx-accent);
+}
+
+.atmosphereTabs button.active::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--sx-accent);
+}
+
+.matchAtmosphereShell.overviewTabActive .atmosphereChatSection {
   display: none;
 }
 
+.matchAtmosphereShell.chatTabActive .atmosphereOverviewOnly {
+  display: none !important;
+}
+
+.matchAtmosphereShell.chatTabActive .atmosphereChatSection {
+  width: min(980px, calc(100% - 40px));
+  margin-top: 18px;
+}
+
+.matchAtmosphereShell.chatTabActive .atmosphereChatSection .matchChatRoom.embedded {
+  height: min(620px, calc(var(--scorexp-viewport-height) - 430px));
+  min-height: 430px;
+}
+
 @media (max-width: 760px) {
-  body.scorexpRoutePage .routeDetailPage .matchDetailPane.chatTabActive,
-  .routeDetailPage .matchDetailPane.chatTabActive {
-    width: 100% !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    display: grid !important;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    overflow: hidden !important;
-    padding-bottom: 0 !important;
-    background: #0a1114;
-  }
-
-  .matchDetailPane.chatTabActive .detailTop {
-    position: relative;
-    top: auto;
-    z-index: 6;
-    min-height: 54px;
-  }
-
-  .matchDetailPane.chatTabActive .detailScoreHero {
-    min-height: 150px;
-    gap: 8px;
-    padding: 12px 10px;
-    border-bottom: 1px solid var(--sx-line);
-  }
-
-  .matchDetailPane.chatTabActive .detailTeamSummary {
-    gap: 6px;
-  }
-
-  .matchDetailPane.chatTabActive .detailTeamSummary .teamLogo.lg,
-  .matchDetailPane.chatTabActive .detailTeamSummary .logoFallback.lg {
-    width: 42px;
-    height: 42px;
-  }
-
-  .matchDetailPane.chatTabActive .detailAtmosphereAction,
-  .matchDetailPane.chatTabActive .detailNotice {
-    display: none;
-  }
-
-  .matchDetailPane.chatTabActive .detailTabs {
-    position: relative !important;
-    top: auto !important;
-    z-index: 7;
-    min-height: 46px;
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0 8px;
-    border-top: 1px solid var(--sx-line);
-    border-bottom: 1px solid var(--sx-line);
-    background: #11181b;
-    scrollbar-width: none;
-  }
-
-  .matchDetailPane.chatTabActive .detailTabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .matchDetailPane.chatTabActive .detailTabs button,
-  .matchDetailPane.chatTabActive .detailTabs.dense button {
-    flex: 0 0 auto;
-    min-width: 88px;
-    height: 46px;
-    padding: 0 12px;
-    border-radius: 0;
-    color: var(--sx-muted);
-    font-size: 13px;
-    font-weight: 780;
-  }
-
-  .matchDetailPane.chatTabActive .detailTabs button.active {
-    background: transparent;
-    color: var(--sx-accent);
-  }
-
-  .matchDetailPane.chatTabActive .detailTabs button.active::after {
-    left: 12px;
-    right: 12px;
-    bottom: 0;
-    height: 3px;
-  }
-
-  .matchDetailPane.chatTabActive .detailChatContent {
-    min-height: 0;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr);
-    overflow: hidden;
-    padding: 0;
-  }
-
-  .atmosphereMobileTabs {
+  .atmosphereTabs {
     min-height: 46px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
+    width: 100%;
+    margin: 0;
     padding: 0 8px;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
     border-top: 1px solid var(--sx-line);
     border-bottom: 1px solid var(--sx-line);
     background: #11181b;
   }
 
-  .atmosphereMobileTabs button {
+  .atmosphereTabs button {
     position: relative;
     min-width: 0;
     height: 46px;
     border: 0;
+    border-radius: 0;
     background: transparent;
     color: var(--sx-muted);
     font-size: 13px;
     font-weight: 800;
   }
 
-  .atmosphereMobileTabs button.active {
+  .atmosphereTabs button.active {
+    background: transparent;
     color: var(--sx-accent);
   }
 
-  .atmosphereMobileTabs button.active::after {
+  .atmosphereTabs button.active::after {
     content: "";
     position: absolute;
     left: 14px;
@@ -7851,16 +7862,16 @@ body,
     background: var(--sx-accent);
   }
 
-  .matchAtmosphereShell.mobileOverviewActive .atmosphereChatSection {
+  .matchAtmosphereShell.overviewTabActive .atmosphereChatSection {
     display: none;
   }
 
-  .matchAtmosphereShell.mobileChatActive .atmosphereMobileOverviewOnly {
+  .matchAtmosphereShell.chatTabActive .atmosphereOverviewOnly {
     display: none !important;
   }
 
-  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive,
-  .matchAtmosphereShell.mobileChatActive {
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.chatTabActive,
+  .matchAtmosphereShell.chatTabActive {
     height: 100dvh !important;
     min-height: 100dvh !important;
     max-height: 100dvh !important;
@@ -7870,15 +7881,15 @@ body,
     background: #0a1114;
   }
 
-  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive .atmosphereBody,
-  .matchAtmosphereShell.mobileChatActive .atmosphereBody {
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.chatTabActive .atmosphereBody,
+  .matchAtmosphereShell.chatTabActive .atmosphereBody {
     min-height: 0 !important;
     display: block !important;
     overflow: hidden !important;
   }
 
-  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatActive .atmosphereScroll,
-  .matchAtmosphereShell.mobileChatActive .atmosphereScroll {
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.chatTabActive .atmosphereScroll,
+  .matchAtmosphereShell.chatTabActive .atmosphereScroll {
     height: 100% !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -7888,16 +7899,16 @@ body,
     padding-bottom: 0 !important;
   }
 
-  .matchAtmosphereShell.mobileChatActive .atmosphereHero {
+  .matchAtmosphereShell.chatTabActive .atmosphereHero {
     min-height: 150px;
     border-bottom: 0;
   }
 
-  .matchAtmosphereShell.mobileChatActive .atmosphereScoreStage {
+  .matchAtmosphereShell.chatTabActive .atmosphereScoreStage {
     min-height: 132px;
   }
 
-  .matchAtmosphereShell.mobileChatActive .atmosphereChatSection {
+  .matchAtmosphereShell.chatTabActive .atmosphereChatSection {
     width: 100%;
     min-height: 0;
     display: grid;
@@ -7909,12 +7920,11 @@ body,
     background: #0a1114;
   }
 
-  .matchAtmosphereShell.mobileChatActive .atmosphereChatSection .atmospherePanelTitle {
+  .matchAtmosphereShell.chatTabActive .atmosphereChatSection .atmospherePanelTitle {
     display: none;
   }
 
-  .matchDetailPane.chatTabActive .matchChatRoom.embedded,
-  .matchAtmosphereShell.mobileChatActive .matchChatRoom.embedded {
+  .matchAtmosphereShell.chatTabActive .matchChatRoom.embedded {
     height: 100% !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -7924,13 +7934,11 @@ body,
     background: #0a1114;
   }
 
-  .matchDetailPane.chatTabActive .matchChatRoom.embedded .chatTop,
-  .matchAtmosphereShell.mobileChatActive .matchChatRoom.embedded .chatTop {
+  .matchAtmosphereShell.chatTabActive .matchChatRoom.embedded .chatTop {
     display: none;
   }
 
-  .matchDetailPane.chatTabActive .chatMessages,
-  .matchAtmosphereShell.mobileChatActive .chatMessages {
+  .matchAtmosphereShell.chatTabActive .chatMessages {
     min-height: 0;
     height: 100%;
     gap: 10px;
@@ -7939,59 +7947,62 @@ body,
     background: #0d1417;
   }
 
-  .matchDetailPane.chatTabActive .chatMessage,
-  .matchAtmosphereShell.mobileChatActive .chatMessage {
+  .matchAtmosphereShell.chatTabActive .chatMessage {
     width: 100%;
   }
 
-  .matchDetailPane.chatTabActive .chatMessage.mine,
-  .matchAtmosphereShell.mobileChatActive .chatMessage.mine {
+  .matchAtmosphereShell.chatTabActive .chatMessage.mine {
     max-width: 92%;
     justify-self: end;
   }
 
-  .matchDetailPane.chatTabActive .chatComposerWrap,
-  .matchAtmosphereShell.mobileChatActive .chatComposerWrap {
+  .matchAtmosphereShell.chatTabActive .chatComposerWrap {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 98;
-    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: 100vw;
+    padding: 7px 8px max(7px, env(safe-area-inset-bottom));
     border-top: 1px solid rgba(180, 202, 211, 0.16);
-    background: rgba(16, 23, 26, 0.98);
+    background: rgba(12, 18, 21, 0.98);
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(14px);
   }
 
-  .matchDetailPane.chatTabActive .chatComposer,
-  .matchAtmosphereShell.mobileChatActive .chatComposer {
-    max-width: 760px;
+  .matchAtmosphereShell.chatTabActive .chatComposer {
+    width: min(100%, 760px);
     margin: 0 auto;
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: end;
     gap: 8px;
   }
 
-  .matchDetailPane.chatTabActive .chatComposer textarea,
-  .matchAtmosphereShell.mobileChatActive .chatComposer textarea {
-    height: 44px;
-    padding: 11px 16px;
-    border-color: #1f2d33;
+  .matchAtmosphereShell.chatTabActive .chatComposer textarea {
+    --chat-composer-max-height: 122px;
+    min-height: 48px;
+    height: auto;
+    padding: 13px 16px;
+    border-color: rgba(120, 137, 147, 0.26);
     border-radius: 999px;
-    background: #030506;
-    font-size: 14px;
+    background: #080f13;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    font-size: 16px;
+    line-height: 1.3;
   }
 
-  .matchDetailPane.chatTabActive .chatComposer button,
-  .matchAtmosphereShell.mobileChatActive .chatComposer button {
-    width: 44px;
-    height: 44px;
+  .matchAtmosphereShell.chatTabActive .chatComposer button {
+    width: 48px;
+    height: 48px;
     border-radius: 999px;
     border-color: rgba(59, 130, 246, 0.54);
-    background: rgba(59, 130, 246, 0.2);
-    color: #eaf1ff;
+    background: #8a91ff;
+    color: #071014;
+    box-shadow: 0 10px 24px rgba(39, 50, 160, 0.32);
   }
 
-  .matchDetailPane.chatTabActive .chatNewMessageNotice,
-  .matchAtmosphereShell.mobileChatActive .chatNewMessageNotice {
+  .matchAtmosphereShell.chatTabActive .chatNewMessageNotice {
     bottom: calc(100% + 10px);
   }
 }
