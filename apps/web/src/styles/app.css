@@ -8127,6 +8127,790 @@ body,
   }
 }
 
+/* User color mode. Header chrome stays dark; the product surfaces below it switch. */
+.themeHeaderIcon svg {
+  transition: transform 140ms ease-out;
+}
+
+.themeHeaderIcon:active svg {
+  transform: scale(0.92) rotate(-10deg);
+}
+
+.detailThemeButton,
+.atmosphereThemeButton {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  .detailThemeButton,
+  .atmosphereThemeButton {
+    display: inline-flex !important;
+  }
+}
+
+html.scorexpLightTheme {
+  --sx-bg: #eef3f6;
+  --sx-surface: #ffffff;
+  --sx-surface-soft: #f7fafc;
+  --sx-surface-hover: #eaf2ff;
+  --sx-surface-lift: #ffffff;
+  --sx-line: #d6e1e8;
+  --sx-line-strong: #b8c8d2;
+  --sx-text: #111821;
+  --sx-muted: #5f6f7b;
+  --sx-subtle: #7b8790;
+  --sx-soft: #35424b;
+  --sx-accent: #2563eb;
+  --sx-live: #e11d48;
+  --sx-good: #059669;
+  --sx-warn: #d97706;
+  --sx-shadow: 0 12px 34px rgba(28, 45, 59, 0.11);
+  --sx-shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 10px 26px rgba(28, 45, 59, 0.08);
+  --sx-input-bg: #ffffff;
+  --sx-chat-bg: #f4f8fb;
+  color-scheme: light;
+  background: var(--sx-bg);
+  color: var(--sx-text);
+}
+
+body.scorexpLightTheme,
+.scorexpLightTheme .appShell,
+.scorexpLightTheme .leagueStack,
+.scorexpLightTheme .matchList,
+.scorexpLightTheme .sortedMatchList {
+  background: var(--sx-bg);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .appShell {
+  background:
+    linear-gradient(180deg, rgba(221, 232, 239, 0.94), rgba(238, 243, 246, 0.99) 285px),
+    var(--sx-bg);
+}
+
+.scorexpLightTheme .scorePanel,
+.scorexpLightTheme .matchDetailPane,
+.scorexpLightTheme .matchChatRoom,
+.scorexpLightTheme .leagueCard,
+.scorexpLightTheme .detailFact,
+.scorexpLightTheme .aiPredictionBlock,
+.scorexpLightTheme .eventRow,
+.scorexpLightTheme .statCompareRow,
+.scorexpLightTheme .summaryPill,
+.scorexpLightTheme .compactMatchRow,
+.scorexpLightTheme .standingsTable,
+.scorexpLightTheme .installPrompt,
+.scorexpLightTheme .favoriteNotificationToast,
+.scorexpLightTheme .aiPredictionModal {
+  border-color: var(--sx-line);
+  background: var(--sx-surface);
+  color: var(--sx-text);
+  box-shadow: var(--sx-shadow-soft);
+}
+
+.scorexpLightTheme .scorePanel {
+  background: #fbfdfe;
+}
+
+.scorexpLightTheme .topNav,
+.scorexpLightTheme .filters,
+.scorexpLightTheme .detailTop,
+.scorexpLightTheme .detailTabs,
+.scorexpLightTheme .detailAtmosphereAction,
+.scorexpLightTheme .chatTop,
+.scorexpLightTheme .chatComposerWrap {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .tabs button,
+.scorexpLightTheme .detailTabs button,
+.scorexpLightTheme .chip,
+.scorexpLightTheme .dateButton,
+.scorexpLightTheme .datePicker .iconButton {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .tabs button:hover,
+.scorexpLightTheme .detailTabs button:hover,
+.scorexpLightTheme .chip:hover,
+.scorexpLightTheme .tabs button.active,
+.scorexpLightTheme .detailTabs button.active,
+.scorexpLightTheme .chip.active,
+.scorexpLightTheme .chip.liveChip.active,
+.scorexpLightTheme .favoriteNavChip.active,
+.scorexpLightTheme .sortNavChip.active {
+  border-color: #c7d7e1;
+  background: #edf4ff;
+  color: #0f172a;
+}
+
+.scorexpLightTheme .chip.liveChip,
+.scorexpLightTheme .matchRow.live .matchTime,
+.scorexpLightTheme .matchRow.live .scoreBlock,
+.scorexpLightTheme .atmosphereScoreline,
+.scorexpLightTheme .detailScoreCenter {
+  color: var(--sx-live);
+}
+
+.scorexpLightTheme .chip.liveChip strong,
+.scorexpLightTheme .chip.liveChip.active strong,
+.scorexpLightTheme .chipBadge {
+  border-color: #ffffff;
+  background: var(--sx-live);
+  color: #ffffff;
+}
+
+.scorexpLightTheme .favoriteNavChip .chipBadge {
+  background: var(--sx-warn);
+  color: #ffffff;
+}
+
+.scorexpLightTheme .datePicker,
+.scorexpLightTheme .leaguePinButton,
+.scorexpLightTheme .leagueToggleButton,
+.scorexpLightTheme .aiXpRowButton,
+.scorexpLightTheme .detailAtmosphereButton,
+.scorexpLightTheme .aiPredictionHeader button,
+.scorexpLightTheme .emptyState button {
+  border-color: var(--sx-line);
+  background: var(--sx-input-bg);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .datePicker {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.scorexpLightTheme .leagueCard {
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.scorexpLightTheme .leagueCard.pinned {
+  border-color: rgba(37, 99, 235, 0.32);
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.scorexpLightTheme .leagueHeader {
+  border-color: var(--sx-line);
+  background: linear-gradient(180deg, #ffffff, #f7fafc);
+}
+
+.scorexpLightTheme .leagueIdentity strong,
+.scorexpLightTheme .teamLine,
+.scorexpLightTheme .scoreBlock,
+.scorexpLightTheme .detailTop strong,
+.scorexpLightTheme .detailTeamSummary,
+.scorexpLightTheme .detailFact strong,
+.scorexpLightTheme .chatTitleBlock strong,
+.scorexpLightTheme .chatMessage p,
+.scorexpLightTheme .aiPredictionBlock strong,
+.scorexpLightTheme .eventRow strong,
+.scorexpLightTheme .statCompareRow strong,
+.scorexpLightTheme .standingRow strong {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .leagueIdentity span,
+.scorexpLightTheme .leagueMatchCount,
+.scorexpLightTheme .statusLine,
+.scorexpLightTheme .matchTime,
+.scorexpLightTheme .matchRow.finished .teamLine,
+.scorexpLightTheme .matchRow.finished .scoreBlock,
+.scorexpLightTheme .matchRow.finished .matchTime,
+.scorexpLightTheme .detailTop em,
+.scorexpLightTheme .detailLeagueCountry,
+.scorexpLightTheme .detailFact span,
+.scorexpLightTheme .chatMessageHeader time,
+.scorexpLightTheme .chatEmptyState,
+.scorexpLightTheme .eventRow p,
+.scorexpLightTheme .statCompareRow span,
+.scorexpLightTheme .standingRow span,
+.scorexpLightTheme .emptyState {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .matchRow {
+  border-color: rgba(214, 225, 232, 0.76);
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.scorexpLightTheme .matchRow:hover,
+.scorexpLightTheme .matchRow:focus-visible,
+.scorexpLightTheme .matchRow.selected,
+.scorexpLightTheme .matchRow.live:hover,
+.scorexpLightTheme .matchRow.live.selected,
+.scorexpLightTheme .matchRow.selected:hover {
+  border-color: #bdd2df;
+  background: #f4f9ff;
+}
+
+.scorexpLightTheme .matchRow.live {
+  border-color: rgba(225, 29, 72, 0.22);
+  background: linear-gradient(90deg, rgba(225, 29, 72, 0.045), #ffffff 34%);
+}
+
+.scorexpLightTheme .matchRow.finished {
+  background: #f8fbfd;
+}
+
+.scorexpLightTheme .matchRow.goalPending,
+.scorexpLightTheme .matchRow.goalPending:hover,
+.scorexpLightTheme .matchRow.goalPending.selected {
+  border-color: rgba(225, 29, 72, 0.42);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(225, 29, 72, 0.12), transparent 58%),
+    #fff5f7;
+}
+
+.scorexpLightTheme .starButton:hover,
+.scorexpLightTheme .aiXpRowButton:hover,
+.scorexpLightTheme .leaguePinButton:hover,
+.scorexpLightTheme .leagueToggleButton:hover,
+.scorexpLightTheme .detailAtmosphereButton:hover,
+.scorexpLightTheme .aiPredictionHeader button:hover,
+.scorexpLightTheme .emptyState button:hover {
+  border-color: #b8c8d2;
+  background: #eef5ff;
+  color: #0f172a;
+}
+
+.scorexpLightTheme .starButton.active,
+.scorexpLightTheme .starButton.active:hover,
+.scorexpLightTheme .leaguePinButton.active,
+.scorexpLightTheme .leaguePinButton.active:hover {
+  border-color: rgba(217, 119, 6, 0.28);
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--sx-warn);
+}
+
+.scorexpLightTheme .detailScoreHero {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.035), transparent),
+    #f7fbfd;
+}
+
+.scorexpLightTheme .detailLeagueLogo,
+.scorexpLightTheme .logoFallback,
+.scorexpLightTheme .teamLogo {
+  border-color: var(--sx-line);
+}
+
+.scorexpLightTheme .detailScoreCenter small,
+.scorexpLightTheme .atmosphereStatusPill {
+  border-color: rgba(225, 29, 72, 0.2);
+  background: rgba(225, 29, 72, 0.08);
+  color: var(--sx-live);
+}
+
+.scorexpLightTheme .detailAtmosphereButton,
+.scorexpLightTheme .aiPredictionHeader button,
+.scorexpLightTheme .emptyState button,
+.scorexpLightTheme .highlightsMoreButton,
+.scorexpLightTheme .highlightsState button {
+  border-color: rgba(37, 99, 235, 0.26);
+  background: rgba(37, 99, 235, 0.08);
+  color: #174ea6;
+}
+
+.scorexpLightTheme .detailFact,
+.scorexpLightTheme .eventRow,
+.scorexpLightTheme .statCompareRow,
+.scorexpLightTheme .summaryPill,
+.scorexpLightTheme .compactMatchRow,
+.scorexpLightTheme .standingsTable,
+.scorexpLightTheme .atmosphereSignalMetric,
+.scorexpLightTheme .atmospherePanel,
+.scorexpLightTheme .atmosphereInsight,
+.scorexpLightTheme .atmosphereStatRow,
+.scorexpLightTheme .atmosphereSummaryMetric,
+.scorexpLightTheme .atmosphereMiniRow,
+.scorexpLightTheme .atmosphereStandingRow,
+.scorexpLightTheme .atmospherePlayerRow,
+.scorexpLightTheme .atmosphereTimelineCard,
+.scorexpLightTheme .atmosphereEmptyState {
+  border-color: var(--sx-line);
+  background: #ffffff;
+  color: var(--sx-text);
+  box-shadow: 0 8px 24px rgba(28, 45, 59, 0.06);
+}
+
+.scorexpLightTheme .eventRow.away,
+.scorexpLightTheme .atmosphereTimelineCard.goal,
+.scorexpLightTheme .aiPredictionBlock.done {
+  background: #f2fbf7;
+}
+
+.scorexpLightTheme .aiPredictionBlock.analyzing,
+.scorexpLightTheme .atmosphereAiPanel {
+  border-color: rgba(37, 99, 235, 0.28);
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.96)),
+    #ffffff;
+}
+
+.scorexpLightTheme .aiScanner,
+.scorexpLightTheme .aiModalScanner {
+  border-color: rgba(37, 99, 235, 0.32);
+  background:
+    repeating-linear-gradient(180deg, rgba(37, 99, 235, 0.1) 0 2px, transparent 2px 6px),
+    #f4f8ff;
+}
+
+.scorexpLightTheme .matchChatRoom,
+.scorexpLightTheme .matchChatRoom.panel,
+.scorexpLightTheme .matchChatRoom.embedded {
+  border-color: var(--sx-line);
+  background: #ffffff;
+}
+
+.scorexpLightTheme .chatTop {
+  border-bottom-color: var(--sx-line);
+  background: #ffffff;
+}
+
+.scorexpLightTheme .chatMessages {
+  background: var(--sx-chat-bg);
+}
+
+.scorexpLightTheme .chatComposerWrap {
+  border-top-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -10px 30px rgba(28, 45, 59, 0.08);
+}
+
+.scorexpLightTheme .chatComposer textarea,
+.scorexpLightTheme .highlightCommentInput,
+.scorexpLightTheme .mobileSearchInput {
+  border-color: var(--sx-line);
+  background: #ffffff;
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .chatComposer textarea::placeholder,
+.scorexpLightTheme .highlightCommentInput input::placeholder,
+.scorexpLightTheme .mobileSearchInput input::placeholder {
+  color: #81919b;
+}
+
+.scorexpLightTheme .chatComposer textarea:focus,
+.scorexpLightTheme .highlightCommentInput:focus-within {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.scorexpLightTheme .chatComposer button,
+.scorexpLightTheme .highlightCommentInput button {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.scorexpLightTheme .chatNotice,
+.scorexpLightTheme .detailNotice,
+.scorexpLightTheme .atmosphereNotice {
+  border-color: var(--sx-line);
+  background: #f7fafc;
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .errorBanner,
+.scorexpLightTheme .detailNotice.error,
+.scorexpLightTheme .atmosphereNotice.error {
+  border-color: rgba(225, 29, 72, 0.28);
+  background: #fff1f3;
+  color: #be123c;
+}
+
+.scorexpLightTheme .matchAtmosphereOverlay,
+.scorexpLightTheme .matchAtmosphereShell {
+  background:
+    linear-gradient(180deg, rgba(221, 232, 239, 0.95), rgba(238, 243, 246, 0.99) 320px),
+    var(--sx-bg);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereTopbar {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.scorexpLightTheme .atmosphereBackButton,
+.scorexpLightTheme .atmosphereTopActions button,
+.scorexpLightTheme .atmosphereRail nav button,
+.scorexpLightTheme .atmosphereRail nav a,
+.scorexpLightTheme .atmosphereRailMetric {
+  border-color: var(--sx-line);
+  background: #ffffff;
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereBackButton:hover,
+.scorexpLightTheme .atmosphereTopActions button:hover,
+.scorexpLightTheme .atmosphereRail nav button:hover,
+.scorexpLightTheme .atmosphereRail nav button.active,
+.scorexpLightTheme .atmosphereRail nav a:hover {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #edf4ff;
+  color: #174ea6;
+}
+
+.scorexpLightTheme .atmosphereRail {
+  border-color: var(--sx-line);
+  background: #f8fbfd;
+}
+
+.scorexpLightTheme .atmosphereHero {
+  border-color: var(--sx-line);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.09), transparent 44%),
+    linear-gradient(135deg, #ffffff, #f3f8fb);
+}
+
+.scorexpLightTheme .atmosphereScoreStage {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--sx-shadow);
+}
+
+.scorexpLightTheme .atmosphereTabs {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.scorexpLightTheme .atmosphereTabs button {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmosphereTabs button.active {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--sx-accent);
+}
+
+.scorexpLightTheme .atmosphereLeagueTitle,
+.scorexpLightTheme .atmosphereScoreStage p,
+.scorexpLightTheme .atmosphereTeam span,
+.scorexpLightTheme .atmosphereSignalMetric span,
+.scorexpLightTheme .atmosphereInsight p,
+.scorexpLightTheme .atmosphereStatValues span,
+.scorexpLightTheme .atmosphereSummaryMetric span,
+.scorexpLightTheme .atmosphereFormChips em,
+.scorexpLightTheme .atmosphereMiniRow,
+.scorexpLightTheme .atmosphereStandingRow,
+.scorexpLightTheme .atmospherePlayerRow span,
+.scorexpLightTheme .atmosphereTimelineCard p,
+.scorexpLightTheme .atmosphereTimelineCard em,
+.scorexpLightTheme .atmosphereEmptyState {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmosphereLeagueTitle strong,
+.scorexpLightTheme .atmosphereTeam strong,
+.scorexpLightTheme .atmosphereScoreStage strong,
+.scorexpLightTheme .atmospherePanelTitle,
+.scorexpLightTheme .atmosphereAiPanel > strong,
+.scorexpLightTheme .atmosphereProbabilityBars span,
+.scorexpLightTheme .atmosphereProbabilityBars strong,
+.scorexpLightTheme .atmosphereInsight strong,
+.scorexpLightTheme .atmosphereStatTeams,
+.scorexpLightTheme .atmosphereStatValues,
+.scorexpLightTheme .atmosphereSummaryMetric strong,
+.scorexpLightTheme .atmosphereFormTitle,
+.scorexpLightTheme .atmospherePlayerTeam,
+.scorexpLightTheme .atmosphereMiniRow strong,
+.scorexpLightTheme .atmosphereStandingRow strong,
+.scorexpLightTheme .atmospherePlayerRow strong,
+.scorexpLightTheme .atmosphereTimelineCard strong {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereTimeline::before {
+  background: linear-gradient(180deg, transparent, #c8d8e2 10%, #c8d8e2 90%, transparent);
+}
+
+.scorexpLightTheme .atmosphereTimelineMinute {
+  border-color: var(--sx-line);
+  background: #ffffff;
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereStandingRow.highlighted {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.1), #ffffff 48%);
+}
+
+.scorexpLightTheme .highlightsOverlay {
+  background: rgba(235, 241, 245, 0.94);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .highlightsRail,
+.scorexpLightTheme .highlightsTopbar,
+.scorexpLightTheme .highlightReel {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(238, 243, 246, 0.98) 320px),
+    var(--sx-bg);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .highlightMetaPanel,
+.scorexpLightTheme .highlightComments,
+.scorexpLightTheme .highlightActions button,
+.scorexpLightTheme .highlightScrollDock,
+.scorexpLightTheme .highlightScrollMeter,
+.scorexpLightTheme .highlightVideoFrame,
+.scorexpLightTheme .highlightPoster {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--sx-text);
+  box-shadow: var(--sx-shadow);
+}
+
+.scorexpLightTheme .highlightsBrand strong,
+.scorexpLightTheme .highlightsTopbar strong,
+.scorexpLightTheme .highlightMetaPanel h2,
+.scorexpLightTheme .highlightComments > strong,
+.scorexpLightTheme .highlightsState strong,
+.scorexpLightTheme .favoriteNotificationToast strong,
+.scorexpLightTheme .installPromptText strong {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .highlightsBrand span:not(.brandMark),
+.scorexpLightTheme .highlightsTopbar span,
+.scorexpLightTheme .highlightMetaPanel p,
+.scorexpLightTheme .highlightSourceRow span,
+.scorexpLightTheme .highlightCommentList span,
+.scorexpLightTheme .highlightCommentList em,
+.scorexpLightTheme .highlightsState,
+.scorexpLightTheme .favoriteNotificationToast span,
+.scorexpLightTheme .installPromptText span {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .aiPredictionOverlay {
+  background: rgba(238, 243, 246, 0.72);
+}
+
+.scorexpLightTheme .aiModalHeader,
+.scorexpLightTheme .aiModalTeams {
+  border-color: var(--sx-line);
+  background: #ffffff;
+}
+
+.scorexpLightTheme .aiModalHeader > span,
+.scorexpLightTheme .aiModalResult > span,
+.scorexpLightTheme .aiModalTeams strong,
+.scorexpLightTheme .aiModalAnalysis p,
+.scorexpLightTheme .aiModalResult strong,
+.scorexpLightTheme .aiModalBars span,
+.scorexpLightTheme .aiModalBars b {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .aiModalResult p {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .aiModalBars div,
+.scorexpLightTheme .aiModalProgress {
+  border-color: var(--sx-line);
+  background: #f5f9fb;
+}
+
+.scorexpLightTheme .scrollTopButton {
+  border-color: var(--sx-line-strong);
+  background: #ffffff;
+  color: var(--sx-text);
+  box-shadow: var(--sx-shadow);
+}
+
+/* Keep the real site header untouched in both modes. */
+.scorexpLightTheme .siteHeader {
+  background: #090d0f !important;
+  border-top-color: #343a3d !important;
+  border-bottom-color: #252d31 !important;
+  color: #f4f8fa !important;
+}
+
+.scorexpLightTheme .siteHeader .brand {
+  color: #f2f7f9;
+}
+
+.scorexpLightTheme .siteHeader .brandMark {
+  background: #f5f8fa;
+  color: #0b1012;
+}
+
+.scorexpLightTheme .siteHeader .headerSearch,
+.scorexpLightTheme .siteHeader .mobileSearchInput {
+  border-color: transparent;
+  background: #22292e;
+  color: #cbd4d8;
+  box-shadow: none;
+}
+
+.scorexpLightTheme .siteHeader .headerSearch input,
+.scorexpLightTheme .siteHeader .mobileSearchInput input {
+  color: #e8eff2;
+}
+
+.scorexpLightTheme .siteHeader .headerSearch input::placeholder,
+.scorexpLightTheme .siteHeader .mobileSearchInput input::placeholder {
+  color: #9faab0;
+}
+
+.scorexpLightTheme .siteHeader .headerIcon,
+.scorexpLightTheme .siteHeader .newsButton,
+.scorexpLightTheme .siteHeader .mobileHeaderIcon,
+.scorexpLightTheme .siteHeader .sportItem {
+  border-color: transparent;
+  background: transparent;
+  color: #f0f4f6;
+  box-shadow: none;
+}
+
+.scorexpLightTheme .siteHeader .headerIcon:hover,
+.scorexpLightTheme .siteHeader .mobileHeaderIcon:hover,
+.scorexpLightTheme .siteHeader .mobileHeaderIcon[aria-expanded="true"],
+.scorexpLightTheme .siteHeader .sportItem:hover,
+.scorexpLightTheme .siteHeader .sportItem.active {
+  border-color: rgba(138, 145, 255, 0.28);
+  background: #151b1f;
+  color: #ffffff;
+}
+
+.scorexpLightTheme .siteHeader .themeHeaderIcon[aria-pressed="true"] {
+  color: #f8d77a;
+}
+
+.scorexpLightTheme .siteHeader .sportItem.active::before {
+  background: #22292e;
+}
+
+.scorexpLightTheme .siteHeader .sportItem::after,
+.scorexpLightTheme .siteHeader .sportItem.active::after {
+  background: #7680ff;
+}
+
+.scorexpLightTheme .siteHeader .sportBadge,
+.scorexpLightTheme .siteHeader .mobileSportsMenu strong {
+  background: #171d20;
+  color: #f7fbfd;
+}
+
+.scorexpLightTheme .siteHeader .sportsMenu,
+.scorexpLightTheme .siteHeader .mobileSportsMenu,
+.scorexpLightTheme .siteHeader .mobileProfileMenu,
+.scorexpLightTheme .siteHeader .mobileSearchPanel {
+  border-color: #26343a;
+  background: #0e1518;
+  color: #eaf2f5;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.scorexpLightTheme .siteHeader .sportsMenu button,
+.scorexpLightTheme .siteHeader .mobileSportsMenu button,
+.scorexpLightTheme .siteHeader .mobileProfileMenu button {
+  border-color: #26343a;
+  background: #11171a;
+  color: #eaf2f5;
+}
+
+.scorexpLightTheme .siteHeader .sportsMenu button.active,
+.scorexpLightTheme .siteHeader .sportsMenu button:hover,
+.scorexpLightTheme .siteHeader .mobileSportsMenu button.active,
+.scorexpLightTheme .siteHeader .mobileSportsMenu button:hover,
+.scorexpLightTheme .siteHeader .mobileProfileMenu button:hover {
+  border-color: #5a65df;
+  background: #171d3b;
+  color: #ffffff;
+}
+
+.scorexpLightTheme .siteHeader .mobileSportsMenu strong,
+.scorexpLightTheme .siteHeader .mobileSportSelectButton strong {
+  background: #edf5f7;
+  color: #0b1113;
+}
+
+@media (max-width: 760px) {
+  body.scorexpLightTheme {
+    background: var(--sx-bg) !important;
+  }
+
+  .scorexpLightTheme .appShell,
+  .scorexpLightTheme .scorePanel,
+  .scorexpLightTheme .leagueStack {
+    background: var(--sx-bg);
+  }
+
+  .scorexpLightTheme .scorePanel,
+  .scorexpLightTheme .leagueCard,
+  .scorexpLightTheme .matchDetailPane {
+    box-shadow: none;
+  }
+
+  .scorexpLightTheme .filters {
+    border-color: rgba(184, 200, 210, 0.9);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 16px 44px rgba(28, 45, 59, 0.14);
+  }
+
+  .scorexpLightTheme .chip {
+    color: var(--sx-muted);
+  }
+
+  .scorexpLightTheme .chip.active,
+  .scorexpLightTheme .chip:active {
+    background: #edf4ff;
+    color: #0f172a;
+  }
+
+  .scorexpLightTheme .chip.liveChip.active {
+    background: var(--sx-live);
+    color: #ffffff;
+  }
+
+  .scorexpLightTheme .atmosphereTabs {
+    border-color: var(--sx-line);
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive,
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive .atmosphereChatSection,
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive .matchChatRoom.embedded {
+    background: var(--sx-bg) !important;
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive .chatMessages {
+    background: var(--sx-chat-bg);
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive .chatComposerWrap,
+  .scorexpLightTheme .routeDetailPage .matchDetailPane[data-active-tab="chat"] .chatComposerWrap {
+    border-top-color: var(--sx-line);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 -10px 28px rgba(28, 45, 59, 0.1);
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.chatTabActive .chatComposer textarea,
+  .scorexpLightTheme .routeDetailPage .matchDetailPane[data-active-tab="chat"] .chatComposer textarea {
+    border-color: var(--sx-line);
+    background: #ffffff;
+    color: var(--sx-text);
+  }
+
+  .scorexpLightTheme .routeDetailPage .matchDetailPane[data-active-tab="chat"] {
+    background: var(--sx-bg) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .matchRow,
   .chip,

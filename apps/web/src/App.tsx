@@ -62,8 +62,10 @@ type MatchRoute =
   | { kind: "list" }
   | { kind: "detail"; slug: string }
   | { kind: "atmosphere"; slug: string };
+type ColorMode = "dark" | "light";
 
 const atmosphereRouteSuffix = "-mac-atmosferi";
+const colorModeStorageKey = "scorexp:colorMode";
 
 const defaultPinnedLeagues = [
   { countries: ["turkey", "turkiye", "türkiye"], leagues: ["super lig", "süper lig"] },
@@ -92,6 +94,7 @@ export default function App() {
   const [route, setRoute] = useState<MatchRoute>(() => readRouteFromLocation());
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [colorMode, setColorMode] = useState<ColorMode>(() => readColorMode());
   const desktopLayout = useDesktopLayout();
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
@@ -177,9 +180,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const lightMode = colorMode === "light";
+    const pageColor = lightMode ? "#eef3f6" : "#0c1113";
     const themeColor = "#090d0f";
-    document.documentElement.style.backgroundColor = "#0c1113";
-    document.body.style.backgroundColor = "#0c1113";
+
+    document.documentElement.classList.toggle("scorexpLightTheme", lightMode);
+    document.documentElement.classList.toggle("scorexpDarkTheme", !lightMode);
+    document.body.classList.toggle("scorexpLightTheme", lightMode);
+    document.body.classList.toggle("scorexpDarkTheme", !lightMode);
+    document.documentElement.dataset.scorexpTheme = colorMode;
+    document.body.dataset.scorexpTheme = colorMode;
+    document.documentElement.style.backgroundColor = pageColor;
+    document.body.style.backgroundColor = pageColor;
+    document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
+
+    try {
+      window.localStorage.setItem(colorModeStorageKey, colorMode);
+    } catch {
+      // Storage can be unavailable in private modes.
+    }
 
     const metas = [
       document.querySelector('meta[name="theme-color"]'),
@@ -190,7 +209,7 @@ export default function App() {
     for (const meta of metas) {
       meta.setAttribute("content", themeColor);
     }
-  }, []);
+  }, [colorMode]);
 
   useEffect(() => {
     if (!allMatches.length) return;
@@ -502,6 +521,7 @@ export default function App() {
     setRoute(nextRoute);
     writeRouteToHistory(nextRoute, "replace");
   };
+  const toggleColorMode = () => setColorMode((mode) => (mode === "dark" ? "light" : "dark"));
 
   const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
   const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel);
@@ -517,7 +537,12 @@ export default function App() {
 
   return (
     <div className={rootClassName}>
-      <SiteHeader footballCount={counts.all} onOpenHighlights={() => setHighlightsOpen(true)} />
+      <SiteHeader
+        footballCount={counts.all}
+        colorMode={colorMode}
+        onToggleColorMode={toggleColorMode}
+        onOpenHighlights={() => setHighlightsOpen(true)}
+      />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canlı skorlar">
           <header className="topNav dateOnly">
@@ -660,6 +685,8 @@ export default function App() {
             onClose={closeMatchDetail}
             onReload={detailState.reload}
             onOpenAtmosphere={openAtmosphere}
+            colorMode={colorMode}
+            onToggleColorMode={toggleColorMode}
             chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" /> : undefined}
           />
         ) : null}
@@ -678,6 +705,8 @@ export default function App() {
           onRequestClose={closeAtmosphere}
           backLabel="Maç detayı"
           onReload={detailState.reload}
+          colorMode={colorMode}
+          onToggleColorMode={toggleColorMode}
         />
       ) : null}
 
@@ -733,6 +762,14 @@ function readFavorites() {
     return new Set<string>(JSON.parse(localStorage.getItem("scorexp:favorites") ?? "[]"));
   } catch {
     return new Set<string>();
+  }
+}
+
+function readColorMode(): ColorMode {
+  try {
+    return window.localStorage.getItem(colorModeStorageKey) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
   }
 }
 

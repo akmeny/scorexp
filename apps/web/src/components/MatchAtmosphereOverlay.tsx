@@ -9,9 +9,11 @@ import {
   ListOrdered,
   MapPin,
   MessageCircle,
+  Moon,
   RefreshCw,
   Shield,
   Sparkles,
+  Sun,
   Target,
   Trophy,
   UsersRound,
@@ -44,6 +46,8 @@ interface MatchAtmosphereOverlayProps {
   error: string | null;
   onRequestClose: () => void;
   onReload: () => void;
+  colorMode?: "dark" | "light";
+  onToggleColorMode?: () => void;
   backLabel?: string;
 }
 
@@ -85,6 +89,8 @@ export function MatchAtmosphereOverlay({
   error,
   onRequestClose,
   onReload,
+  colorMode = "dark",
+  onToggleColorMode,
   backLabel = "Maç listesi"
 }: MatchAtmosphereOverlayProps) {
   const [activeTab, setActiveTab] = useState<AtmosphereTab>("overview");
@@ -98,6 +104,8 @@ export function MatchAtmosphereOverlay({
   const h2hSummary = useMemo(() => summarizeResults(h2hMatches, activeMatch.homeTeam, activeMatch.awayTeam), [activeMatch, h2hMatches]);
   const homeStanding = useMemo(() => findStandingRow(detail?.standings ?? null, activeMatch.homeTeam.id), [activeMatch.homeTeam.id, detail?.standings]);
   const awayStanding = useMemo(() => findStandingRow(detail?.standings ?? null, activeMatch.awayTeam.id), [activeMatch.awayTeam.id, detail?.standings]);
+  const ThemeIcon = colorMode === "dark" ? Sun : Moon;
+  const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
 
   useEffect(() => {
     setActiveTab("overview");
@@ -161,6 +169,18 @@ export function MatchAtmosphereOverlay({
           </div>
 
           <div className="atmosphereTopActions">
+            {onToggleColorMode ? (
+              <button
+                className="atmosphereThemeButton themeHeaderIcon"
+                type="button"
+                aria-label={themeToggleLabel}
+                aria-pressed={colorMode === "light"}
+                title={themeToggleLabel}
+                onClick={onToggleColorMode}
+              >
+                <ThemeIcon size={17} />
+              </button>
+            ) : null}
             <button type="button" aria-label="Atmosferi yenile" onClick={onReload}>
               <RefreshCw className={refreshing ? "syncSpin" : undefined} size={17} />
             </button>

@@ -14,8 +14,32 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+installStoredColorModeClass();
 installViewportGeometryVars();
 installMobileInteractionGuards();
+
+function installStoredColorModeClass() {
+  if (typeof window === "undefined") return;
+
+  let colorMode: "dark" | "light" = "dark";
+  try {
+    colorMode = window.localStorage.getItem("scorexp:colorMode") === "light" ? "light" : "dark";
+  } catch {
+    colorMode = "dark";
+  }
+
+  const lightMode = colorMode === "light";
+  document.documentElement.classList.toggle("scorexpLightTheme", lightMode);
+  document.documentElement.classList.toggle("scorexpDarkTheme", !lightMode);
+  document.documentElement.dataset.scorexpTheme = colorMode;
+  document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
+
+  if (document.body) {
+    document.body.classList.toggle("scorexpLightTheme", lightMode);
+    document.body.classList.toggle("scorexpDarkTheme", !lightMode);
+    document.body.dataset.scorexpTheme = colorMode;
+  }
+}
 
 function installViewportGeometryVars() {
   if (typeof window === "undefined") return;

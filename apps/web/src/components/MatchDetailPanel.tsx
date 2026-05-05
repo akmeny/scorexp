@@ -7,9 +7,11 @@ import {
   CloudSun,
   ListOrdered,
   MapPin,
+  Moon,
   RefreshCw,
   Sparkles,
   Square,
+  Sun,
   Target,
   Trophy,
   UserRound,
@@ -40,6 +42,8 @@ interface MatchDetailPanelProps {
   onClose: () => void;
   onReload: () => void;
   onOpenAtmosphere: () => void;
+  colorMode?: "dark" | "light";
+  onToggleColorMode?: () => void;
   chatSlot?: ReactNode;
 }
 
@@ -97,6 +101,8 @@ export function MatchDetailPanel({
   onClose,
   onReload,
   onOpenAtmosphere,
+  colorMode = "dark",
+  onToggleColorMode,
   chatSlot
 }: MatchDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>("details");
@@ -109,6 +115,8 @@ export function MatchDetailPanel({
   const visibleTabs = useMemo(() => buildTabs(activeMatch, detail, statisticRows.length, hasChatTab), [activeMatch, detail, statisticRows.length, hasChatTab]);
   const aiResult = useMemo(() => buildAiResult(activeMatch, detail, prediction), [activeMatch, detail, prediction]);
   const tabStyle = { "--tab-count": visibleTabs.length } as CSSProperties;
+  const ThemeIcon = colorMode === "dark" ? Sun : Moon;
+  const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
 
   useEffect(() => {
     setTab("details");
@@ -168,6 +176,18 @@ export function MatchDetailPanel({
           </div>
         </div>
         <div className="detailTopActions">
+          {onToggleColorMode ? (
+            <button
+              className="iconButton detailThemeButton themeHeaderIcon"
+              type="button"
+              aria-label={themeToggleLabel}
+              aria-pressed={colorMode === "light"}
+              title={themeToggleLabel}
+              onClick={onToggleColorMode}
+            >
+              <ThemeIcon size={17} />
+            </button>
+          ) : null}
           <button className="iconButton" type="button" aria-label="Detayı yenile" onClick={onReload}>
             <RefreshCw className={refreshing ? "syncSpin" : undefined} size={17} />
           </button>

@@ -4,7 +4,9 @@ import {
   Newspaper,
   Search,
   Settings,
+  Moon,
   Star,
+  Sun,
   Zap,
   X
 } from "lucide-react";
@@ -14,6 +16,8 @@ import { useEffect, useRef, useState } from "react";
 
 interface SiteHeaderProps {
   footballCount: number;
+  colorMode: "dark" | "light";
+  onToggleColorMode: () => void;
   onOpenHighlights: () => void;
 }
 
@@ -52,7 +56,7 @@ const overflowSports = [
   "Bandy"
 ];
 
-export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps) {
+export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpenHighlights }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSportsOpen, setMobileSportsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -91,6 +95,8 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
   const selectedMobileSport = mobileSports.find((sport) => sport.label === selectedSportLabel) ?? mobileSports[0];
   const SelectedMobileSportIcon = selectedMobileSport.icon;
   const hasSelectedOverflowSport = overflowSports.includes(selectedSportLabel);
+  const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
+  const ThemeIcon = colorMode === "dark" ? Sun : Moon;
 
   const selectSport = (label: string) => {
     setSelectedSportLabel(label);
@@ -224,6 +230,21 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
           >
             <CircleUserRound size={20} />
           </button>
+          <button
+            className="mobileHeaderIcon themeHeaderIcon"
+            type="button"
+            aria-label={themeToggleLabel}
+            aria-pressed={colorMode === "light"}
+            title={themeToggleLabel}
+            onClick={() => {
+              setMobileSportsOpen(false);
+              setMobileSearchOpen(false);
+              setProfileMenuOpen(false);
+              onToggleColorMode();
+            }}
+          >
+            <ThemeIcon size={19} />
+          </button>
 
           {mobileSportsOpen ? (
             <div className="mobileSportsMenu" role="listbox" aria-label="Spor dalları">
@@ -272,6 +293,16 @@ export function SiteHeader({ footballCount, onOpenHighlights }: SiteHeaderProps)
           </button>
           <button className="headerIcon" type="button" aria-label="Ayarlar">
             <Settings size={20} />
+          </button>
+          <button
+            className="headerIcon themeHeaderIcon"
+            type="button"
+            aria-label={themeToggleLabel}
+            aria-pressed={colorMode === "light"}
+            title={themeToggleLabel}
+            onClick={onToggleColorMode}
+          >
+            <ThemeIcon size={20} />
           </button>
         </div>
       </div>
