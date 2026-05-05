@@ -14,7 +14,32 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+installViewportGeometryVars();
 installMobileInteractionGuards();
+
+function installViewportGeometryVars() {
+  if (typeof window === "undefined") return;
+
+  const root = document.documentElement;
+  const update = () => {
+    const viewport = window.visualViewport;
+    const width = viewport?.width ?? window.innerWidth;
+    const height = viewport?.height ?? window.innerHeight;
+    const offsetTop = viewport?.offsetTop ?? 0;
+    const keyboardInset = Math.max(0, window.innerHeight - height - offsetTop);
+
+    root.style.setProperty("--scorexp-visual-viewport-width", `${width}px`);
+    root.style.setProperty("--scorexp-visual-viewport-height", `${height}px`);
+    root.style.setProperty("--scorexp-keyboard-inset", `${keyboardInset}px`);
+    root.classList.toggle("scorexpKeyboardOpen", keyboardInset > 80);
+  };
+
+  update();
+  window.addEventListener("resize", update, { passive: true });
+  window.addEventListener("orientationchange", update);
+  window.visualViewport?.addEventListener("resize", update, { passive: true });
+  window.visualViewport?.addEventListener("scroll", update, { passive: true });
+}
 
 function installMobileInteractionGuards() {
   if (typeof window === "undefined") return;

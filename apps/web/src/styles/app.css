@@ -8008,29 +8008,76 @@ body,
 }
 
 @media (max-width: 760px) {
+  html.scorexpDetailChatActive,
+  body.scorexpDetailChatActive {
+    height: var(--scorexp-visual-viewport-height, 100dvh) !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
+  body.scorexpDetailChatActive {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    padding-bottom: 0 !important;
+  }
+
   body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] {
-    padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 78px));
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 94 !important;
+    width: 100% !important;
+    height: var(--scorexp-visual-viewport-height, 100dvh) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+    background: #0a1114;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailTop,
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailScoreHero,
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailAtmosphereAction,
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailNotice,
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailTabs {
+    flex: 0 0 auto;
+  }
+
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailTop,
+  body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailTabs {
+    position: relative;
+    top: auto;
   }
 
   body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .detailChatContent {
-    padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 78px));
+    min-height: 0;
+    flex: 1 1 auto;
+    display: grid;
+    overflow: hidden;
+    padding: 0;
   }
 
   body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .matchChatRoom.embedded {
-    min-height: min(62dvh, 520px);
-    height: auto;
+    position: relative;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: auto minmax(0, 1fr);
     border-right: 0;
     border-left: 0;
     border-radius: 0;
   }
 
   body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .chatMessages {
-    min-height: min(46dvh, 420px);
+    min-height: 0;
+    height: auto;
     padding-bottom: max(108px, calc(env(safe-area-inset-bottom) + 88px));
   }
 
   body.scorexpRoutePage .routeDetailPage .matchDetailPane[data-active-tab="chat"] .chatComposerWrap {
-    position: fixed;
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;

@@ -123,6 +123,17 @@ export function MatchDetailPanel({
   }, [tab, visibleTabs]);
 
   useEffect(() => {
+    const active = Boolean(chatSlot && tab === "chat");
+    document.documentElement.classList.toggle("scorexpDetailChatActive", active);
+    document.body.classList.toggle("scorexpDetailChatActive", active);
+
+    return () => {
+      document.documentElement.classList.remove("scorexpDetailChatActive");
+      document.body.classList.remove("scorexpDetailChatActive");
+    };
+  }, [chatSlot, tab]);
+
+  useEffect(() => {
     if (aiStatus !== "analyzing") return;
 
     const interval = window.setInterval(() => {
