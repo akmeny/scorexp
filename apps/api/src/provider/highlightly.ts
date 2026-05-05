@@ -59,48 +59,60 @@ export class HighlightlyClient {
 
   async getMatchesByDate(date: string, timezone: string): Promise<HighlightlyFetchResult> {
     const limit = 100;
-    let offset = 0;
-    let totalCount = Number.POSITIVE_INFINITY;
-    let requestCount = 0;
-    let rateLimit = { limit: null as string | null, remaining: null as string | null };
-    const matches: ProviderMatch[] = [];
+    const firstPage = await this.getMatchesPage(date, timezone, limit, 0);
+    const totalCount = firstPage.totalCount ?? firstPage.matches.length;
+    const remainingOffsets = [];
 
-    while (offset < totalCount) {
-      const url = new URL(`${this.appEnv.highlightlyApiBaseUrl}/matches`);
-      url.searchParams.set("date", date);
-      url.searchParams.set("timezone", timezone);
-      url.searchParams.set("limit", String(limit));
-      url.searchParams.set("offset", String(offset));
-
-      const response = await fetch(url, {
-        headers: {
-          "x-rapidapi-key": this.appEnv.highlightlyApiKey
-        },
-        signal: AbortSignal.timeout(30_000)
-      });
-
-      requestCount += 1;
-      rateLimit = {
-        limit: response.headers.get("x-ratelimit-requests-limit"),
-        remaining: response.headers.get("x-ratelimit-requests-remaining")
-      };
-
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(`Highlightly /matches failed (${response.status}): ${body.slice(0, 400)}`);
-      }
-
-      const payload = (await response.json()) as MatchesResponse;
-      const page = payload.data ?? [];
-      matches.push(...page);
-
-      totalCount = payload.pagination?.totalCount ?? matches.length;
-      offset += page.length;
-
-      if (page.length === 0 || page.length < limit) break;
+    for (let offset = limit; offset < totalCount; offset += limit) {
+      remainingOffsets.push(offset);
     }
 
-    return { matches, requestCount, rateLimit };
+    const remainingPages =
+      remainingOffsets.length > 0
+        ? await mapWithConcurrency(remainingOffsets, 4, (offset) => this.getMatchesPage(date, timezone, limit, offset))
+        : [];
+    const pages = [firstPage, ...remainingPages].sort((a, b) => a.offset - b.offset);
+    const lastPage = pages[pages.length - 1] ?? firstPage;
+
+    return {
+      matches: pages.flatMap((page) => page.matches),
+      requestCount: pages.length,
+      rateLimit: lastPage.rateLimit
+    };
+  }
+
+  private async getMatchesPage(date: string, timezone: string, limit: number, offset: number) {
+    const url = new URL(`${this.appEnv.highlightlyApiBaseUrl}/matches`);
+    url.searchParams.set("date", date);
+    url.searchParams.set("timezone", timezone);
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("offset", String(offset));
+
+    const response = await fetch(url, {
+      headers: {
+        "x-rapidapi-key": this.appEnv.highlightlyApiKey
+      },
+      signal: AbortSignal.timeout(30_000)
+    });
+
+    const rateLimit = {
+      limit: response.headers.get("x-ratelimit-requests-limit"),
+      remaining: response.headers.get("x-ratelimit-requests-remaining")
+    };
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Highlightly /matches failed (${response.status}): ${body.slice(0, 400)}`);
+    }
+
+    const payload = (await response.json()) as MatchesResponse;
+
+    return {
+      matches: payload.data ?? [],
+      totalCount: payload.pagination?.totalCount,
+      offset: payload.pagination?.offset ?? offset,
+      rateLimit
+    };
   }
 
   async getMatchById(id: string): Promise<HighlightlyMatchDetailResult> {
@@ -216,4 +228,21 @@ export class HighlightlyClient {
 
     return (await response.json()) as T;
   }
+}
+
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>) {
+  const results: R[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const currentIndex = index;
+      index += 1;
+      results[currentIndex] = await mapper(items[currentIndex]);
+    }
+  }
+
+  const workerCount = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }

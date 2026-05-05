@@ -29,8 +29,8 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
-const LIVE_REFRESH_SECONDS = 100;
 const HIGHLIGHTS_REFRESH_SECONDS = 60;
+const STALE_CLIENT_RETRY_SECONDS = 10;
 
 interface ScoreboardQuery {
   date: string;
@@ -53,6 +53,7 @@ interface HighlightsQuery {
 export class ScoreboardService {
   private readonly inFlight = new Map<string, Promise<SnapshotCacheEntry>>();
   private readonly detailInFlight = new Map<string, Promise<MatchDetailCacheEntry>>();
+  private readonly cardEnrichmentInFlight = new Map<string, Promise<void>>();
 
   constructor(
     private readonly appEnv: AppEnv,
@@ -83,17 +84,14 @@ export class ScoreboardService {
       return filterSnapshot(durable.snapshot, query.view);
     }
 
-    try {
-      const fresh = await this.refresh(key, query.date, query.timezone);
-      return filterSnapshot(fresh.snapshot, query.view);
-    } catch (error) {
-      const staleFallback = cached ?? durable;
-      if (staleFallback) {
-        return filterSnapshot(staleFallback.snapshot, query.view);
-      }
-
-      throw error;
+    const staleFallback = cached ?? durable;
+    if (staleFallback) {
+      this.queueRefresh(key, query.date, query.timezone);
+      return filterSnapshot(markSnapshotRefreshing(staleFallback.snapshot), query.view);
     }
+
+    const fresh = await this.refresh(key, query.date, query.timezone);
+    return filterSnapshot(fresh.snapshot, query.view);
   }
 
   async getMatchDetail(query: MatchDetailQuery): Promise<MatchDetail> {
@@ -184,12 +182,15 @@ export class ScoreboardService {
     return promise;
   }
 
+  private queueRefresh(key: string, date: string, timezone: string): void {
+    void this.refresh(key, date, timezone).catch(() => undefined);
+  }
+
   private async fetchAndBuild(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {
     const fetchedAt = new Date().toISOString();
     const response = await this.highlightly.getMatchesByDate(date, timezone);
     const normalized = response.matches.map((match) => normalizeMatch(match, timezone, fetchedAt));
-    const cardEnrichment = await this.enrichLiveMatchCards(normalized, timezone, fetchedAt);
-    const incoming = cardEnrichment.matches;
+    const incoming = normalized;
     const persistedFinished = await this.store.getFinishedMatches(key);
     const merged = mergePersistedFinished(incoming, persistedFinished);
     const newlyFinished = merged.filter((match) => match.status.group === "finished");
@@ -201,11 +202,12 @@ export class ScoreboardService {
       snapshot,
       fetchedAt,
       expiresAt: snapshot.expiresAt,
-      providerRequestCount: response.requestCount + cardEnrichment.requestCount
+      providerRequestCount: response.requestCount
     };
 
     await this.cache.set(key, entry, ttlFromEntry(entry));
     await this.store.saveSnapshot(key, entry);
+    this.queueLiveCardEnrichment(key, timezone, entry);
 
     const isPast = isBeforeLocalDate(date, timezone);
     const canLockDate = isPast && merged.every((match) => match.status.group === "finished");
@@ -214,6 +216,43 @@ export class ScoreboardService {
     }
 
     return entry;
+  }
+
+  private queueLiveCardEnrichment(key: string, timezone: string, baseEntry: SnapshotCacheEntry): void {
+    if (!baseEntry.snapshot.leagues.some((league) => league.counts.live > 0)) return;
+    if (this.cardEnrichmentInFlight.has(key)) return;
+
+    const promise = this.enrichAndPersistLiveMatchCards(key, timezone, baseEntry).finally(() => {
+      this.cardEnrichmentInFlight.delete(key);
+    });
+
+    this.cardEnrichmentInFlight.set(key, promise);
+    void promise.catch(() => undefined);
+  }
+
+  private async enrichAndPersistLiveMatchCards(
+    key: string,
+    timezone: string,
+    baseEntry: SnapshotCacheEntry
+  ): Promise<void> {
+    const matches = baseEntry.snapshot.leagues.flatMap((league) => league.matches);
+    const cardEnrichment = await this.enrichLiveMatchCards(matches, timezone, baseEntry.fetchedAt);
+
+    if (cardEnrichment.requestCount === 0) return;
+
+    const current = await this.cache.get<SnapshotCacheEntry>(key);
+    if (!current || current.fetchedAt !== baseEntry.fetchedAt) return;
+
+    const snapshot = this.buildSnapshot(baseEntry.snapshot.date, timezone, cardEnrichment.matches, baseEntry.fetchedAt);
+    const entry: SnapshotCacheEntry = {
+      snapshot,
+      fetchedAt: baseEntry.fetchedAt,
+      expiresAt: snapshot.expiresAt,
+      providerRequestCount: baseEntry.providerRequestCount + cardEnrichment.requestCount
+    };
+
+    await this.cache.set(key, entry, ttlFromEntry(entry));
+    await this.store.saveSnapshot(key, entry);
   }
 
   private async enrichLiveMatchCards(matches: NormalizedMatch[], timezone: string, fetchedAt: string) {
@@ -378,7 +417,7 @@ export class ScoreboardService {
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
     const providerRefreshSeconds =
       reason === "live"
-        ? LIVE_REFRESH_SECONDS
+        ? this.appEnv.liveRefreshSeconds
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -386,7 +425,7 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: reason === "live" ? LIVE_REFRESH_SECONDS : this.appEnv.clientRefreshSeconds,
+      clientRefreshSeconds: reason === "live" ? this.appEnv.liveRefreshSeconds : this.appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
@@ -395,7 +434,7 @@ export class ScoreboardService {
     const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
     const providerRefreshSeconds =
       reason === "live"
-        ? LIVE_REFRESH_SECONDS
+        ? this.appEnv.liveRefreshSeconds
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -478,6 +517,20 @@ function lockSnapshot(snapshot: ScoreboardSnapshot, appEnv: AppEnv): ScoreboardS
       providerRefreshSeconds: appEnv.finishedRefreshSeconds,
       clientRefreshSeconds: appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: snapshot.expiresAt
+    }
+  };
+}
+
+function markSnapshotRefreshing(snapshot: ScoreboardSnapshot): ScoreboardSnapshot {
+  const retryAt = addSeconds(new Date(), STALE_CLIENT_RETRY_SECONDS).toISOString();
+
+  return {
+    ...snapshot,
+    expiresAt: retryAt,
+    refreshPolicy: {
+      ...snapshot.refreshPolicy,
+      clientRefreshSeconds: Math.min(snapshot.refreshPolicy.clientRefreshSeconds, STALE_CLIENT_RETRY_SECONDS),
+      nextProviderRefreshAt: retryAt
     }
   };
 }

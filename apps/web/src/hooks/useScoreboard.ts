@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchScoreboard } from "../lib/api";
 import type { ScoreboardSnapshot, ScoreboardView } from "../types";
 
+const SCOREBOARD_CACHE_PREFIX = "scorexp:scoreboard";
+const SCOREBOARD_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
 interface UseScoreboardState {
   data: ScoreboardSnapshot | null;
   loading: boolean;
@@ -11,12 +14,17 @@ interface UseScoreboardState {
 }
 
 export function useScoreboard(date: string, timezone: string, view: ScoreboardView): UseScoreboardState {
-  const [data, setData] = useState<ScoreboardSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialSnapshotRef = useRef<ScoreboardSnapshot | null | undefined>(undefined);
+  if (initialSnapshotRef.current === undefined) {
+    initialSnapshotRef.current = readCachedScoreboard(date, timezone, view);
+  }
+
+  const [data, setData] = useState<ScoreboardSnapshot | null>(() => initialSnapshotRef.current ?? null);
+  const [loading, setLoading] = useState(() => !initialSnapshotRef.current);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const etagRef = useRef<string | null>(null);
-  const dataRef = useRef<ScoreboardSnapshot | null>(null);
+  const dataRef = useRef<ScoreboardSnapshot | null>(initialSnapshotRef.current ?? null);
   const abortRef = useRef<AbortController | null>(null);
   const requestKey = `${date}:${timezone}:${view}`;
 
@@ -40,6 +48,7 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
         if (result.etag) etagRef.current = result.etag;
         const nextSnapshot = result.snapshot;
         if (nextSnapshot) {
+          writeCachedScoreboard(nextSnapshot);
           setData((current) => {
             if (current && current.checksum === nextSnapshot.checksum && current.view === nextSnapshot.view) {
               dataRef.current = current;
@@ -68,7 +77,18 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
 
   useEffect(() => {
     etagRef.current = null;
-    void load(false);
+    const cached = readCachedScoreboard(date, timezone, view);
+
+    if (cached) {
+      dataRef.current = cached;
+      setData(cached);
+      setLoading(false);
+      void load(true);
+    } else {
+      dataRef.current = null;
+      setData(null);
+      void load(false);
+    }
 
     return () => abortRef.current?.abort();
   }, [load, requestKey]);
@@ -89,4 +109,42 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
     error,
     reload: () => void load(true)
   };
+}
+
+function readCachedScoreboard(date: string, timezone: string, view: ScoreboardView): ScoreboardSnapshot | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(scoreboardCacheKey(date, timezone, view));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as { savedAt?: number; snapshot?: ScoreboardSnapshot };
+    if (!parsed.snapshot || typeof parsed.savedAt !== "number") return null;
+    if (Date.now() - parsed.savedAt > SCOREBOARD_CACHE_MAX_AGE_MS) return null;
+    if (parsed.snapshot.date !== date || parsed.snapshot.timezone !== timezone || parsed.snapshot.view !== view) return null;
+
+    return parsed.snapshot;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedScoreboard(snapshot: ScoreboardSnapshot): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      scoreboardCacheKey(snapshot.date, snapshot.timezone, snapshot.view),
+      JSON.stringify({
+        savedAt: Date.now(),
+        snapshot
+      })
+    );
+  } catch {
+    // Storage can be unavailable in private modes or when the quota is full.
+  }
+}
+
+function scoreboardCacheKey(date: string, timezone: string, view: ScoreboardView) {
+  return `${SCOREBOARD_CACHE_PREFIX}:${date}:${timezone}:${view}`;
 }

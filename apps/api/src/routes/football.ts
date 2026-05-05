@@ -40,7 +40,7 @@ export async function registerFootballRoutes(app: FastifyInstance, service: Scor
     const snapshot = await service.getScoreboard({ date, timezone, view });
     const etag = `"${snapshot.checksum}:${snapshot.view}"`;
 
-    reply.header("Cache-Control", "no-store");
+    reply.header("Cache-Control", "public, max-age=5, stale-while-revalidate=30");
     reply.header("ETag", etag);
 
     if (request.headers["if-none-match"] === etag) {
