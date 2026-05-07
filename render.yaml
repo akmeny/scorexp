@@ -44,9 +44,9 @@ services:
       - key: CLIENT_REFRESH_SECONDS
         value: 100
       - key: SUPABASE_URL
-        sync: false
+        value: https://mpysngxgbfiquhwfplag.supabase.co
       - key: SUPABASE_ANON_KEY
-        sync: false
+        value: sb_publishable_uO8hvTlCUL21OBOCNvzOdQ_-CE-NWLA
 
   - type: keyvalue
     name: scorexp-cache
