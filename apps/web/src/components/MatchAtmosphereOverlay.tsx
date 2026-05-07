@@ -114,6 +114,7 @@ export function MatchAtmosphereOverlay({
   const awayStanding = useMemo(() => findStandingRow(detail?.standings ?? null, activeMatch.awayTeam.id), [activeMatch.awayTeam.id, detail?.standings]);
   const ThemeIcon = colorMode === "dark" ? Sun : Moon;
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
+  const compactScoreline = formatCompactScoreline(activeMatch);
 
   useEffect(() => {
     setActiveTab("overview");
@@ -272,9 +273,10 @@ export function MatchAtmosphereOverlay({
 
           <main className="atmosphereScroll" ref={scrollContainerRef}>
             <div className="atmosphereCompactHero" aria-hidden={!chatHeroCompact}>
-              <div className="atmosphereCompactHeroInner">
+              <div className={compactScoreline ? "atmosphereCompactHeroInner withScore" : "atmosphereCompactHeroInner"}>
                 <TeamLogo src={activeMatch.homeTeam.logo} label={activeMatch.homeTeam.name} size="lg" />
                 <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
+                {compactScoreline ? <strong className="atmosphereCompactScoreline">{compactScoreline}</strong> : null}
                 <TeamLogo src={activeMatch.awayTeam.logo} label={activeMatch.awayTeam.name} size="lg" />
               </div>
             </div>
@@ -853,6 +855,11 @@ function formatStatus(match: NormalizedMatch) {
 function formatScoreline(match: NormalizedMatch) {
   if (match.status.group === "upcoming") return match.localTime;
   if (match.score.home === null || match.score.away === null) return "-";
+  return `${match.score.home} - ${match.score.away}`;
+}
+
+function formatCompactScoreline(match: NormalizedMatch) {
+  if (match.score.home === null || match.score.away === null) return null;
   return `${match.score.home} - ${match.score.away}`;
 }
 

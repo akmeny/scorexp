@@ -8105,6 +8105,12 @@ body,
     pointer-events: auto;
   }
 
+  .atmosphereCompactHeroInner.withScore {
+    min-width: 330px;
+    grid-template-columns: 52px auto auto 52px;
+    gap: 22px;
+  }
+
   .atmosphereCompactHeroInner .teamLogo.lg,
   .atmosphereCompactHeroInner .logoFallback.lg {
     width: 42px;
@@ -8114,6 +8120,17 @@ body,
 
   .atmosphereCompactHeroInner .logoFallback.lg {
     font-size: 13px;
+  }
+
+  .atmosphereCompactScoreline {
+    min-width: 58px;
+    color: #f3f8fb;
+    font-size: 17px;
+    font-weight: 950;
+    line-height: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .atmosphereCompactHeroInner .atmosphereStatusPill {
@@ -8944,6 +8961,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .atmosphereLeagueTitle strong,
 .scorexpLightTheme .atmosphereTeam strong,
 .scorexpLightTheme .atmosphereScoreStage strong,
+.scorexpLightTheme .atmosphereCompactScoreline,
 .scorexpLightTheme .atmospherePanelTitle,
 .scorexpLightTheme .atmosphereAiPanel > strong,
 .scorexpLightTheme .atmosphereProbabilityBars span,
