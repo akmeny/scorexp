@@ -22,7 +22,7 @@ export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv, prof
 
     return {
       configured: isSupabaseAuthConfigured(env),
-      providers: ["google", "apple", "facebook", "twitter"]
+      providers: ["google", "apple", "facebook", "x"]
     };
   });
 

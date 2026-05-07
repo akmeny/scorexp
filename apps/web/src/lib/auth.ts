@@ -20,7 +20,7 @@ export const authProviders: { provider: AuthProvider; label: string }[] = [
   { provider: "google", label: "Google ile giriş" },
   { provider: "apple", label: "Apple ile giriş" },
   { provider: "facebook", label: "Facebook ile giriş" },
-  { provider: "twitter", label: "X ile giriş" }
+  { provider: "x", label: "X ile giriş" }
 ];
 
 export async function signInWithProvider(provider: AuthProvider) {

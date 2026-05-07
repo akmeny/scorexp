@@ -250,7 +250,7 @@ export interface ChatRoomSnapshot {
   messages: ChatMessage[];
 }
 
-export type AuthProvider = "google" | "apple" | "facebook" | "twitter";
+export type AuthProvider = "google" | "apple" | "facebook" | "x";
 
 export interface UserProfile {
   userId: string;
