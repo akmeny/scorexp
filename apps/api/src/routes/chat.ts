@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import type { AppEnv } from "../config/env.js";
+import { resolveAuthUser } from "./auth.js";
+import type { UserProfileStore } from "../storage/userProfileStore.js";
 
 const maxRoomMessages = 150;
 const maxBodyLength = 360;
@@ -39,7 +42,7 @@ const postMessageSchema = z.object({
   body: z.string().min(1).max(maxBodyLength)
 });
 
-export async function registerChatRoutes(app: FastifyInstance) {
+export async function registerChatRoutes(app: FastifyInstance, authContext?: { env: AppEnv; profileStore: UserProfileStore }) {
   app.get("/api/v1/chat/rooms/:matchId/messages", async (request, reply) => {
     const params = paramsSchema.parse(request.params);
     const room = getRoom(params.matchId);
@@ -57,12 +60,23 @@ export async function registerChatRoutes(app: FastifyInstance) {
   app.post("/api/v1/chat/rooms/:matchId/messages", async (request, reply) => {
     const params = paramsSchema.parse(request.params);
     const parsed = postMessageSchema.parse(request.body);
+    const authUser = authContext ? await resolveAuthUser(request, authContext.env) : null;
+
+    if (request.headers.authorization && !authUser) {
+      return reply.code(401).send({ message: "Invalid auth session" });
+    }
+
+    if (!authUser && parsed.authorId.startsWith("auth:")) {
+      return reply.code(400).send({ message: "Authenticated author requires a valid session" });
+    }
+
+    const profile = authUser && authContext ? await authContext.profileStore.ensureProfile(authUser) : null;
     const room = getRoom(params.matchId);
     const message: ChatMessage = {
       id: randomUUID(),
       matchId: params.matchId,
-      authorId: cleanToken(parsed.authorId),
-      nickname: cleanNickname(parsed.nickname),
+      authorId: profile ? `auth:${profile.userId}` : cleanToken(parsed.authorId),
+      nickname: profile ? profile.nickname : cleanNickname(parsed.nickname),
       color: parsed.color,
       body: cleanBody(parsed.body),
       createdAt: new Date().toISOString()

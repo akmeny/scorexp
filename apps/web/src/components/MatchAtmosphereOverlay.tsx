@@ -20,7 +20,7 @@ import {
   X,
   Zap
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { MatchChatRoom } from "./MatchChatRoom";
 import { TeamLogo } from "./TeamLogo";
@@ -35,7 +35,8 @@ import type {
   MatchDetailStandingRow,
   MatchDetailTopPlayer,
   NormalizedMatch,
-  Team
+  Team,
+  UserProfile
 } from "../types";
 
 interface MatchAtmosphereOverlayProps {
@@ -49,6 +50,8 @@ interface MatchAtmosphereOverlayProps {
   colorMode?: "dark" | "light";
   onToggleColorMode?: () => void;
   backLabel?: string;
+  chatProfile?: UserProfile | null;
+  chatAccessToken?: string | null;
 }
 
 const statisticPriority = [
@@ -91,9 +94,14 @@ export function MatchAtmosphereOverlay({
   onReload,
   colorMode = "dark",
   onToggleColorMode,
-  backLabel = "Maç listesi"
+  backLabel = "Maç listesi",
+  chatProfile = null,
+  chatAccessToken = null
 }: MatchAtmosphereOverlayProps) {
   const [activeTab, setActiveTab] = useState<AtmosphereTab>("overview");
+  const [chatHeroCompact, setChatHeroCompact] = useState(false);
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const heroRef = useRef<HTMLElement | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
@@ -109,7 +117,31 @@ export function MatchAtmosphereOverlay({
 
   useEffect(() => {
     setActiveTab("overview");
+    setChatHeroCompact(false);
   }, [match.id]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const updateCompactHero = () => {
+      const heroHeight = heroRef.current?.offsetHeight ?? 286;
+      const enterAt = Math.max(180, heroHeight * 0.72);
+      const exitAt = Math.max(80, heroHeight * 0.28);
+
+      setChatHeroCompact((isCompact) => {
+        if (activeTab !== "chat") return false;
+        return isCompact ? scrollContainer.scrollTop > exitAt : scrollContainer.scrollTop > enterAt;
+      });
+    };
+
+    updateCompactHero();
+    scrollContainer.addEventListener("scroll", updateCompactHero, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", updateCompactHero);
+    };
+  }, [activeTab, match.id]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -150,7 +182,8 @@ export function MatchAtmosphereOverlay({
   const shellClassName = [
     "matchAtmosphereShell",
     activeMatch.status.group,
-    activeTab === "chat" ? "chatTabActive" : "overviewTabActive"
+    activeTab === "chat" ? "chatTabActive" : "overviewTabActive",
+    chatHeroCompact ? "chatHeroCompact" : ""
   ].join(" ");
 
   return (
@@ -237,8 +270,16 @@ export function MatchAtmosphereOverlay({
             </div>
           </aside>
 
-          <main className="atmosphereScroll">
-            <section className="atmosphereHero" id="atmosphere-overview">
+          <main className="atmosphereScroll" ref={scrollContainerRef}>
+            <div className="atmosphereCompactHero" aria-hidden={!chatHeroCompact}>
+              <div className="atmosphereCompactHeroInner">
+                <TeamLogo src={activeMatch.homeTeam.logo} label={activeMatch.homeTeam.name} size="lg" />
+                <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
+                <TeamLogo src={activeMatch.awayTeam.logo} label={activeMatch.awayTeam.name} size="lg" />
+              </div>
+            </div>
+
+            <section className="atmosphereHero" id="atmosphere-overview" ref={heroRef}>
               <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} />
               <div className="atmosphereScoreStage">
                 <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
@@ -280,7 +321,7 @@ export function MatchAtmosphereOverlay({
 
             <section className="atmosphereChatSection atmosphereChatOnly" id="atmosphere-chat">
               <PanelTitle icon={<MessageCircle size={17} />} label="Sohbet" />
-              <MatchChatRoom match={activeMatch} variant="embedded" />
+              <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
             </section>
 
             <section className="atmosphereGrid atmosphereOverviewOnly">

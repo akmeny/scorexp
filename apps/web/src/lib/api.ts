@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatRoomSnapshot, HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView } from "../types";
+import type { ChatMessage, ChatRoomSnapshot, HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView, UserProfile } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
 const fallbackLocalApi = "http://localhost:4000";
@@ -51,6 +51,15 @@ export interface SendChatMessageOptions {
   nickname: string;
   color: string;
   body: string;
+  accessToken?: string | null;
+  signal?: AbortSignal;
+}
+
+export interface UpdateUserProfileOptions {
+  accessToken: string;
+  nickname?: string;
+  notificationsEnabled?: boolean;
+  notificationPermission?: UserProfile["notificationPermission"];
   signal?: AbortSignal;
 }
 
@@ -150,7 +159,8 @@ export async function sendChatMessage(options: SendChatMessageOptions): Promise<
     method: "POST",
     signal: options.signal,
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {})
     },
     body: JSON.stringify({
       authorId: options.authorId,
@@ -170,6 +180,47 @@ export async function sendChatMessage(options: SendChatMessageOptions): Promise<
 
 export function chatEventsUrl(matchId: string) {
   return new URL(`/api/v1/chat/rooms/${encodeURIComponent(matchId)}/events`, apiBase).toString();
+}
+
+export async function fetchUserProfile(accessToken: string, signal?: AbortSignal): Promise<UserProfile> {
+  const response = await fetch(new URL("/api/v1/me", apiBase), {
+    signal,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`User profile request failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as { profile: UserProfile };
+  return payload.profile;
+}
+
+export async function updateUserProfile(options: UpdateUserProfileOptions): Promise<UserProfile> {
+  const response = await fetch(new URL("/api/v1/me", apiBase), {
+    method: "PATCH",
+    signal: options.signal,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${options.accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nickname: options.nickname,
+      notificationsEnabled: options.notificationsEnabled,
+      notificationPermission: options.notificationPermission
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Update user profile failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as { profile: UserProfile };
+  return payload.profile;
 }
 
 function resolveApiBase(value: string | undefined) {

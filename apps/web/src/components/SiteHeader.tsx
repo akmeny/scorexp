@@ -1,24 +1,38 @@
 import {
+  Apple,
+  Bell,
+  BellOff,
   CircleUserRound,
+  Chrome,
+  Facebook,
+  LogOut,
   Menu,
   Newspaper,
+  Save,
   Search,
   Settings,
   Moon,
   Star,
   Sun,
+  Twitter,
+  UserRound,
   Zap,
   X
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import type { AuthProfileState } from "../hooks/useAuthProfile";
+import { authProviders } from "../lib/auth";
+import type { AuthProvider } from "../types";
 
 interface SiteHeaderProps {
   footballCount: number;
   colorMode: "dark" | "light";
   onToggleColorMode: () => void;
   onOpenHighlights: () => void;
+  auth: AuthProfileState;
+  onToggleNotifications: () => Promise<void>;
 }
 
 interface SportIconProps {
@@ -56,12 +70,15 @@ const overflowSports = [
   "Bandy"
 ];
 
-export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpenHighlights }: SiteHeaderProps) {
+export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpenHighlights, auth, onToggleNotifications }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSportsOpen, setMobileSportsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [selectedSportLabel, setSelectedSportLabel] = useState("Futbol");
+  const [nicknameDraft, setNicknameDraft] = useState("");
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileNotice, setProfileNotice] = useState<string | null>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const headerRef = useRef<HTMLElement>(null);
   const sportsBarRef = useRef<HTMLDivElement>(null);
@@ -97,12 +114,143 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
   const hasSelectedOverflowSport = overflowSports.includes(selectedSportLabel);
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const ThemeIcon = colorMode === "dark" ? Sun : Moon;
+  const profileButtonLabel = auth.profile ? `${auth.profile.nickname} profili` : "Giriş yap";
+
+  useEffect(() => {
+    setNicknameDraft(auth.profile?.nickname ?? "");
+  }, [auth.profile?.nickname]);
 
   const selectSport = (label: string) => {
     setSelectedSportLabel(label);
     setMenuOpen(false);
     setMobileSportsOpen(false);
   };
+
+  const handleSignIn = async (provider: AuthProvider) => {
+    setProfileBusy(true);
+    setProfileNotice(null);
+    try {
+      await auth.signIn(provider);
+    } catch {
+      setProfileNotice("Giriş başlatılamadı.");
+      setProfileBusy(false);
+    }
+  };
+
+  const handleSaveNickname = async () => {
+    const nextNickname = nicknameDraft.replace(/\s+/g, " ").trim();
+    if (nextNickname.length < 2 || nextNickname.length > 28) {
+      setProfileNotice("Nickname 2-28 karakter olmalı.");
+      return;
+    }
+
+    setProfileBusy(true);
+    setProfileNotice(null);
+    try {
+      await auth.updateProfile({ nickname: nextNickname });
+      setProfileNotice("Nickname kaydedildi.");
+    } catch {
+      setProfileNotice("Nickname kaydedilemedi.");
+    } finally {
+      setProfileBusy(false);
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    setProfileBusy(true);
+    setProfileNotice(null);
+    try {
+      await onToggleNotifications();
+    } catch {
+      setProfileNotice("Bildirim tercihi kaydedilemedi.");
+    } finally {
+      setProfileBusy(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setProfileBusy(true);
+    setProfileNotice(null);
+    try {
+      await auth.signOut();
+      setProfileMenuOpen(false);
+    } catch {
+      setProfileNotice("Çıkış yapılamadı.");
+    } finally {
+      setProfileBusy(false);
+    }
+  };
+
+  const renderProfileMenu = (variant: "desktop" | "mobile") => (
+    <div className={variant === "desktop" ? "profileMenu" : "mobileProfileMenu"}>
+      {!auth.configured ? (
+        <div className="profileMenuState">
+          <strong>Giriş hazır değil</strong>
+          <span>Supabase ayarları tanımlanınca sosyal girişler açılacak.</span>
+        </div>
+      ) : auth.profile ? (
+        <>
+          <div className="profileIdentity">
+            <span className="profileAvatar" aria-hidden="true">
+              {auth.profile.nickname.charAt(0).toUpperCase()}
+            </span>
+            <div>
+              <strong title={auth.profile.nickname}>{auth.profile.nickname}</strong>
+              <span title={auth.profile.email ?? auth.profile.provider ?? ""}>{auth.profile.email ?? auth.profile.provider ?? "ScoreXP hesabı"}</span>
+            </div>
+          </div>
+
+          <label className="profileField">
+            <span>Nickname</span>
+            <input value={nicknameDraft} maxLength={28} autoComplete="nickname" onChange={(event) => setNicknameDraft(event.target.value)} />
+          </label>
+
+          <button className="profileActionButton primary" type="button" disabled={profileBusy} onClick={handleSaveNickname}>
+            <Save size={15} />
+            <span>Kaydet</span>
+          </button>
+
+          <button
+            className={auth.profile.notificationsEnabled ? "profileToggleButton active" : "profileToggleButton"}
+            type="button"
+            aria-pressed={auth.profile.notificationsEnabled}
+            disabled={profileBusy}
+            onClick={handleToggleNotifications}
+          >
+            {auth.profile.notificationsEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+            <span>Bildirimler</span>
+            <strong>{auth.profile.notificationsEnabled ? "Açık" : "Kapalı"}</strong>
+          </button>
+
+          <button className="profileActionButton" type="button" disabled={profileBusy} onClick={handleSignOut}>
+            <LogOut size={15} />
+            <span>Çıkış yap</span>
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="profileMenuState">
+            <strong>ScoreXP hesabı</strong>
+            <span>Nickname ve bildirim tercihlerin hesabınla saklanır.</span>
+          </div>
+          <div className="socialLoginGrid">
+            {authProviders.map((item) => {
+              const Icon = providerIcon(item.provider);
+
+              return (
+                <button type="button" disabled={profileBusy || auth.loading} key={item.provider} onClick={() => void handleSignIn(item.provider)}>
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {auth.error || profileNotice ? <div className="profileNotice">{profileNotice ?? auth.error}</div> : null}
+    </div>
+  );
 
   useEffect(() => {
     if (!mobileSportsOpen && !mobileSearchOpen && !profileMenuOpen) return;
@@ -219,7 +367,7 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
           <button
             className="mobileHeaderIcon"
             type="button"
-            aria-label="Profil ve ayarlar"
+            aria-label={profileButtonLabel}
             aria-haspopup="menu"
             aria-expanded={profileMenuOpen}
             onClick={() => {
@@ -228,7 +376,7 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
               setProfileMenuOpen((open) => !open);
             }}
           >
-            <CircleUserRound size={20} />
+            {auth.profile ? <UserRound size={20} /> : <CircleUserRound size={20} />}
           </button>
           <button
             className="mobileHeaderIcon themeHeaderIcon"
@@ -270,18 +418,7 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
             </div>
           ) : null}
 
-          {profileMenuOpen ? (
-            <div className="mobileProfileMenu">
-              <button type="button">
-                <CircleUserRound size={15} />
-                <span>Profil</span>
-              </button>
-              <button type="button">
-                <Settings size={15} />
-                <span>Ayarlar</span>
-              </button>
-            </div>
-          ) : null}
+          {profileMenuOpen ? renderProfileMenu("mobile") : null}
         </div>
 
         <div className="headerActions">
@@ -291,9 +428,20 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
           <button className="headerIcon" type="button" aria-label="Hızlı erişim">
             <Zap size={20} />
           </button>
-          <button className="headerIcon" type="button" aria-label="Ayarlar">
-            <Settings size={20} />
+          <button
+            className={auth.profile ? "headerIcon profileHeaderIcon signedIn" : "headerIcon profileHeaderIcon"}
+            type="button"
+            aria-label={profileButtonLabel}
+            aria-haspopup="menu"
+            aria-expanded={profileMenuOpen}
+            onClick={() => {
+              setMenuOpen(false);
+              setProfileMenuOpen((open) => !open);
+            }}
+          >
+            {auth.profile ? <UserRound size={20} /> : <CircleUserRound size={20} />}
           </button>
+          {profileMenuOpen ? renderProfileMenu("desktop") : null}
           <button
             className="headerIcon themeHeaderIcon"
             type="button"
@@ -376,6 +524,13 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
       </div>
     </header>
   );
+}
+
+function providerIcon(provider: AuthProvider) {
+  if (provider === "google") return Chrome;
+  if (provider === "apple") return Apple;
+  if (provider === "facebook") return Facebook;
+  return Twitter;
 }
 
 function SvgRoot({ size = 18, children }: SportIconProps & { children: ReactNode }) {

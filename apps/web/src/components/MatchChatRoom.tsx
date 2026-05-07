@@ -2,12 +2,14 @@ import { MessageCircle, Send, UsersRound, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { chatEventsUrl, fetchChatMessages, sendChatMessage } from "../lib/api";
-import type { ChatMessage, NormalizedMatch } from "../types";
+import type { ChatMessage, NormalizedMatch, UserProfile } from "../types";
 
 interface MatchChatRoomProps {
   match: NormalizedMatch;
   variant?: "panel" | "embedded";
   onClose?: () => void;
+  profile?: UserProfile | null;
+  accessToken?: string | null;
 }
 
 interface ChatUser {
@@ -77,8 +79,19 @@ const nicknameSeeds = [
   "Taktik"
 ];
 
-export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRoomProps) {
-  const user = useMemo(() => readChatUser(), []);
+export function MatchChatRoom({ match, variant = "panel", onClose, profile = null, accessToken = null }: MatchChatRoomProps) {
+  const localUser = useMemo(() => readChatUser(), []);
+  const user = useMemo(
+    () =>
+      profile
+        ? {
+            id: `auth:${profile.userId}`,
+            nickname: profile.nickname,
+            color: localUser.color
+          }
+        : localUser,
+    [localUser, profile]
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [body, setBody] = useState("");
   const [viewerCount, setViewerCount] = useState(1);
@@ -226,7 +239,8 @@ export function MatchChatRoom({ match, variant = "panel", onClose }: MatchChatRo
         authorId: user.id,
         nickname: user.nickname,
         color: user.color,
-        body: nextBody
+        body: nextBody,
+        accessToken
       });
       setBody("");
       shouldStickToBottomRef.current = true;

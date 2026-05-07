@@ -23,6 +23,7 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SortedMatchList } from "./components/SortedMatchList";
 import { dateLabel, shiftDate, todayInTimezone } from "./lib/date";
 import { compareTr, localizeCountryName, normalizeName } from "./lib/localization";
+import { useAuthProfile } from "./hooks/useAuthProfile";
 import { useMatchDetail } from "./hooks/useMatchDetail";
 import { useScoreboard } from "./hooks/useScoreboard";
 import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, MatchScore, NormalizedMatch, ScoreboardView } from "./types";
@@ -95,6 +96,7 @@ export default function App() {
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [colorMode, setColorMode] = useState<ColorMode>(() => readColorMode());
+  const auth = useAuthProfile();
   const desktopLayout = useDesktopLayout();
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
@@ -171,6 +173,7 @@ export default function App() {
   const canGoPreviousDay = date > minDate;
   const canGoNextDay = date < maxDate;
   const defaultGroupOpen = view === "live" || tab === "favorites";
+  const notificationsEnabled = auth.profile?.notificationsEnabled ?? true;
 
   useEffect(() => {
     const updateScrollButton = () => setShowScrollTop(window.scrollY > 120);
@@ -210,6 +213,14 @@ export default function App() {
       meta.setAttribute("content", themeColor);
     }
   }, [colorMode]);
+
+  useEffect(() => {
+    if (!auth.profile || !("Notification" in window)) return;
+    const permission = Notification.permission;
+    if (auth.profile.notificationPermission === permission) return;
+
+    void auth.updateProfile({ notificationPermission: permission });
+  }, [auth]);
 
   useEffect(() => {
     if (!allMatches.length) return;
@@ -424,8 +435,10 @@ export default function App() {
         next.delete(id);
       } else {
         next.add(id);
-        requestNotificationPermission();
-        primeNotificationSound();
+        if (notificationsEnabled) {
+          requestNotificationPermission();
+          primeNotificationSound();
+        }
       }
       localStorage.setItem("scorexp:favorites", JSON.stringify(Array.from(next)));
       return next;
@@ -433,6 +446,7 @@ export default function App() {
   };
 
   const emitFavoriteNotification = (title: string, body: string, matchId: string) => {
+    if (!notificationsEnabled) return;
     playNotificationSound();
     void showSystemNotification(title, body, matchId);
   };
@@ -522,6 +536,22 @@ export default function App() {
     writeRouteToHistory(nextRoute, "replace");
   };
   const toggleColorMode = () => setColorMode((mode) => (mode === "dark" ? "light" : "dark"));
+  const toggleProfileNotifications = async () => {
+    if (!auth.profile) return;
+
+    const nextEnabled = !auth.profile.notificationsEnabled;
+    let permission = readNotificationPermission();
+
+    if (nextEnabled) {
+      permission = await requestNotificationPermissionValue();
+      if (permission === "granted") primeNotificationSound();
+    }
+
+    await auth.updateProfile({
+      notificationsEnabled: nextEnabled && permission !== "denied",
+      notificationPermission: permission
+    });
+  };
 
   const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
   const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel);
@@ -542,6 +572,8 @@ export default function App() {
         colorMode={colorMode}
         onToggleColorMode={toggleColorMode}
         onOpenHighlights={() => setHighlightsOpen(true)}
+        auth={auth}
+        onToggleNotifications={toggleProfileNotifications}
       />
       <main className="appShell">
         <section className="scorePanel" aria-label="Canlı skorlar">
@@ -687,11 +719,11 @@ export default function App() {
             onOpenAtmosphere={openAtmosphere}
             colorMode={colorMode}
             onToggleColorMode={toggleColorMode}
-            chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" /> : undefined}
+            chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" profile={auth.profile} accessToken={auth.session?.access_token} /> : undefined}
           />
         ) : null}
         {shouldRenderDesktopChat && selectedMatch ? (
-          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} />
+          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} profile={auth.profile} accessToken={auth.session?.access_token} />
         ) : null}
       </main>
 
@@ -707,6 +739,8 @@ export default function App() {
           onReload={detailState.reload}
           colorMode={colorMode}
           onToggleColorMode={toggleColorMode}
+          chatProfile={auth.profile}
+          chatAccessToken={auth.session?.access_token}
         />
       ) : null}
 
@@ -1076,6 +1110,17 @@ function formatNotificationScore(match: NormalizedMatch) {
 function requestNotificationPermission() {
   if (!("Notification" in window) || Notification.permission !== "default") return;
   void Notification.requestPermission();
+}
+
+function readNotificationPermission(): NotificationPermission | null {
+  if (!("Notification" in window)) return null;
+  return Notification.permission;
+}
+
+async function requestNotificationPermissionValue(): Promise<NotificationPermission | null> {
+  if (!("Notification" in window)) return null;
+  if (Notification.permission !== "default") return Notification.permission;
+  return Notification.requestPermission();
 }
 
 async function showSystemNotification(title: string, body: string, matchId: string) {

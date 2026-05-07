@@ -43,6 +43,10 @@ services:
         value: 86400
       - key: CLIENT_REFRESH_SECONDS
         value: 100
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
 
   - type: keyvalue
     name: scorexp-cache

@@ -249,3 +249,16 @@ export interface ChatRoomSnapshot {
   viewerCount?: number;
   messages: ChatMessage[];
 }
+
+export type AuthProvider = "google" | "apple" | "facebook" | "twitter";
+
+export interface UserProfile {
+  userId: string;
+  email: string | null;
+  provider: string | null;
+  nickname: string;
+  notificationsEnabled: boolean;
+  notificationPermission: "default" | "granted" | "denied" | null;
+  createdAt: string;
+  updatedAt: string;
+}

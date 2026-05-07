@@ -29,7 +29,9 @@ const schema = z.object({
   LIVE_REFRESH_SECONDS: numberFromEnv(100),
   UPCOMING_REFRESH_SECONDS: numberFromEnv(900),
   FINISHED_REFRESH_SECONDS: numberFromEnv(86400),
-  CLIENT_REFRESH_SECONDS: numberFromEnv(100)
+  CLIENT_REFRESH_SECONDS: numberFromEnv(100),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional()
 });
 
 const parsed = schema.safeParse(process.env);
@@ -58,6 +60,8 @@ export const env = {
   upcomingRefreshSeconds: parsed.data.UPCOMING_REFRESH_SECONDS,
   finishedRefreshSeconds: parsed.data.FINISHED_REFRESH_SECONDS,
   clientRefreshSeconds: parsed.data.CLIENT_REFRESH_SECONDS,
+  supabaseUrl: parsed.data.SUPABASE_URL?.replace(/\/$/, ""),
+  supabaseAnonKey: parsed.data.SUPABASE_ANON_KEY,
   repoRoot
 };
 
