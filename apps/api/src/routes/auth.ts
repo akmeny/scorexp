@@ -16,13 +16,16 @@ interface SupabaseUserResponse {
   user_metadata?: unknown;
 }
 
+type AuthProvider = "google" | "apple" | "facebook" | "x";
+const fallbackProviders: AuthProvider[] = ["google"];
+
 export async function registerAuthRoutes(app: FastifyInstance, env: AppEnv, profileStore: UserProfileStore) {
   app.get("/api/v1/auth/status", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
 
     return {
       configured: isSupabaseAuthConfigured(env),
-      providers: ["google", "apple", "facebook", "x"]
+      providers: await resolveEnabledProviders(env)
     };
   });
 
@@ -65,6 +68,32 @@ async function requireAuthUser(request: FastifyRequest, reply: FastifyReply, env
 
 export function isSupabaseAuthConfigured(env: AppEnv) {
   return Boolean(env.supabaseUrl && env.supabaseAnonKey);
+}
+
+async function resolveEnabledProviders(env: AppEnv): Promise<AuthProvider[]> {
+  if (!isSupabaseAuthConfigured(env)) return [];
+
+  try {
+    const response = await fetch(`${env.supabaseUrl}/auth/v1/settings`, {
+      headers: {
+        apikey: env.supabaseAnonKey ?? ""
+      }
+    });
+    if (!response.ok) return fallbackProviders;
+
+    const payload = (await response.json()) as { external?: unknown };
+    const external = objectRecord(payload.external);
+    const providers: AuthProvider[] = [];
+
+    if (external.google === true) providers.push("google");
+    if (external.apple === true) providers.push("apple");
+    if (external.facebook === true) providers.push("facebook");
+    if (external.x === true || external.twitter === true) providers.push("x");
+
+    return providers.length ? providers : fallbackProviders;
+  } catch {
+    return fallbackProviders;
+  }
 }
 
 export async function resolveAuthUser(request: FastifyRequest, env: AppEnv): Promise<AuthUserSnapshot | null> {

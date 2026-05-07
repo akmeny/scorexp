@@ -115,6 +115,7 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const ThemeIcon = colorMode === "dark" ? Sun : Moon;
   const profileButtonLabel = auth.profile ? `${auth.profile.nickname} profili` : "Giriş yap";
+  const enabledAuthProviders = authProviders.filter((item) => auth.providers.includes(item.provider));
 
   useEffect(() => {
     setNicknameDraft(auth.profile?.nickname ?? "");
@@ -233,18 +234,25 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
             <strong>ScoreXP hesabı</strong>
             <span>Nickname ve bildirim tercihlerin hesabınla saklanır.</span>
           </div>
-          <div className="socialLoginGrid">
-            {authProviders.map((item) => {
-              const Icon = providerIcon(item.provider);
+          {enabledAuthProviders.length ? (
+            <div className="socialLoginGrid">
+              {enabledAuthProviders.map((item) => {
+                const Icon = providerIcon(item.provider);
 
-              return (
-                <button type="button" disabled={profileBusy || auth.loading} key={item.provider} onClick={() => void handleSignIn(item.provider)}>
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button type="button" disabled={profileBusy || auth.loading} key={item.provider} onClick={() => void handleSignIn(item.provider)}>
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="profileMenuState">
+              <strong>Giris secenekleri yukleniyor</strong>
+              <span>Google girisi birazdan gorunecek.</span>
+            </div>
+          )}
         </>
       )}
 

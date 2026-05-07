@@ -1,11 +1,12 @@
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchUserProfile, updateUserProfile } from "../lib/api";
+import { fetchAuthStatus, fetchUserProfile, updateUserProfile } from "../lib/api";
 import { authConfigured, signInWithProvider, signOut, supabase } from "../lib/auth";
 import type { AuthProvider, UserProfile } from "../types";
 
 export interface AuthProfileState {
   configured: boolean;
+  providers: AuthProvider[];
   loading: boolean;
   session: Session | null;
   profile: UserProfile | null;
@@ -23,6 +24,7 @@ export interface AuthProfileState {
 export function useAuthProfile(): AuthProfileState {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [providers, setProviders] = useState<AuthProvider[]>([]);
   const [loading, setLoading] = useState(authConfigured);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +46,31 @@ export function useAuthProfile(): AuthProfileState {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!authConfigured) {
+      setProviders([]);
+      return;
+    }
+
+    let disposed = false;
+    const controller = new AbortController();
+
+    void fetchAuthStatus(controller.signal)
+      .then((status) => {
+        if (disposed) return;
+        setProviders(status.configured ? status.providers : []);
+      })
+      .catch(() => {
+        if (disposed) return;
+        setProviders(["google"]);
+      });
+
+    return () => {
+      disposed = true;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -113,6 +140,7 @@ export function useAuthProfile(): AuthProfileState {
   return useMemo(
     () => ({
       configured: authConfigured,
+      providers,
       loading,
       session,
       profile,
@@ -122,6 +150,6 @@ export function useAuthProfile(): AuthProfileState {
       updateProfile,
       refreshProfile
     }),
-    [error, handleSignOut, loading, profile, refreshProfile, session, signIn, updateProfile]
+    [error, handleSignOut, loading, profile, providers, refreshProfile, session, signIn, updateProfile]
   );
 }

@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatRoomSnapshot, HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView, UserProfile } from "../types";
+import type { AuthStatus, ChatMessage, ChatRoomSnapshot, HighlightsSnapshot, MatchDetail, ScoreboardSnapshot, ScoreboardView, UserProfile } from "../types";
 
 const fallbackProductionApi = "https://scorexp-api.onrender.com";
 const fallbackLocalApi = "http://localhost:4000";
@@ -61,6 +61,19 @@ export interface UpdateUserProfileOptions {
   notificationsEnabled?: boolean;
   notificationPermission?: UserProfile["notificationPermission"];
   signal?: AbortSignal;
+}
+
+export async function fetchAuthStatus(signal?: AbortSignal): Promise<AuthStatus> {
+  const response = await fetch(new URL("/api/v1/auth/status", apiBase), {
+    signal,
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Auth status request failed (${response.status})`);
+  }
+
+  return (await response.json()) as AuthStatus;
 }
 
 export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<FetchScoreboardResult> {

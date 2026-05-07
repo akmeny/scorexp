@@ -252,6 +252,11 @@ export interface ChatRoomSnapshot {
 
 export type AuthProvider = "google" | "apple" | "facebook" | "x";
 
+export interface AuthStatus {
+  configured: boolean;
+  providers: AuthProvider[];
+}
+
 export interface UserProfile {
   userId: string;
   email: string | null;
