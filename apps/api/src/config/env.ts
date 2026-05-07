@@ -5,6 +5,8 @@ import { z } from "zod";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, "../../../..");
+const defaultSupabaseUrl = "https://mpysngxgbfiquhwfplag.supabase.co";
+const defaultSupabaseAnonKey = "sb_publishable_uO8hvTlCUL21OBOCNvzOdQ_-CE-NWLA";
 
 dotenv.config({ path: path.join(repoRoot, ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: false });
@@ -30,8 +32,8 @@ const schema = z.object({
   UPCOMING_REFRESH_SECONDS: numberFromEnv(900),
   FINISHED_REFRESH_SECONDS: numberFromEnv(86400),
   CLIENT_REFRESH_SECONDS: numberFromEnv(100),
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_ANON_KEY: z.string().optional()
+  SUPABASE_URL: z.string().url().default(defaultSupabaseUrl),
+  SUPABASE_ANON_KEY: z.string().default(defaultSupabaseAnonKey)
 });
 
 const parsed = schema.safeParse(process.env);
@@ -60,7 +62,7 @@ export const env = {
   upcomingRefreshSeconds: parsed.data.UPCOMING_REFRESH_SECONDS,
   finishedRefreshSeconds: parsed.data.FINISHED_REFRESH_SECONDS,
   clientRefreshSeconds: parsed.data.CLIENT_REFRESH_SECONDS,
-  supabaseUrl: parsed.data.SUPABASE_URL?.replace(/\/$/, ""),
+  supabaseUrl: parsed.data.SUPABASE_URL.replace(/\/$/, ""),
   supabaseAnonKey: parsed.data.SUPABASE_ANON_KEY,
   repoRoot
 };
