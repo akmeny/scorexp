@@ -21,7 +21,7 @@ import {
   Zap
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { MatchChatRoom } from "./MatchChatRoom";
 import { TeamLogo } from "./TeamLogo";
 import { localizeCountryName } from "../lib/localization";
@@ -83,6 +83,24 @@ const eventLabels: Record<string, string> = {
 };
 
 type AtmosphereTab = "overview" | "chat";
+type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
+type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
+
+interface InsightSegment {
+  key: "home" | "draw" | "away";
+  label: string;
+  value: number;
+  display: string;
+}
+
+interface InsightRow {
+  label: string;
+  value: string;
+  detail: string;
+  kind: InsightKind;
+  progress?: number;
+  segments?: InsightSegment[];
+}
 
 export function MatchAtmosphereOverlay({
   match,
@@ -103,6 +121,16 @@ export function MatchAtmosphereOverlay({
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
+  const homeAccent = useTeamAccent(activeMatch.homeTeam);
+  const awayAccent = useTeamAccent(activeMatch.awayTeam);
+  const accentStyle = useMemo(
+    () =>
+      ({
+        "--home-accent": homeAccent,
+        "--away-accent": awayAccent
+      }) as CSSProperties,
+    [awayAccent, homeAccent]
+  );
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
   const predictionRows = useMemo(() => buildPredictionRows(activeMatch, prediction), [activeMatch, prediction]);
@@ -189,7 +217,7 @@ export function MatchAtmosphereOverlay({
 
   return (
     <div className="matchAtmosphereOverlay" role="dialog" aria-modal="true" aria-label="Maç atmosferi">
-      <section className={shellClassName}>
+      <section className={shellClassName} style={accentStyle}>
         <header className="atmosphereTopbar">
           <button className="atmosphereBackButton" type="button" onClick={onRequestClose}>
             <ArrowLeft size={17} />
@@ -282,15 +310,16 @@ export function MatchAtmosphereOverlay({
             </div>
 
             <section className="atmosphereHero" id="atmosphere-overview" ref={heroRef}>
-              <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} />
+              <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} accent={homeAccent} />
               <div className="atmosphereScoreStage">
                 <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
                 <div className="atmosphereScoreline">{formatScoreline(activeMatch)}</div>
                 <strong>Maç Atmosferi</strong>
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
-              <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} />
+              <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} />
             </section>
+            <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
 
             <nav className="atmosphereTabs" aria-label="Maç atmosferi sekmeleri">
               <button
@@ -348,11 +377,7 @@ export function MatchAtmosphereOverlay({
                 <PanelTitle icon={<Sparkles size={17} />} label="Karar Sinyalleri" />
                 <div className="atmosphereInsightList">
                   {insightRows.map((item) => (
-                    <div className="atmosphereInsight" key={item.label}>
-                      <span>{item.label}</span>
-                      <strong>{item.value}</strong>
-                      <p>{item.detail}</p>
-                    </div>
+                    <InsightCard item={item} key={item.label} />
                   ))}
                 </div>
               </section>
@@ -365,7 +390,7 @@ export function MatchAtmosphereOverlay({
 
             <section className="atmosphereTwinGrid atmosphereOverviewOnly" id="atmosphere-history">
               <section className="atmospherePanel">
-                <PanelTitle icon={<Shield size={17} />} label="Form ve Aralar" />
+                <PanelTitle icon={<Shield size={17} />} label="Mukayese ve Form" />
                 <div className="atmosphereHistorySummary">
                   <SummaryMetric label={activeMatch.homeTeam.name} value={`${h2hSummary.homeWins}G`} />
                   <SummaryMetric label="Beraberlik" value={`${h2hSummary.draws}B`} />
@@ -426,19 +451,50 @@ function AtmosphereTeam({
   team,
   side,
   standing,
-  form
+  form,
+  accent
 }: {
   team: Team;
   side: "home" | "away";
   standing: MatchDetailStandingRow | null;
   form: NormalizedMatch[];
+  accent: string;
 }) {
+  const teamStyle = { "--team-accent": accent } as CSSProperties;
+
   return (
-    <div className={`atmosphereTeam ${side}`}>
+    <div className={`atmosphereTeam ${side}`} style={teamStyle}>
       <TeamLogo src={team.logo} label={team.name} size="lg" />
       <strong title={team.name}>{team.name}</strong>
       <span>{standing?.position ? `${standing.position}. sıra` : `${formScore(form, team.id)} form puanı`}</span>
     </div>
+  );
+}
+
+function HeroPredictionLine({ rows, homeTeam, awayTeam }: { rows: PredictionRow[]; homeTeam: Team; awayTeam: Team }) {
+  if (rows.length === 0) return null;
+
+  const orderedRows = ["home", "draw", "away"]
+    .map((key) => rows.find((row) => row.key === key))
+    .filter((row): row is PredictionRow => Boolean(row));
+  const leader = [...orderedRows].sort((a, b) => b.number - a.number)[0];
+  if (!leader) return null;
+
+  return (
+    <section className={`atmosphereHeroPrediction ${leader.key}`} aria-label="aiXp tahmin çizgisi">
+      <div className="atmosphereHeroPredictionLabels">
+        <span title={homeTeam.name}>{homeTeam.name}</span>
+        <strong title={`${leader.team} ${leader.value}`}>
+          aiXp: {leader.team} {leader.value}
+        </strong>
+        <span title={awayTeam.name}>{awayTeam.name}</span>
+      </div>
+      <div className="atmosphereHeroPredictionRail" aria-hidden="true">
+        {orderedRows.map((row) => (
+          <i className={row.key} style={{ flexGrow: Math.max(row.number, 4) }} key={row.key} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -467,6 +523,42 @@ function SummaryMetric({ label, value }: { label: string; value: string }) {
       <span title={label}>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function InsightCard({ item }: { item: InsightRow }) {
+  const progressStyle = { "--insight-progress": `${item.progress ?? 0}%` } as CSSProperties;
+  const segments = item.segments ?? [];
+  const segmentTotal = segments.reduce((total, segment) => total + segment.value, 0);
+
+  return (
+    <article className={`atmosphereInsight ${item.kind}`} style={progressStyle}>
+      <div className="atmosphereInsightHeader">
+        <span>{item.label}</span>
+        <strong>{item.value}</strong>
+      </div>
+      {segments.length > 0 ? (
+        <>
+          <div className={`atmosphereInsightGraph count${segments.length}`} aria-hidden="true">
+            {segments.map((segment) => (
+              <i className={segment.key} style={{ flexGrow: segmentTotal > 0 ? Math.max(segment.value, 0.6) : 1 }} key={segment.key} />
+            ))}
+          </div>
+          <div className="atmosphereInsightLegend">
+            {segments.map((segment) => (
+              <span className={segment.key} key={segment.key}>
+                {segment.label} <b>{segment.display}</b>
+              </span>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="atmosphereInsightGauge" aria-hidden="true">
+          <i />
+        </div>
+      )}
+      <p>{item.detail}</p>
+    </article>
   );
 }
 
@@ -528,13 +620,17 @@ function FormColumn({ team, matches }: { team: Team; matches: NormalizedMatch[] 
 
 function MiniMatchRow({ match, focusTeamId }: { match: NormalizedMatch; focusTeamId: string }) {
   const focusHome = match.homeTeam.id === focusTeamId;
-  const opponent = focusHome ? match.awayTeam : match.homeTeam;
+  const focusAway = match.awayTeam.id === focusTeamId;
 
   return (
-    <div className="atmosphereMiniRow">
+    <div className={`atmosphereMiniRow ${focusHome ? "focusHome" : focusAway ? "focusAway" : ""}`}>
       <span>{formatShortDate(match.date)}</span>
-      <TeamLogo src={opponent.logo} label={opponent.name} size="sm" />
-      <strong title={opponent.name}>{opponent.name}</strong>
+      <span className="atmosphereMiniTeams">
+        <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
+        <strong title={`${match.homeTeam.name} - ${match.awayTeam.name}`}>
+          {match.homeTeam.name} - {match.awayTeam.name}
+        </strong>
+      </span>
       <b>{formatScoreline(match)}</b>
     </div>
   );
@@ -545,7 +641,7 @@ function RecentHeadToHead({ matches, focusTeamId }: { matches: NormalizedMatch[]
 
   return (
     <div className="atmosphereHeadToHeadList">
-      <span>Son karşılaşmalar</span>
+      <span>Son mukayeseler</span>
       <div className="atmosphereMiniList">
         {matches.slice(0, 5).map((match) => (
           <MiniMatchRow key={match.id} match={match} focusTeamId={focusTeamId} />
@@ -605,7 +701,7 @@ function PlayerColumn({ team, players }: { team: Team; players: MatchDetailTopPl
           {players.slice(0, 5).map((player) => (
             <div className="atmospherePlayerRow" key={`${team.id}:${player.name}`}>
               <strong title={player.name}>{player.name}</strong>
-              <span>{player.position ?? "Oyuncu"}</span>
+              <span>{translatePlayerPosition(player.position)}</span>
               <b>{formatPlayerStat(player)}</b>
             </div>
           ))}
@@ -687,7 +783,7 @@ function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) 
     });
 }
 
-function buildPredictionRows(match: NormalizedMatch, prediction: MatchDetailPrediction | null) {
+function buildPredictionRows(match: NormalizedMatch, prediction: MatchDetailPrediction | null): PredictionRow[] {
   if (!prediction) return [];
 
   return [
@@ -696,7 +792,7 @@ function buildPredictionRows(match: NormalizedMatch, prediction: MatchDetailPred
     { key: "away", label: "2", team: match.awayTeam.name, value: prediction.probabilities.away }
   ]
     .map((item) => ({ ...item, number: parsePercent(item.value) }))
-    .filter((item): item is { key: string; label: string; team: string; value: string; number: number } => item.number !== null && item.value !== null);
+    .filter((item): item is PredictionRow => item.number !== null && item.value !== null);
 }
 
 function buildAiSummary(match: NormalizedMatch, rows: ReturnType<typeof buildPredictionRows>) {
@@ -725,37 +821,68 @@ function buildInsightRows(
   detail: MatchDetail | null,
   stats: ReturnType<typeof buildStatisticRows>,
   predictions: ReturnType<typeof buildPredictionRows>
-) {
+): InsightRow[] {
   const homeFormScore = formScore(detail?.form?.home ?? [], match.homeTeam.id);
   const awayFormScore = formScore(detail?.form?.away ?? [], match.awayTeam.id);
   const h2h = summarizeResults((detail?.headToHead ?? []).filter((item) => item.id !== match.id), match.homeTeam, match.awayTeam);
   const shots = stats.find((row) => row.name === "Shots on target") ?? stats.find((row) => row.name === "Total shots");
   const leader = predictions.length > 0 ? [...predictions].sort((a, b) => b.number - a.number)[0] : null;
+  const statusProgress = match.status.group === "finished" ? 100 : match.status.group === "live" ? Math.min(100, Math.max(8, match.status.minute ?? 8)) : 22;
+  const h2hTotal = h2h.homeWins + h2h.draws + h2h.awayWins;
+  const dataSegments = shots
+    ? [
+        { key: "home" as const, label: "Ev", value: shots.homeNumber, display: shots.homeDisplay },
+        { key: "away" as const, label: "Dep", value: shots.awayNumber, display: shots.awayDisplay }
+      ]
+    : predictions.map((item) => ({
+        key: item.key,
+        label: item.label,
+        value: item.number,
+        display: item.value
+      }));
+  const dataDetail = shots
+    ? shots.homeNumber === shots.awayNumber
+      ? "İki takım veri çizgisinde dengede"
+      : `${shots.homeNumber > shots.awayNumber ? match.homeTeam.name : match.awayTeam.name} veri çizgisinde önde`
+    : leader
+      ? `${leader.team} olasılık lideri`
+      : "Veri geldikçe sinyal üretilecek";
 
   return [
     {
       label: "Durum",
       value: formatStatus(match),
-      detail: match.status.group === "live" ? "Canlı veri ritmi açık" : match.status.group === "finished" ? "Maç sonrası analiz görünümü" : "Maç öncesi hazırlık görünümü"
+      detail: match.status.group === "live" ? "Canlı veri ritmi açık" : match.status.group === "finished" ? "Maç sonrası analiz görünümü" : "Maç öncesi hazırlık görünümü",
+      kind: "status",
+      progress: statusProgress
     },
     {
       label: "Form",
       value: `${homeFormScore} - ${awayFormScore}`,
-      detail: homeFormScore === awayFormScore ? "Son maç formu dengede" : `${homeFormScore > awayFormScore ? match.homeTeam.name : match.awayTeam.name} son maçlarda daha yüksek puan topladı`
+      detail: homeFormScore === awayFormScore ? "Son maç formu dengede" : `${homeFormScore > awayFormScore ? match.homeTeam.name : match.awayTeam.name} son maçlarda daha yüksek puan topladı`,
+      kind: "form",
+      segments: [
+        { key: "home", label: "Ev", value: homeFormScore, display: `${homeFormScore}` },
+        { key: "away", label: "Dep", value: awayFormScore, display: `${awayFormScore}` }
+      ]
     },
     {
-      label: "Aralar",
+      label: "Mukayese",
       value: `${h2h.homeWins}-${h2h.draws}-${h2h.awayWins}`,
-      detail: "Ev sahibi galibiyetleri, beraberlik ve deplasman galibiyetleri"
+      detail: h2hTotal > 0 ? "Ev sahibi, beraberlik ve deplasman galibiyet dağılımı" : "Geçmiş eşleşme verisi bekleniyor",
+      kind: "comparison",
+      segments: [
+        { key: "home", label: "Ev", value: h2h.homeWins, display: `${h2h.homeWins}G` },
+        { key: "draw", label: "X", value: h2h.draws, display: `${h2h.draws}B` },
+        { key: "away", label: "Dep", value: h2h.awayWins, display: `${h2h.awayWins}G` }
+      ]
     },
     {
       label: shots ? translateStatisticLabel(shots.name) : "aiXp",
       value: shots ? `${shots.homeDisplay} - ${shots.awayDisplay}` : leader?.value ?? "-",
-      detail: shots
-        ? `${shots.homeNumber > shots.awayNumber ? match.homeTeam.name : shots.awayNumber > shots.homeNumber ? match.awayTeam.name : "İki takım"} veri çizgisinde önde`
-        : leader
-          ? `${leader.team} olasılık lideri`
-          : "Veri geldikçe sinyal üretilecek"
+      detail: dataDetail,
+      kind: shots ? "data" : "aixp",
+      segments: dataSegments
     }
   ];
 }
@@ -944,7 +1071,179 @@ function formatRefreshLabel(detail: MatchDetail | null) {
 function formatPlayerStat(player: MatchDetailTopPlayer) {
   const stat = player.statistics.find((item) => item.value !== null && item.value !== undefined && item.value !== "");
   if (!stat) return "-";
-  return `${stat.name}: ${stat.value}`;
+  return `${translatePlayerStatName(stat.name)}: ${stat.value}`;
+}
+
+function translatePlayerPosition(position: string | null) {
+  if (!position) return "Oyuncu";
+  const normalized = position.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    attacker: "Forvet",
+    forward: "Forvet",
+    striker: "Santrfor",
+    midfielder: "Orta saha",
+    defender: "Defans",
+    goalkeeper: "Kaleci",
+    keeper: "Kaleci",
+    coach: "Teknik direktör"
+  };
+
+  return labels[normalized] ?? position;
+}
+
+function translatePlayerStatName(name: string) {
+  const normalized = name.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    goals: "Gol",
+    goal: "Gol",
+    assists: "Asist",
+    assist: "Asist",
+    tackles: "Top kapma",
+    tackle: "Top kapma",
+    saves: "Kurtarış",
+    save: "Kurtarış",
+    shots: "Şut",
+    "shots on target": "İsabetli şut",
+    passes: "Pas",
+    "key passes": "Kilit pas",
+    rating: "Puan",
+    minutes: "Dakika",
+    appearances: "Maç",
+    cards: "Kart",
+    "yellow cards": "Sarı kart",
+    "red cards": "Kırmızı kart"
+  };
+
+  return labels[normalized] ?? translateStatisticLabel(name);
+}
+
+function useTeamAccent(team: Team) {
+  const fallback = useMemo(() => teamAccentFallback(team.name), [team.name]);
+  const [accent, setAccent] = useState(fallback);
+
+  useEffect(() => {
+    setAccent(fallback);
+    if (!team.logo) return;
+
+    let cancelled = false;
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.decoding = "async";
+    image.onload = () => {
+      const dominant = extractDominantImageColor(image);
+      if (!cancelled && dominant) setAccent(dominant);
+    };
+    image.onerror = () => {
+      if (!cancelled) setAccent(fallback);
+    };
+    image.src = team.logo;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fallback, team.logo]);
+
+  return accent;
+}
+
+function extractDominantImageColor(image: HTMLImageElement) {
+  try {
+    const canvas = document.createElement("canvas");
+    const size = 36;
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return null;
+
+    context.drawImage(image, 0, 0, size, size);
+    const pixels = context.getImageData(0, 0, size, size).data;
+    const buckets = new Map<string, { r: number; g: number; b: number; score: number }>();
+
+    for (let index = 0; index < pixels.length; index += 16) {
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const a = pixels[index + 3];
+      if (a < 96) continue;
+
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const lightness = (max + min) / 510;
+      const saturation = max === 0 ? 0 : (max - min) / max;
+      if (lightness > 0.94 || lightness < 0.08 || saturation < 0.18) continue;
+
+      const bucketR = Math.round(r / 24) * 24;
+      const bucketG = Math.round(g / 24) * 24;
+      const bucketB = Math.round(b / 24) * 24;
+      const key = `${bucketR}:${bucketG}:${bucketB}`;
+      const score = (0.35 + saturation) * (1 - Math.abs(lightness - 0.52) * 0.55);
+      const current = buckets.get(key);
+
+      if (current) {
+        current.r += r * score;
+        current.g += g * score;
+        current.b += b * score;
+        current.score += score;
+      } else {
+        buckets.set(key, { r: r * score, g: g * score, b: b * score, score });
+      }
+    }
+
+    const dominant = [...buckets.values()].sort((a, b) => b.score - a.score)[0];
+    if (!dominant) return null;
+
+    const r = Math.round(dominant.r / dominant.score);
+    const g = Math.round(dominant.g / dominant.score);
+    const b = Math.round(dominant.b / dominant.score);
+    return `rgb(${r} ${g} ${b})`;
+  } catch {
+    return null;
+  }
+}
+
+function teamAccentFallback(name: string) {
+  const normalized = normalizeTeamName(name);
+  const knownAccents: Array<[string, string]> = [
+    ["dortmund", "#f6d20a"],
+    ["frankfurt", "#d71920"],
+    ["manchester city", "#6cabdd"],
+    ["manchester united", "#da291c"],
+    ["liverpool", "#c8102e"],
+    ["chelsea", "#034694"],
+    ["tottenham", "#132257"],
+    ["brighton", "#0057b8"],
+    ["arsenal", "#ef0107"],
+    ["barcelona", "#a50044"],
+    ["real madrid", "#febd11"],
+    ["bayern", "#dc052d"],
+    ["juventus", "#111111"],
+    ["milan", "#fb090b"],
+    ["inter", "#0068a8"],
+    ["galatasaray", "#fdb912"],
+    ["fenerbahce", "#f7d417"],
+    ["besiktas", "#111111"],
+    ["trabzonspor", "#7b1024"]
+  ];
+  const match = knownAccents.find(([keyword]) => normalized.includes(keyword));
+  if (match) return match[1];
+
+  const palette = ["#2563eb", "#dc2626", "#f59e0b", "#059669", "#7c3aed", "#0891b2", "#e11d48", "#65a30d", "#9333ea", "#0f766e"];
+  return palette[hashString(normalized) % palette.length];
+}
+
+function normalizeTeamName(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function hashString(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
 }
 
 function eventSide(event: MatchDetailEvent, match: NormalizedMatch) {

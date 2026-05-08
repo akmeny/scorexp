@@ -2773,6 +2773,8 @@ button:disabled {
 }
 
 .matchAtmosphereShell {
+  --home-accent: #7c83ff;
+  --away-accent: #ff5360;
   height: var(--scorexp-viewport-height);
   min-height: 0;
   display: grid;
@@ -2969,15 +2971,26 @@ button:disabled {
   gap: 22px;
   padding: 28px;
   border-bottom: 1px solid #26343a;
-  background: linear-gradient(135deg, rgba(20, 27, 30, 0.92), rgba(14, 22, 26, 0.96));
+  background:
+    radial-gradient(circle at 17% 50%, color-mix(in srgb, var(--home-accent) 15%, transparent), transparent 38%),
+    radial-gradient(circle at 83% 50%, color-mix(in srgb, var(--away-accent) 15%, transparent), transparent 38%),
+    linear-gradient(135deg, rgba(20, 27, 30, 0.94), rgba(14, 22, 26, 0.97));
 }
 
 .atmosphereTeam {
+  --team-accent: #7c83ff;
   min-width: 0;
   display: grid;
   justify-items: center;
   gap: 8px;
+  padding: 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--team-accent) 18%, rgba(255, 255, 255, 0.06));
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--team-accent) 18%, transparent), transparent 66%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
   text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
 .atmosphereTeam strong {
@@ -2995,10 +3008,10 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   padding: 0 9px;
-  border: 1px solid #344249;
+  border: 1px solid color-mix(in srgb, var(--team-accent) 22%, #344249);
   border-radius: 999px;
-  background: #10171a;
-  color: #b4c6cd;
+  background: color-mix(in srgb, var(--team-accent) 10%, #10171a);
+  color: color-mix(in srgb, var(--team-accent) 28%, #d9e7eb);
   font-size: 11px;
   font-weight: 850;
 }
@@ -3075,6 +3088,84 @@ button:disabled {
   font-weight: 620;
   line-height: 1.5;
   overflow-wrap: break-word;
+}
+
+.atmosphereHeroPrediction {
+  width: min(1180px, calc(100% - 40px));
+  display: grid;
+  gap: 8px;
+  margin: -1px auto 0;
+  padding: 9px 14px 12px;
+  border: 1px solid #26343a;
+  border-top: 0;
+  border-radius: 0 0 20px 20px;
+  background:
+    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 84% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
+    rgba(13, 20, 24, 0.9);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.atmosphereHeroPredictionLabels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: #9dafb6;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.atmosphereHeroPredictionLabels span,
+.atmosphereHeroPredictionLabels strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereHeroPredictionLabels span:last-child {
+  text-align: right;
+}
+
+.atmosphereHeroPredictionLabels strong {
+  color: #edf7fa;
+  font-weight: 950;
+}
+
+.atmosphereHeroPredictionRail {
+  height: 8px;
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.atmosphereHeroPredictionRail i {
+  min-width: 8px;
+  display: block;
+  border-radius: inherit;
+}
+
+.atmosphereHeroPredictionRail .home {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 30%, transparent), var(--home-accent));
+}
+
+.atmosphereHeroPredictionRail .draw {
+  background: linear-gradient(90deg, rgba(183, 196, 204, 0.42), rgba(231, 237, 241, 0.72));
+}
+
+.atmosphereHeroPredictionRail .away {
+  background: linear-gradient(90deg, var(--away-accent), color-mix(in srgb, var(--away-accent) 30%, transparent));
+}
+
+.atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
+  color: color-mix(in srgb, var(--home-accent) 72%, #ffffff);
+}
+
+.atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
+  color: color-mix(in srgb, var(--away-accent) 72%, #ffffff);
 }
 
 .atmosphereCompactHero {
@@ -3257,28 +3348,124 @@ button:disabled {
 }
 
 .atmosphereInsight {
+  --insight-progress: 0%;
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 8px;
   padding: 10px;
   border: 1px solid #2b3940;
-  border-radius: 7px;
-  background: #10171a;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(124, 131, 255, 0.12), transparent 42%),
+    #10171a;
 }
 
-.atmosphereInsight span {
+.atmosphereInsight.form {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--home-accent) 12%, transparent), transparent 46%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--away-accent) 12%, transparent), transparent 46%),
+    #10171a;
+}
+
+.atmosphereInsight.comparison {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 7%, transparent), color-mix(in srgb, var(--away-accent) 7%, transparent)),
+    #10171a;
+}
+
+.atmosphereInsightHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.atmosphereInsightHeader span {
   color: #9ca6ff;
   font-size: 11px;
   font-weight: 900;
 }
 
-.atmosphereInsight strong {
+.atmosphereInsightHeader strong {
   overflow: hidden;
   color: #f1f8fa;
   font-size: 13px;
   font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.atmosphereInsightGraph {
+  height: 9px;
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.atmosphereInsightGraph i {
+  min-width: 8px;
+  display: block;
+  border-radius: inherit;
+}
+
+.atmosphereInsightGraph .home {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 35%, transparent), var(--home-accent));
+}
+
+.atmosphereInsightGraph .draw {
+  background: linear-gradient(90deg, #9dafb6, #d8e1e5);
+}
+
+.atmosphereInsightGraph .away {
+  background: linear-gradient(90deg, var(--away-accent), color-mix(in srgb, var(--away-accent) 35%, transparent));
+}
+
+.atmosphereInsightLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.atmosphereInsightLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border: 1px solid #26343a;
+  border-radius: 999px;
+  color: #9dafb6;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.atmosphereInsightLegend b {
+  color: #edf7fa;
+  font-weight: 950;
+}
+
+.atmosphereInsightLegend .home {
+  border-color: color-mix(in srgb, var(--home-accent) 35%, #26343a);
+}
+
+.atmosphereInsightLegend .away {
+  border-color: color-mix(in srgb, var(--away-accent) 35%, #26343a);
+}
+
+.atmosphereInsightGauge {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.atmosphereInsightGauge i {
+  width: var(--insight-progress);
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c83ff, #3fe0a0);
 }
 
 .atmosphereInsight p {
@@ -3492,7 +3679,7 @@ button:disabled {
   min-width: 0;
   min-height: 36px;
   display: grid;
-  grid-template-columns: 44px 18px minmax(0, 1fr) 54px;
+  grid-template-columns: 44px minmax(0, 1fr) 56px;
   align-items: center;
   gap: 7px;
   padding: 0 8px;
@@ -3502,6 +3689,14 @@ button:disabled {
   color: #a9bbc2;
   font-size: 11px;
   font-weight: 750;
+}
+
+.atmosphereMiniTeams {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
 }
 
 .atmosphereMiniRow strong {
@@ -3514,10 +3709,11 @@ button:disabled {
 }
 
 .atmosphereMiniRow b {
-  color: #ff6570;
+  color: #edf7fa;
   font-size: 11px;
   font-weight: 950;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .atmosphereStandingRow {
@@ -9072,6 +9268,45 @@ body.scorexpLightTheme,
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .atmosphereMiniRow b,
+.scorexpLightTheme .atmosphereInsightHeader strong,
+.scorexpLightTheme .atmosphereInsightLegend b,
+.scorexpLightTheme .atmosphereHeroPredictionLabels strong {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereHeroPrediction {
+  border-color: var(--sx-line);
+  background:
+    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 84% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
+    rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 32px rgba(28, 45, 59, 0.09);
+}
+
+.scorexpLightTheme .atmosphereHeroPredictionLabels,
+.scorexpLightTheme .atmosphereInsightLegend span {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmosphereInsight.form {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
+    #ffffff;
+}
+
+.scorexpLightTheme .atmosphereInsight.comparison {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 6%, transparent), color-mix(in srgb, var(--away-accent) 6%, transparent)),
+    #ffffff;
+}
+
+.scorexpLightTheme .atmosphereInsightGauge,
+.scorexpLightTheme .atmosphereInsightGraph {
+  background: #e8f0f5;
+}
+
 .scorexpLightTheme .atmosphereLeagueTitle strong,
 .scorexpLightTheme .atmosphereTeam strong,
 .scorexpLightTheme .atmosphereScoreStage strong,
@@ -9512,6 +9747,8 @@ body.scorexpLightTheme,
     border: 1px solid rgba(124, 131, 255, 0.24);
     border-radius: 28px;
     background:
+      radial-gradient(circle at 16% 45%, color-mix(in srgb, var(--home-accent) 14%, transparent), transparent 42%),
+      radial-gradient(circle at 84% 45%, color-mix(in srgb, var(--away-accent) 14%, transparent), transparent 42%),
       radial-gradient(circle at 50% 15%, rgba(124, 131, 255, 0.14), transparent 44%),
       linear-gradient(135deg, rgba(16, 24, 28, 0.98), rgba(11, 18, 22, 0.98));
     box-shadow:
@@ -9545,10 +9782,13 @@ body.scorexpLightTheme,
     align-self: center;
     align-content: center;
     gap: 6px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
+    padding: 8px 5px;
+    border: 1px solid color-mix(in srgb, var(--team-accent) 15%, rgba(255, 255, 255, 0.07));
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--team-accent) 18%, transparent), transparent 64%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.01));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   .atmosphereTeam .teamLogo.lg,
@@ -9618,6 +9858,27 @@ body.scorexpLightTheme,
   .atmosphereScoreStage p {
     display: none;
   }
+
+  .atmosphereHeroPrediction {
+    width: calc(100% - 20px);
+    margin: -10px auto 10px;
+    padding: 14px 12px 10px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .atmosphereHeroPredictionLabels {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    text-align: center;
+  }
+
+  .atmosphereHeroPredictionLabels span:last-child {
+    text-align: center;
+  }
+
+  .atmosphereHeroPredictionLabels span {
+    display: none;
+  }
 }
 
 @media (max-width: 380px) {
@@ -9652,6 +9913,8 @@ body.scorexpLightTheme,
   .scorexpLightTheme .atmosphereHero {
     border-color: rgba(37, 99, 235, 0.22);
     background:
+      radial-gradient(circle at 16% 45%, color-mix(in srgb, var(--home-accent) 13%, transparent), transparent 42%),
+      radial-gradient(circle at 84% 45%, color-mix(in srgb, var(--away-accent) 13%, transparent), transparent 42%),
       radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.12), transparent 48%),
       linear-gradient(135deg, #ffffff, #eef5f9);
     box-shadow:
@@ -9671,9 +9934,17 @@ body.scorexpLightTheme,
       rgba(255, 255, 255, 0.96);
   }
 
+  .scorexpLightTheme .atmosphereTeam {
+    border-color: color-mix(in srgb, var(--team-accent) 16%, var(--sx-line));
+    background:
+      radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--team-accent) 16%, transparent), transparent 66%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  }
+
   .scorexpLightTheme .atmosphereTeam span {
     border-color: rgba(37, 99, 235, 0.18);
-    background: #edf4ff;
+    background: color-mix(in srgb, var(--team-accent) 12%, #ffffff);
     color: #174ea6;
   }
 }
@@ -9702,7 +9973,7 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .atmosphereTeam span {
   border-color: rgba(37, 99, 235, 0.18);
-  background: #edf4ff;
+  background: color-mix(in srgb, var(--team-accent) 12%, #ffffff);
   color: #174ea6;
 }
 
