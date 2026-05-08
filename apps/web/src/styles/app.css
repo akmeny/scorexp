@@ -10367,6 +10367,78 @@ body.scorexpLightTheme,
   color: #91a4ac;
 }
 
+@media (max-width: 760px) {
+  .atmosphereHero {
+    border-color: rgba(190, 207, 216, 0.22);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--home-accent) 12%, #10171b) 0%,
+        color-mix(in srgb, var(--home-accent) 5%, #10171b) 33%,
+        #10171b 50%,
+        color-mix(in srgb, var(--away-accent) 5%, #10171b) 67%,
+        color-mix(in srgb, var(--away-accent) 12%, #10171b) 100%
+      ) !important;
+    box-shadow: none !important;
+  }
+
+  .atmosphereHero::before,
+  .atmosphereHero::after,
+  .atmosphereTeam::before,
+  .atmosphereScoreStage::before,
+  .atmosphereScoreStage::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .atmosphereTeam,
+  .atmosphereScoreStage,
+  .scorexpLightTheme .atmosphereTeam,
+  .scorexpLightTheme .atmosphereScoreStage {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .atmosphereTeam {
+    border-radius: 0 !important;
+  }
+
+  .atmosphereScoreStage {
+    border-radius: 0 !important;
+  }
+
+  .atmosphereScoreline {
+    text-shadow: none !important;
+  }
+
+  .atmosphereTeam span {
+    border-color: color-mix(in srgb, var(--team-accent) 20%, rgba(213, 229, 234, 0.22));
+    background: transparent;
+    color: color-mix(in srgb, var(--team-accent) 22%, #dfe8ed);
+  }
+
+  .scorexpLightTheme .atmosphereHero {
+    border-color: rgba(120, 144, 156, 0.24);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--home-accent) 10%, #f8fbfd) 0%,
+        color-mix(in srgb, var(--home-accent) 4%, #f8fbfd) 33%,
+        #f8fbfd 50%,
+        color-mix(in srgb, var(--away-accent) 4%, #f8fbfd) 67%,
+        color-mix(in srgb, var(--away-accent) 10%, #f8fbfd) 100%
+      ) !important;
+    box-shadow: none !important;
+  }
+
+  .scorexpLightTheme .atmosphereTeam span {
+    border-color: color-mix(in srgb, var(--team-accent) 18%, #cbd9e1);
+    background: transparent;
+    color: color-mix(in srgb, var(--team-accent) 32%, #344450);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .matchRow,
   .chip,
