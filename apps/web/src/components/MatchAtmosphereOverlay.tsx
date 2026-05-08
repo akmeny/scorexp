@@ -1071,7 +1071,6 @@ function EmptyAtmosphereState({ label }: { label: string }) {
 
 function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | null, rows: StatisticRow[]): LiveAtmosphereData {
   const attacks = readStatisticPair(rows, ["Attacks", "Attack", "Total attacks"]);
-  const dangerousAttacks = readStatisticPair(rows, ["Dangerous attacks", "Dangerous attack"]);
   const possession = readStatisticPair(rows, ["Possession", "Ball possession"], { percent: true });
   const corners = readStatisticPair(rows, ["Corners", "Corner kicks"]);
   const yellowCards = readStatisticPair(rows, ["Yellow cards", "Yellow card"]);
@@ -1080,6 +1079,15 @@ function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | n
     away: match.redCards.away
   });
   const shotsOnTarget = readStatisticPair(rows, ["Shots on target", "Shots on goal"]);
+  const bigChancesCreated = readStatisticPair(rows, [
+    "Big chances created",
+    "Big chances",
+    "Clear cut chances",
+    "Created big chances",
+    "Yaratilan net firsat",
+    "Net firsat"
+  ]);
+  const dangerousAttacks = addStatisticPairs(bigChancesCreated, shotsOnTarget);
   const shotsOffTarget = readStatisticPair(rows, ["Shots off target", "Shots wide", "Missed shots"]);
   const blockedShots = readStatisticPair(rows, ["Blocked shots", "Shots blocked"]);
   const missedBlockedShots = addStatisticPairs(shotsOffTarget, blockedShots);
@@ -1453,9 +1461,12 @@ function parseDisplayNumber(value: string) {
 function normalizeStatisticLookup(value: string) {
   return value
     .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ı/g, "i")
     .replace(/[\u2010-\u2015]/g, "-")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
+    .replace(/\s+/g, " ");
 }
 
 function clamp(value: number, min: number, max: number) {

@@ -1096,9 +1096,12 @@ function formatStatValue(name: string, value: MatchDetailStatistic["value"]) {
 function normalizeStatisticLookup(value: string) {
   return value
     .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ı/g, "i")
     .replace(/[\u2010-\u2015]/g, "-")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
+    .replace(/\s+/g, " ");
 }
 
 function parsePercent(value: string | null) {
