@@ -15,11 +15,35 @@ export function InstallPrompt() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    setTarget(isMobileBrowser() ? "mobile" : "desktop");
+    const updateTarget = () => {
+      setTarget(isInstalledApp() ? null : isMobileBrowser() ? "mobile" : "desktop");
+    };
+
+    updateTarget();
+    window.addEventListener("appinstalled", updateTarget);
+    window.addEventListener("visibilitychange", updateTarget);
+
+    const standaloneQuery = window.matchMedia?.("(display-mode: standalone)");
+    if (standaloneQuery?.addEventListener) {
+      standaloneQuery.addEventListener("change", updateTarget);
+    } else {
+      standaloneQuery?.addListener?.(updateTarget);
+    }
+
+    return () => {
+      window.removeEventListener("appinstalled", updateTarget);
+      window.removeEventListener("visibilitychange", updateTarget);
+      if (standaloneQuery?.removeEventListener) {
+        standaloneQuery.removeEventListener("change", updateTarget);
+      } else {
+        standaloneQuery?.removeListener?.(updateTarget);
+      }
+    };
   }, []);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
+      if (isInstalledApp()) return;
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
     };
@@ -79,4 +103,14 @@ function isMobileBrowser() {
   const userAgent = navigator.userAgent.toLowerCase();
   const mobileAgent = /android|iphone|ipad|ipod|mobile/.test(userAgent);
   return mobileAgent || (coarsePointer && compactViewport);
+}
+
+function isInstalledApp() {
+  const standaloneDisplay = window.matchMedia?.("(display-mode: standalone)").matches ?? false;
+  const fullscreenDisplay = window.matchMedia?.("(display-mode: fullscreen)").matches ?? false;
+  const minimalUiDisplay = window.matchMedia?.("(display-mode: minimal-ui)").matches ?? false;
+  const iosStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const androidTrustedWebActivity = document.referrer.startsWith("android-app://");
+
+  return standaloneDisplay || fullscreenDisplay || minimalUiDisplay || iosStandalone || androidTrustedWebActivity;
 }

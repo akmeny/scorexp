@@ -289,7 +289,7 @@ function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statistic
 
   if (!isUpcoming && (detail?.events?.length ?? 0) > 0) tabs.push({ key: "events", label: "Özet" });
   if (!isUpcoming && statisticRowCount > 0) tabs.push({ key: "stats", label: "İstatistik" });
-  if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "Aralar" });
+  if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "Mukayese" });
   if ((detail?.form?.home.length ?? 0) > 0 || (detail?.form?.away.length ?? 0) > 0) tabs.push({ key: "form", label: "Form" });
   if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan" });
 
@@ -483,20 +483,74 @@ function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: Retur
 function HeadToHeadView({ match, matches }: { match: NormalizedMatch; matches: NormalizedMatch[] }) {
   const pastMatches = matches.filter((item) => item.id !== match.id);
   const summary = summarizeResults(pastMatches, match.homeTeam, match.awayTeam);
+  const items = [
+    { label: match.homeTeam.name, shortLabel: "Ev", value: summary.homeWins, suffix: "G", tone: "home" },
+    { label: "Beraberlik", shortLabel: "X", value: summary.draws, suffix: "B", tone: "draw" },
+    { label: match.awayTeam.name, shortLabel: "Dep", value: summary.awayWins, suffix: "G", tone: "away" }
+  ] as const;
 
   return (
     <div className="h2hBlock">
-      <div className="h2hSummary">
-        <SummaryPill label={match.homeTeam.name} value={summary.homeWins} />
-        <SummaryPill label="Beraberlik" value={summary.draws} />
-        <SummaryPill label={match.awayTeam.name} value={summary.awayWins} />
-      </div>
+      <ComparisonGraph items={items} />
       <div className="compactMatchList">
         {pastMatches.slice(0, 10).map((item) => (
           <CompactMatchRow key={item.id} match={item} focusTeamId={match.homeTeam.id} />
         ))}
       </div>
     </div>
+  );
+}
+
+function ComparisonGraph({
+  items
+}: {
+  items: readonly {
+    label: string;
+    shortLabel: string;
+    value: number;
+    suffix: string;
+    tone: "home" | "draw" | "away";
+  }[];
+}) {
+  const maxValue = Math.max(1, ...items.map((item) => item.value));
+  const points = items
+    .map((item, index) => {
+      const x = 12 + index * 38;
+      const y = 42 - (item.value / maxValue) * 30;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <section className="comparisonGraphCard" aria-label="Mukayese grafiği">
+      <div className="comparisonStats">
+        {items.map((item) => (
+          <div className={`comparisonStat ${item.tone}`} key={item.tone}>
+            <span title={item.label}>{item.label}</span>
+            <strong>
+              {item.value}
+              {item.suffix}
+            </strong>
+          </div>
+        ))}
+      </div>
+      <div className="comparisonSparkline" aria-hidden="true">
+        <svg viewBox="0 0 100 48" preserveAspectRatio="none">
+          <path d="M12 42 H88" />
+          <polyline points={points} />
+          {items.map((item, index) => {
+            const cx = 12 + index * 38;
+            const cy = 42 - (item.value / maxValue) * 30;
+            return <circle className={item.tone} cx={cx} cy={cy} r="3.2" key={item.tone} />;
+          })}
+        </svg>
+        <div className="comparisonAxis">
+          {items.map((item) => (
+            <span key={item.tone}>{item.shortLabel}</span>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -574,13 +628,17 @@ function TeamFormColumn({ team, matches }: { team: Team; matches: NormalizedMatc
 
 function CompactMatchRow({ match, focusTeamId }: { match: NormalizedMatch; focusTeamId: string }) {
   const focusHome = match.homeTeam.id === focusTeamId;
-  const opponent = focusHome ? match.awayTeam : match.homeTeam;
+  const focusAway = match.awayTeam.id === focusTeamId;
 
   return (
-    <div className="compactMatchRow">
+    <div className={`compactMatchRow ${focusHome ? "focusHome" : focusAway ? "focusAway" : ""}`}>
       <span>{formatShortDate(match.date)}</span>
-      <TeamLogo src={opponent.logo} label={opponent.name} size="sm" />
-      <strong>{opponent.name}</strong>
+      <span className="compactMatchTeams">
+        <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
+        <strong title={`${match.homeTeam.name} - ${match.awayTeam.name}`}>
+          {match.homeTeam.name} - {match.awayTeam.name}
+        </strong>
+      </span>
       <b>{formatScoreline(match)}</b>
     </div>
   );
