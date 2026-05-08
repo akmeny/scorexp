@@ -10054,6 +10054,137 @@ body.scorexpLightTheme,
   }
 }
 
+@media (max-width: 760px) {
+  .atmosphereHero {
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--home-accent) 15%, color-mix(in srgb, var(--away-accent) 15%, rgba(124, 131, 255, 0.24)));
+    background:
+      radial-gradient(ellipse at 23% 46%, color-mix(in srgb, var(--home-accent) 23%, transparent), transparent 48%),
+      radial-gradient(ellipse at 77% 46%, color-mix(in srgb, var(--away-accent) 23%, transparent), transparent 48%),
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.08), transparent 34%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 6%, transparent), rgba(15, 23, 27, 0.97) 36%, rgba(15, 23, 27, 0.97) 64%, color-mix(in srgb, var(--away-accent) 6%, transparent)),
+      linear-gradient(135deg, rgba(17, 25, 29, 0.99), rgba(11, 18, 22, 0.99));
+  }
+
+  .atmosphereHero::before {
+    left: 14%;
+    right: 14%;
+    top: 50%;
+    bottom: auto;
+    z-index: 0;
+    height: 46px;
+    opacity: 0.72;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 18%, transparent), rgba(255, 255, 255, 0.06), color-mix(in srgb, var(--away-accent) 18%, transparent));
+    transform: translateY(-50%);
+  }
+
+  .atmosphereHero::after {
+    inset: 1px;
+    z-index: 0;
+    height: auto;
+    border-radius: inherit;
+    opacity: 1;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--away-accent) 10%, transparent)),
+      radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.08), transparent 28%);
+    pointer-events: none;
+  }
+
+  .atmosphereTeam,
+  .atmosphereScoreStage {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .atmosphereTeam {
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  .atmosphereTeam::before {
+    content: "";
+    position: absolute;
+    inset: 4px -2px 8px;
+    z-index: -1;
+    border-radius: 26px;
+    background:
+      radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--team-accent) 22%, transparent), transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent);
+    opacity: 0.82;
+  }
+
+  .atmosphereScoreStage {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.045) 44%, transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 8%, transparent), rgba(255, 255, 255, 0.035) 48%, color-mix(in srgb, var(--away-accent) 8%, transparent));
+  }
+
+  .atmosphereScoreStage::before {
+    left: -38px;
+    right: -38px;
+    height: 42px;
+    opacity: 0.66;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 20%, transparent), rgba(255, 255, 255, 0.08), color-mix(in srgb, var(--away-accent) 20%, transparent));
+  }
+
+  .atmosphereScoreStage::after {
+    inset: -4px;
+    border-radius: 34px;
+    background:
+      radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.12), transparent 42%),
+      radial-gradient(circle at 50% 56%, rgba(255, 255, 255, 0.11), transparent 64%);
+  }
+
+  .scorexpLightTheme .atmosphereHero {
+    border-color: color-mix(in srgb, var(--home-accent) 13%, color-mix(in srgb, var(--away-accent) 13%, rgba(37, 99, 235, 0.22)));
+    background:
+      radial-gradient(ellipse at 23% 46%, color-mix(in srgb, var(--home-accent) 19%, transparent), transparent 48%),
+      radial-gradient(ellipse at 77% 46%, color-mix(in srgb, var(--away-accent) 19%, transparent), transparent 48%),
+      radial-gradient(circle at 50% 14%, rgba(37, 99, 235, 0.12), transparent 42%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 8%, #ffffff), #f8fbfd 37%, #f8fbfd 63%, color-mix(in srgb, var(--away-accent) 8%, #ffffff));
+  }
+
+  .scorexpLightTheme .atmosphereHero::before {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 15%, transparent), rgba(37, 99, 235, 0.08), color-mix(in srgb, var(--away-accent) 15%, transparent));
+  }
+
+  .scorexpLightTheme .atmosphereHero::after {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 9%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--away-accent) 9%, transparent)),
+      radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.68), transparent 28%);
+  }
+
+  .scorexpLightTheme .atmosphereTeam,
+  .scorexpLightTheme .atmosphereScoreStage {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .scorexpLightTheme .atmosphereTeam::before {
+    background:
+      radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--team-accent) 18%, transparent), transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent);
+  }
+
+  .scorexpLightTheme .atmosphereScoreStage {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22) 44%, transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 6%, transparent), rgba(255, 255, 255, 0.32) 48%, color-mix(in srgb, var(--away-accent) 6%, transparent));
+  }
+
+  .scorexpLightTheme .atmosphereScoreStage::before {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 15%, transparent), rgba(37, 99, 235, 0.07), color-mix(in srgb, var(--away-accent) 15%, transparent));
+  }
+
+  .scorexpLightTheme .atmosphereScoreStage::after {
+    background:
+      radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.72), transparent 42%),
+      radial-gradient(circle at 50% 56%, rgba(255, 255, 255, 0.38), transparent 64%);
+  }
+}
+
 .scorexpLightTheme .atmosphereAiPanel {
   border-color: rgba(37, 99, 235, 0.28);
   background:
