@@ -10032,6 +10032,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .aiPredictionBlock strong,
 .scorexpLightTheme .eventRow strong,
 .scorexpLightTheme .statCompareRow strong,
+.scorexpLightTheme .statTeams,
 .scorexpLightTheme .standingRow strong {
   color: var(--sx-text);
 }
@@ -11844,8 +11845,8 @@ body.scorexpLightTheme,
 .formGoalsGraph {
   min-width: 0;
   display: grid;
-  gap: 10px;
-  padding: 11px;
+  gap: 12px;
+  padding: 12px;
   border: 1px solid #26343a;
   border-radius: 8px;
   background:
@@ -11860,35 +11861,137 @@ body.scorexpLightTheme,
 .formGoalsHeader {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 8px;
 }
 
-.formGoalsHeader span {
+.formGoalsHeader > span {
   color: #9ca6ff;
   font-size: 11px;
   font-weight: 950;
 }
 
-.formGoalsHeader strong {
+.formGoalsTeams {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.formGoalsTeams strong {
   min-width: 0;
   overflow: hidden;
   color: #edf4f6;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.formGoalsTeams strong:last-child {
+  text-align: right;
+}
+
+.formGoalsTeams em {
+  color: #8fa2aa;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.formGoalsTotals {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.formGoalsTotals b {
+  min-width: 0;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid rgba(180, 202, 211, 0.12);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #edf4f6;
+  font-size: 14px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.formGoalsTotals b:nth-child(-n + 2) {
+  border-color: color-mix(in srgb, var(--sx-data-home) 20%, rgba(180, 202, 211, 0.12));
+}
+
+.formGoalsTotals b:nth-child(n + 3) {
+  border-color: color-mix(in srgb, var(--sx-data-away) 20%, rgba(180, 202, 211, 0.12));
+}
+
+.formGoalsTotals span {
+  min-width: 0;
+  overflow: hidden;
+  color: #9dafb6;
+  font-size: 9.5px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.formGoalsBars {
+  display: grid;
+  gap: 10px;
+}
+
 .formGoalBar {
   min-width: 0;
-  min-height: 36px;
+  display: grid;
+  gap: 5px;
+}
+
+.formGoalBarMeta {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 42px;
+}
+
+.formGoalBarMeta span {
+  min-width: 0;
+  overflow: hidden;
+  color: #d8e6eb;
+  font-size: 11px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formGoalBarMeta em {
+  color: #8fa2aa;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.formGoalBarBody {
+  min-width: 0;
+  min-height: 28px;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 8px;
 }
 
-.formGoalBar > strong {
+.formGoalBarBody > strong {
   color: #edf4f6;
   font-size: 18px;
   font-weight: 950;
@@ -11899,27 +12002,28 @@ body.scorexpLightTheme,
 .formGoalBarTrack {
   position: relative;
   min-width: 0;
-  height: 28px;
+  height: 14px;
   display: flex;
   align-items: center;
   overflow: hidden;
   border: 1px solid rgba(180, 202, 211, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.055);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 22px rgba(0, 0, 0, 0.16);
 }
 
-.formGoalBarTrack span {
+.formGoalBarTrack::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #d4e2e7;
-  font-size: 11px;
-  font-weight: 950;
-  text-align: center;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38);
+  top: -4px;
+  bottom: -4px;
+  left: 50%;
+  z-index: 3;
+  width: 1px;
+  background: rgba(237, 244, 246, 0.52);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -11930,6 +12034,7 @@ body.scorexpLightTheme,
   min-width: 7px;
   height: 100%;
   display: block;
+  transition: width 180ms ease;
 }
 
 .formGoalBarTrack i {
@@ -11946,6 +12051,14 @@ body.scorexpLightTheme,
 
 .formGoalBar.reverseTone .formGoalBarTrack b {
   background: linear-gradient(90deg, rgba(251, 146, 60, 0.82), rgba(251, 146, 60, 0.36));
+}
+
+.formGoalBar.homeLead .formGoalBarMeta em {
+  color: color-mix(in srgb, var(--sx-data-home) 62%, #edf4f6);
+}
+
+.formGoalBar.awayLead .formGoalBarMeta em {
+  color: color-mix(in srgb, var(--sx-data-away) 62%, #edf4f6);
 }
 
 @media (min-width: 981px) {
@@ -12265,16 +12378,28 @@ body.scorexpLightTheme,
     padding: 10px;
   }
 
-  .formGoalsHeader strong {
+  .formGoalsTeams {
     white-space: normal;
   }
 
-  .formGoalBar {
+  .formGoalsTeams em {
+    display: none;
+  }
+
+  .formGoalsTotals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formGoalBarMeta {
+    padding: 0 34px;
+  }
+
+  .formGoalBarBody {
     grid-template-columns: 28px minmax(0, 1fr) 28px;
     gap: 6px;
   }
 
-  .formGoalBar > strong {
+  .formGoalBarBody > strong {
     font-size: 15px;
   }
 }
@@ -12294,23 +12419,34 @@ body.scorexpLightTheme,
   color: var(--sx-text);
 }
 
-.scorexpLightTheme .formGoalsHeader span {
+.scorexpLightTheme .formGoalsHeader > span {
   color: var(--sx-accent);
 }
 
-.scorexpLightTheme .formGoalsHeader strong,
-.scorexpLightTheme .formGoalBar > strong {
+.scorexpLightTheme .formGoalsTeams strong,
+.scorexpLightTheme .formGoalsTotals b,
+.scorexpLightTheme .formGoalBarBody > strong {
   color: var(--sx-text);
+}
+
+.scorexpLightTheme .formGoalsTeams em,
+.scorexpLightTheme .formGoalsTotals span,
+.scorexpLightTheme .formGoalBarMeta em {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .formGoalsTotals b {
+  border-color: var(--sx-line);
+  background: #f7fafc;
+}
+
+.scorexpLightTheme .formGoalBarMeta span {
+  color: #22313a;
 }
 
 .scorexpLightTheme .formGoalBarTrack {
   border-color: var(--sx-line);
   background: #eef4f7;
-}
-
-.scorexpLightTheme .formGoalBarTrack span {
-  color: #1f2d36;
-  text-shadow: none;
 }
 
 @media (min-width: 981px) {

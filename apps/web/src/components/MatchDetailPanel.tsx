@@ -589,12 +589,34 @@ function FormGoalsGraph({
     <div className="formGoalsGraph detailFormGoalsGraph" aria-label="Son 5 maç gol formu">
       <div className="formGoalsHeader">
         <span>Son 5 Maç Gol Formu</span>
-        <strong>
-          {homeTeam.name} {home.scored}:{home.conceded} · {awayTeam.name} {away.scored}:{away.conceded}
-        </strong>
+        <div className="formGoalsTeams">
+          <strong title={homeTeam.name}>{homeTeam.name}</strong>
+          <em>Son 5 maç toplamları</em>
+          <strong title={awayTeam.name}>{awayTeam.name}</strong>
+        </div>
+        <div className="formGoalsTotals" aria-hidden="true">
+          <b>
+            <span>Attı</span>
+            {home.scored}
+          </b>
+          <b>
+            <span>Yedi</span>
+            {home.conceded}
+          </b>
+          <b>
+            <span>Attı</span>
+            {away.scored}
+          </b>
+          <b>
+            <span>Yedi</span>
+            {away.conceded}
+          </b>
+        </div>
       </div>
-      <FormGoalBar label="Attığı gol" home={home.scored} away={away.scored} />
-      <FormGoalBar label="Yediği gol" home={home.conceded} away={away.conceded} reverseTone />
+      <div className="formGoalsBars">
+        <FormGoalBar label="Attığı gol" home={home.scored} away={away.scored} />
+        <FormGoalBar label="Yediği gol" home={home.conceded} away={away.conceded} reverseTone />
+      </div>
     </div>
   );
 }
@@ -602,16 +624,22 @@ function FormGoalsGraph({
 function FormGoalBar({ label, home, away, reverseTone = false }: { label: string; home: number; away: number; reverseTone?: boolean }) {
   const homeShare = shareOfTotal(home, away) * 100;
   const awayShare = 100 - homeShare;
+  const leaderClass = home === away ? "balanced" : home > away ? "homeLead" : "awayLead";
 
   return (
-    <div className={reverseTone ? "formGoalBar reverseTone" : "formGoalBar"}>
-      <strong>{home}</strong>
-      <div className="formGoalBarTrack">
+    <div className={`formGoalBar ${reverseTone ? "reverseTone" : ""} ${leaderClass}`}>
+      <div className="formGoalBarMeta">
         <span>{label}</span>
-        <i style={{ width: `${homeShare}%` }} />
-        <b style={{ width: `${awayShare}%` }} />
+        <em>{home === away ? "Denge" : home > away ? "Ev yüksek" : "Dep yüksek"}</em>
       </div>
-      <strong>{away}</strong>
+      <div className="formGoalBarBody">
+        <strong>{home}</strong>
+        <div className="formGoalBarTrack">
+          <i style={{ width: `${homeShare}%` }} />
+          <b style={{ width: `${awayShare}%` }} />
+        </div>
+        <strong>{away}</strong>
+      </div>
     </div>
   );
 }
