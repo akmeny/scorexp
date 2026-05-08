@@ -37,8 +37,10 @@ const notificationIcon = "/icons/icon-192.png";
 const notificationBadge = "/icons/notification-badge.png";
 const notificationImage = "/icons/icon-512.png";
 const notificationSound = "/audio/notification.mp3";
+const favoriteNotificationPermissionPromptKey = "scorexp:favoriteNotificationPermissionPrompted";
 
 let notificationAudioElement: HTMLAudioElement | null = null;
+let favoriteNotificationPermissionPromptedInMemory = false;
 
 type GoalDisplayScore = Pick<MatchScore, "home" | "away">;
 type GoalPresentation = {
@@ -428,6 +430,18 @@ export default function App() {
     favoriteSnapshotsRef.current = nextSnapshots;
   }, [allMatches, favoriteIds]);
 
+  const syncProfileNotificationPermission = (permission: NotificationPermission | null) => {
+    if (!auth.profile || !permission) return;
+
+    const nextNotificationsEnabled = auth.profile.notificationsEnabled && permission !== "denied";
+    if (auth.profile.notificationPermission === permission && auth.profile.notificationsEnabled === nextNotificationsEnabled) return;
+
+    void auth.updateProfile({
+      notificationsEnabled: nextNotificationsEnabled,
+      notificationPermission: permission
+    });
+  };
+
   const toggleFavorite = (id: string) => {
     setFavoriteIds((current) => {
       const next = new Set(current);
@@ -436,7 +450,7 @@ export default function App() {
       } else {
         next.add(id);
         if (notificationsEnabled) {
-          requestNotificationPermission();
+          void requestFavoriteNotificationPermissionOnce().then(syncProfileNotificationPermission);
           primeNotificationSound();
         }
       }
@@ -1107,9 +1121,17 @@ function formatNotificationScore(match: NormalizedMatch) {
   return `${match.score.home}-${match.score.away}`;
 }
 
-function requestNotificationPermission() {
-  if (!("Notification" in window) || Notification.permission !== "default") return;
-  void Notification.requestPermission();
+async function requestFavoriteNotificationPermissionOnce(): Promise<NotificationPermission | null> {
+  if (!("Notification" in window)) return null;
+  if (Notification.permission !== "default") return Notification.permission;
+  if (favoriteNotificationPermissionWasPrompted()) return Notification.permission;
+
+  markFavoriteNotificationPermissionPrompted();
+  try {
+    return await Notification.requestPermission();
+  } catch {
+    return Notification.permission;
+  }
 }
 
 function readNotificationPermission(): NotificationPermission | null {
@@ -1121,6 +1143,24 @@ async function requestNotificationPermissionValue(): Promise<NotificationPermiss
   if (!("Notification" in window)) return null;
   if (Notification.permission !== "default") return Notification.permission;
   return Notification.requestPermission();
+}
+
+function favoriteNotificationPermissionWasPrompted() {
+  if (favoriteNotificationPermissionPromptedInMemory) return true;
+  try {
+    return window.localStorage.getItem(favoriteNotificationPermissionPromptKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markFavoriteNotificationPermissionPrompted() {
+  favoriteNotificationPermissionPromptedInMemory = true;
+  try {
+    window.localStorage.setItem(favoriteNotificationPermissionPromptKey, "1");
+  } catch {
+    // Some webviews can block storage; the in-memory latch still prevents repeat prompts in this session.
+  }
 }
 
 async function showSystemNotification(title: string, body: string, matchId: string) {
