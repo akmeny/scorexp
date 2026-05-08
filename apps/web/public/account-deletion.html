@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScoreXP Hesap ve Veri Silme</title>
+    <meta
+      name="description"
+      content="ScoreXP hesabı ve ilişkili kullanıcı verileri için silme talebi yönergeleri."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #eef4f7;
+        color: #111820;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #f8fbfd 0%, #e8f0f4 100%);
+      }
+
+      main {
+        width: min(860px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 56px;
+      }
+
+      article {
+        border: 1px solid #d5e1e7;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 22px 70px rgba(21, 34, 43, 0.12);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 30px clamp(20px, 4vw, 42px);
+        background: #0b1116;
+        color: #f7fbfd;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        font-weight: 900;
+      }
+
+      .mark {
+        width: 34px;
+        height: 34px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 9px;
+        background: #f7fbfd;
+        color: #0b1116;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 5vw, 44px);
+        line-height: 1.06;
+        letter-spacing: 0;
+      }
+
+      section {
+        padding: 30px clamp(20px, 4vw, 42px) 36px;
+      }
+
+      h2 {
+        margin: 28px 0 10px;
+        color: #111820;
+        font-size: 20px;
+      }
+
+      p,
+      li {
+        color: #344450;
+        font-size: 16px;
+        line-height: 1.72;
+      }
+
+      ol,
+      ul {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      a {
+        color: #195edb;
+        font-weight: 800;
+      }
+
+      .box {
+        margin-top: 22px;
+        padding: 16px 18px;
+        border: 1px solid #cbd9e1;
+        border-radius: 14px;
+        background: #f5f9fb;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background: #0c1113;
+          color: #eef6f8;
+        }
+
+        body {
+          background: linear-gradient(180deg, #0c1113 0%, #121b20 100%);
+        }
+
+        article {
+          border-color: #26353d;
+          background: rgba(14, 21, 24, 0.94);
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+        }
+
+        h2 {
+          color: #f5fbfd;
+        }
+
+        p,
+        li {
+          color: #c4d2d8;
+        }
+
+        .box {
+          border-color: #2b3b43;
+          background: #10191e;
+        }
+
+        a {
+          color: #8aa8ff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article>
+        <header>
+          <div class="brand"><span class="mark">S</span><span>ScoreXP</span></div>
+          <h1>Hesap ve Veri Silme</h1>
+        </header>
+
+        <section>
+          <p>
+            ScoreXP hesabınız ve ilişkili profil verileriniz için silme talebi oluşturabilirsiniz. Bu sayfa hem webden
+            hem de Google Play üzerinden dağıtılan ScoreXP uygulamasından erişilebilir.
+          </p>
+
+          <h2>Silme talebi nasıl gönderilir?</h2>
+          <ol>
+            <li>ScoreXP hesabınızda kullandığınız e-posta adresini veya nickname'i belirtin.</li>
+            <li>
+              <a href="mailto:privacy@scorexp.com?subject=ScoreXP%20hesap%20silme%20talebi">privacy@scorexp.com</a>
+              adresine "ScoreXP hesap silme talebi" başlığıyla e-posta gönderin.
+            </li>
+            <li>Talebiniz doğrulandıktan sonra ScoreXP profil verileriniz ve hesapla ilişkili tercihleriniz silinir.</li>
+          </ol>
+
+          <h2>Silinen veriler</h2>
+          <ul>
+            <li>ScoreXP kullanıcı profili, nickname, e-posta, sağlayıcı bilgisi ve bildirim tercihleri.</li>
+            <li>Hesapla ilişkilendirilebilen uygulama tercihleri.</li>
+          </ul>
+
+          <h2>Silinmeyen veya daha kısa/uzun tutulabilen veriler</h2>
+          <p>
+            Güvenlik, kötüye kullanımı önleme, yasal yükümlülükler veya sistem bütünlüğü için bazı kayıtlar sınırlı süre
+            saklanabilir. Cihazınızda yerel olarak tutulan favoriler ve tema gibi verileri, tarayıcı veya uygulama
+            verilerini temizleyerek silebilirsiniz.
+          </p>
+
+          <div class="box">
+            <p>
+              Gizlilik politikası:
+              <a href="/privacy-policy.html">https://scorexp.com/privacy-policy.html</a>
+            </p>
+          </div>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

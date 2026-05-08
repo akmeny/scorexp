@@ -256,6 +256,11 @@ export function SiteHeader({ footballCount, colorMode, onToggleColorMode, onOpen
         </>
       )}
 
+      <div className="profileLegalLinks" aria-label="Yasal bağlantılar">
+        <a href="/privacy-policy.html">Gizlilik Politikası</a>
+        <a href="/account-deletion.html">Hesap ve veri silme</a>
+      </div>
+
       {auth.error || profileNotice ? <div className="profileNotice">{profileNotice ?? auth.error}</div> : null}
     </div>
   );
