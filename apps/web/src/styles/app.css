@@ -3157,19 +3157,15 @@ button:disabled {
 }
 
 .atmosphereHeroPrediction {
-  width: min(1180px, calc(100% - 40px));
+  grid-column: 1 / -1;
+  width: 100%;
   display: grid;
   gap: 8px;
-  margin: -1px auto 0;
-  padding: 9px 14px 12px;
-  border: 1px solid #26343a;
-  border-top: 0;
-  border-radius: 0 0 20px 20px;
-  background:
-    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
-    radial-gradient(circle at 84% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
-    rgba(13, 20, 24, 0.9);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+  margin: 4px 0 0;
+  padding: 13px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--home-accent) 12%, color-mix(in srgb, var(--away-accent) 12%, rgba(180, 202, 211, 0.13)));
+  background: transparent;
+  box-shadow: none;
 }
 
 .atmosphereHeroPredictionLabels {
@@ -8596,7 +8592,7 @@ body,
     min-height: 0 !important;
     max-height: none !important;
     display: grid !important;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     overflow: hidden !important;
     padding-bottom: 0 !important;
   }
@@ -8612,7 +8608,7 @@ body,
   }
 
   .matchAtmosphereShell.chatTabActive .atmosphereTabs {
-    grid-row: 3;
+    grid-row: 2;
   }
 
   .matchAtmosphereShell.chatTabActive .atmosphereScoreStage {
@@ -8621,7 +8617,7 @@ body,
   }
 
   .matchAtmosphereShell.chatTabActive .atmosphereChatSection {
-    grid-row: 4;
+    grid-row: 3;
     width: 100%;
     min-height: 0;
     display: grid;
@@ -8884,6 +8880,22 @@ html.scorexpLightTheme {
   color-scheme: light;
   background: var(--sx-bg);
   color: var(--sx-text);
+}
+
+.scorexpLightTheme .starButton.active,
+.scorexpLightTheme .favoriteNavChip,
+.scorexpLightTheme .atmospherePlayerRow b,
+.scorexpLightTheme .atmosphereTimelineCard.yellow strong,
+.scorexpLightTheme .atmosphereTimelineCard.yellow p,
+.scorexpLightTheme .atmosphereTimelineCard.yellow em {
+  color: #ea580c;
+}
+
+.scorexpLightTheme .favoriteNavChip.active,
+.scorexpLightTheme .eventIcon.yellow,
+.scorexpLightTheme .atmosphereTimelineCard.yellow i {
+  background: #f97316;
+  color: #fff;
 }
 
 body.scorexpLightTheme,
@@ -9367,17 +9379,22 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereHeroPrediction {
-  border-color: var(--sx-line);
-  background:
-    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
-    radial-gradient(circle at 84% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
-    rgba(255, 255, 255, 0.92);
-  box-shadow: 0 14px 32px rgba(28, 45, 59, 0.09);
+  border-color: color-mix(in srgb, var(--home-accent) 10%, color-mix(in srgb, var(--away-accent) 10%, var(--sx-line)));
+  background: transparent;
+  box-shadow: none;
 }
 
 .scorexpLightTheme .atmosphereHeroPredictionLabels,
 .scorexpLightTheme .atmosphereInsightLegend span {
   color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
+  color: color-mix(in srgb, var(--home-accent) 72%, #8a300a);
+}
+
+.scorexpLightTheme .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
+  color: color-mix(in srgb, var(--away-accent) 72%, #8a300a);
 }
 
 .scorexpLightTheme .atmosphereInsight.form {
@@ -10436,6 +10453,23 @@ body.scorexpLightTheme,
     border-color: color-mix(in srgb, var(--team-accent) 18%, #cbd9e1);
     background: transparent;
     color: color-mix(in srgb, var(--team-accent) 32%, #344450);
+  }
+
+  .atmosphereHeroPrediction,
+  .scorexpLightTheme .atmosphereHeroPrediction {
+    width: 100% !important;
+    margin: 2px 0 0 !important;
+    padding: 11px 0 0 !important;
+    border: 0 !important;
+    border-top: 1px solid color-mix(in srgb, var(--home-accent) 10%, color-mix(in srgb, var(--away-accent) 10%, rgba(125, 146, 158, 0.24))) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .scorexpLightTheme .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong,
+  .scorexpLightTheme .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
+    color: #ea580c !important;
   }
 }
 

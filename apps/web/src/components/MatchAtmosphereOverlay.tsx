@@ -121,8 +121,10 @@ export function MatchAtmosphereOverlay({
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
-  const homeAccent = useTeamAccent(activeMatch.homeTeam);
-  const awayAccent = useTeamAccent(activeMatch.awayTeam);
+  const rawHomeAccent = useTeamAccent(activeMatch.homeTeam);
+  const rawAwayAccent = useTeamAccent(activeMatch.awayTeam);
+  const homeAccent = useMemo(() => normalizeLightAccent(rawHomeAccent, colorMode), [colorMode, rawHomeAccent]);
+  const awayAccent = useMemo(() => normalizeLightAccent(rawAwayAccent, colorMode), [colorMode, rawAwayAccent]);
   const accentStyle = useMemo(
     () =>
       ({
@@ -324,8 +326,8 @@ export function MatchAtmosphereOverlay({
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
               <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} />
+              <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
             </section>
-            <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
 
             <nav className="atmosphereTabs" aria-label="Maç atmosferi sekmeleri">
               <button
@@ -1150,6 +1152,61 @@ function useTeamAccent(team: Team) {
   }, [fallback, team.logo]);
 
   return accent;
+}
+
+function normalizeLightAccent(accent: string, colorMode: "dark" | "light") {
+  if (colorMode !== "light" || !isYellowAccent(accent)) return accent;
+  return "#f97316";
+}
+
+function isYellowAccent(accent: string) {
+  const rgb = parseAccentColor(accent);
+  if (!rgb) return false;
+
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  const lightness = (max + min) / 2;
+  const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  let hue = 0;
+
+  if (delta !== 0) {
+    if (max === r) hue = 60 * (((g - b) / delta) % 6);
+    if (max === g) hue = 60 * ((b - r) / delta + 2);
+    if (max === b) hue = 60 * ((r - g) / delta + 4);
+  }
+
+  if (hue < 0) hue += 360;
+  return hue >= 34 && hue <= 74 && saturation >= 0.35 && lightness >= 0.32;
+}
+
+function parseAccentColor(accent: string) {
+  const value = accent.trim().toLowerCase();
+  const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const raw = hex[1].length === 3 ? hex[1].split("").map((part) => `${part}${part}`).join("") : hex[1];
+    return {
+      r: Number.parseInt(raw.slice(0, 2), 16),
+      g: Number.parseInt(raw.slice(2, 4), 16),
+      b: Number.parseInt(raw.slice(4, 6), 16)
+    };
+  }
+
+  const rgb = value.match(/^rgba?\(([^)]+)\)$/);
+  if (!rgb) return null;
+
+  const parts = rgb[1]
+    .replace(/\//g, " ")
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((part) => Number.parseFloat(part));
+
+  if (parts.length < 3 || parts.some((part) => Number.isNaN(part))) return null;
+  return { r: parts[0], g: parts[1], b: parts[2] };
 }
 
 function extractDominantImageColor(image: HTMLImageElement) {
