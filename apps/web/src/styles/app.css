@@ -227,7 +227,7 @@ button:disabled {
 
 .headerIcon:hover {
   background: #151b1f;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .profileHeaderIcon.signedIn,
@@ -306,7 +306,7 @@ button:disabled {
   border: 1px solid #4d57cc;
   border-radius: 50%;
   background: #171d3b;
-  color: #ffffff;
+  color: #edf4f6;
   font-size: 15px;
   font-weight: 950;
 }
@@ -354,7 +354,7 @@ button:disabled {
 .profileActionButton.primary {
   border-color: rgba(124, 131, 255, 0.46);
   background: #171d3b;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .profileToggleButton {
@@ -425,7 +425,7 @@ button:disabled {
 
 .profileLegalLinks a:hover {
   border-color: rgba(124, 131, 255, 0.46);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .sportsBar {
@@ -567,7 +567,7 @@ button:disabled {
 .sportsMenu button.active {
   border-color: #4854c9;
   background: #171d3b;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .sportsMenu strong {
@@ -745,7 +745,7 @@ button:disabled {
 
 .chip.liveChip.active {
   background: #f34855;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .statusLine {
@@ -894,7 +894,7 @@ button:disabled {
 
 .leaguePinButton:hover,
 .leagueToggleButton:hover {
-  color: #fff;
+  color: #edf4f6;
   background: #202a2f;
 }
 
@@ -1022,7 +1022,7 @@ button:disabled {
   justify-content: center;
   border-radius: 2px;
   background: #ef2e3f;
-  color: #fff;
+  color: #edf4f6;
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.28);
   font-size: 9px;
   font-weight: 950;
@@ -1093,7 +1093,7 @@ button:disabled {
 .aiXpRowButton:hover {
   border-color: #5a65df;
   background: #151c32;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .matchDetailPane {
@@ -1427,7 +1427,7 @@ button:disabled {
 .chatReopenButton:hover {
   border-color: rgba(138, 145, 255, 0.52);
   background: rgba(138, 145, 255, 0.18);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .chatComposer button:focus-visible,
@@ -1997,7 +1997,7 @@ button:disabled {
 }
 
 .eventIcon.red {
-  color: #fff;
+  color: #edf4f6;
   background: #f14f5c;
 }
 
@@ -2543,7 +2543,7 @@ button:disabled {
 
 .formChip.loss {
   background: #ff6570;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .standingsBlock section {
@@ -2822,7 +2822,7 @@ button:disabled {
 
 .aiModalClose:not(:disabled):hover {
   background: #1b252a;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .aiModalTeams {
@@ -3039,7 +3039,7 @@ button:disabled {
 .atmosphereTopActions button:hover {
   border-color: #5660d8;
   background: #171d3b;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .atmosphereLeagueTitle {
@@ -3154,7 +3154,7 @@ button:disabled {
 .atmosphereRail nav a:hover {
   border-color: #5660d8;
   background: #171d3b;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .atmosphereRailMetric {
@@ -3317,7 +3317,7 @@ button:disabled {
 
 .atmosphereStatusPill.live {
   background: #ff5360;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .atmosphereStatusPill.finished {
@@ -3417,11 +3417,11 @@ button:disabled {
 }
 
 .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--sx-data-home) 72%, #ffffff);
+  color: color-mix(in srgb, var(--sx-data-home) 72%, #edf4f6);
 }
 
 .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--sx-data-away) 72%, #ffffff);
+  color: color-mix(in srgb, var(--sx-data-away) 72%, #edf4f6);
 }
 
 .atmosphereCompactHero {
@@ -4761,7 +4761,7 @@ button:disabled {
 }
 
 .atmosphereTimelineCard.red i {
-  color: #fff;
+  color: #edf4f6;
   background: #f14f5c;
 }
 
@@ -5546,7 +5546,7 @@ button:disabled {
 
 .highlightsClose:hover {
   background: #1d282d;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .highlightReel {
@@ -6030,7 +6030,7 @@ button:disabled {
 
 .installCloseButton:hover {
   background: #1c262b;
-  color: #fff;
+  color: #edf4f6;
 }
 
 .favoriteNotificationStack {
@@ -6144,7 +6144,7 @@ button:disabled {
   .mobileHeaderIcon[aria-expanded="true"] {
     border-color: #5a65df;
     background: #171d3b;
-    color: #fff;
+    color: #edf4f6;
   }
 
   .mobileProfileMenu {
@@ -6202,7 +6202,7 @@ button:disabled {
   .mobileSportsMenu button.active {
     border-color: #5a65df;
     background: #171d3b;
-    color: #fff;
+    color: #edf4f6;
   }
 
   .mobileSportsMenu strong {
@@ -6344,7 +6344,7 @@ button:disabled {
 
   .chip.liveChip.active {
     background: #f34855;
-    color: #fff;
+    color: #edf4f6;
   }
 
   .matchRow {
@@ -6789,7 +6789,7 @@ button:disabled {
 .aiXpRowButton:hover {
   border-color: rgba(138, 145, 255, 0.38);
   background: rgba(138, 145, 255, 0.1);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .matchDetailPane {
@@ -6897,7 +6897,7 @@ button:disabled {
 .detailAtmosphereButton:hover {
   border-color: rgba(138, 145, 255, 0.5);
   background: rgba(138, 145, 255, 0.16);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .detailNotice,
@@ -7768,7 +7768,7 @@ button:disabled {
 
   .chip.liveChip.active {
     background: #f34855;
-    color: #fff;
+    color: #edf4f6;
   }
 
   .matchRow {
@@ -7886,7 +7886,7 @@ button:disabled {
 
   .chip.liveChip.active {
     background: #f34855;
-    color: #fff;
+    color: #edf4f6;
   }
 
   .favoriteNavChip {
@@ -8253,7 +8253,7 @@ button:disabled {
   .mobileHeaderIcon:hover {
     border-color: rgba(138, 145, 255, 0.5);
     background: #181f34;
-    color: #ffffff;
+    color: #edf4f6;
   }
 
   .mobileSportSelectButton {
@@ -8445,7 +8445,7 @@ button:disabled {
     padding: 0 4px;
     border-radius: 999px;
     background: #ff5360;
-    color: #ffffff;
+    color: #edf4f6;
     font-size: 8.5px;
     font-weight: 950;
     line-height: 1;
@@ -8471,7 +8471,7 @@ button:disabled {
 
   .chip.liveChip.active {
     background: #f04d5b;
-    color: #ffffff;
+    color: #edf4f6;
   }
 
   .chip.liveChip.active strong {
@@ -9893,7 +9893,7 @@ html.scorexpLightTheme {
 .scorexpLightTheme .eventIcon.yellow,
 .scorexpLightTheme .atmosphereTimelineCard.yellow i {
   background: #f97316;
-  color: #fff;
+  color: #edf4f6;
 }
 
 body.scorexpLightTheme,
@@ -9982,12 +9982,12 @@ body.scorexpLightTheme,
 .scorexpLightTheme .chipBadge {
   border-color: #ffffff;
   background: var(--sx-live);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .favoriteNavChip .chipBadge {
   background: var(--sx-warn);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .datePicker,
@@ -10238,7 +10238,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .highlightCommentInput button {
   border-color: rgba(37, 99, 235, 0.28);
   background: #2563eb;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .chatNotice,
@@ -10597,7 +10597,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .siteHeader .sportItem.active {
   border-color: rgba(138, 145, 255, 0.28);
   background: #151b1f;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .siteHeader .themeHeaderIcon[aria-pressed="true"] {
@@ -10644,7 +10644,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .siteHeader .mobileProfileMenu button:hover {
   border-color: #5a65df;
   background: #171d3b;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .siteHeader .mobileSportsMenu strong,
@@ -10695,7 +10695,7 @@ body.scorexpLightTheme,
 
   .scorexpLightTheme .chip.liveChip.active {
     background: var(--sx-live);
-    color: #ffffff;
+    color: #edf4f6;
   }
 
   .scorexpLightTheme .atmosphereTabs {
@@ -10850,7 +10850,7 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .formChip.win {
   background: #059669;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .formChip.draw {
@@ -10860,7 +10860,7 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .formChip.loss {
   background: var(--sx-live);
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 .scorexpLightTheme .chatComposerWrap,
@@ -10894,7 +10894,7 @@ body.scorexpLightTheme,
 .scorexpLightTheme .chatComposer button {
   border-color: rgba(37, 99, 235, 0.34);
   background: #2563eb;
-  color: #ffffff;
+  color: #edf4f6;
 }
 
 @media (max-width: 760px) {
@@ -11805,5 +11805,538 @@ body.scorexpLightTheme,
 
   to {
     background: transparent;
+  }
+}
+
+.statPeriodTabs {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--sx-line);
+  border-radius: 8px;
+  background: #0d1417;
+}
+
+.statPeriodTabs button {
+  min-width: 0;
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #a8b8bf;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.statPeriodTabs button.active {
+  background: rgba(138, 145, 255, 0.14);
+  color: #edf4f6;
+}
+
+.formDetailStack {
+  display: grid;
+  gap: 12px;
+}
+
+.formGoalsGraph {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 8%, transparent), color-mix(in srgb, var(--sx-data-away) 8%, transparent)),
+    #10171a;
+}
+
+.detailFormGoalsGraph {
+  margin-bottom: 0;
+}
+
+.formGoalsHeader {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.formGoalsHeader span {
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.formGoalsHeader strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #edf4f6;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formGoalBar {
+  min-width: 0;
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.formGoalBar > strong {
+  color: #edf4f6;
+  font-size: 18px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.formGoalBarTrack {
+  position: relative;
+  min-width: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(180, 202, 211, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.formGoalBarTrack span {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4e2e7;
+  font-size: 11px;
+  font-weight: 950;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38);
+  pointer-events: none;
+}
+
+.formGoalBarTrack i,
+.formGoalBarTrack b {
+  position: relative;
+  z-index: 1;
+  min-width: 7px;
+  height: 100%;
+  display: block;
+}
+
+.formGoalBarTrack i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 38%, transparent), var(--sx-data-home));
+}
+
+.formGoalBarTrack b {
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 38%, transparent));
+}
+
+.formGoalBar.reverseTone .formGoalBarTrack i {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.36), rgba(56, 189, 248, 0.82));
+}
+
+.formGoalBar.reverseTone .formGoalBarTrack b {
+  background: linear-gradient(90deg, rgba(251, 146, 60, 0.82), rgba(251, 146, 60, 0.36));
+}
+
+@media (min-width: 981px) {
+  .matchAtmosphereShell {
+    grid-template-rows: 56px minmax(0, 1fr);
+  }
+
+  .atmosphereTopbar {
+    min-height: 56px;
+  }
+
+  .atmosphereBody {
+    grid-template-columns: clamp(180px, 17vw, 214px) clamp(410px, 47vw, 590px) minmax(286px, 1fr);
+    gap: 12px;
+    padding: 0 12px 0 0;
+    overflow: hidden;
+  }
+
+  .atmosphereRail {
+    padding: 14px 12px;
+  }
+
+  .atmosphereScroll {
+    padding: 0 0 24px;
+  }
+
+  .atmosphereSignalStrip,
+  .atmosphereGrid,
+  .atmosphereTwinGrid,
+  .atmospherePanel,
+  .atmosphereLiveStack {
+    width: 100%;
+    margin: 12px 0 0;
+  }
+
+  .atmosphereGrid,
+  .atmosphereTwinGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .atmosphereSignalStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .atmosphereHero {
+    position: relative;
+    min-height: 168px;
+    grid-template-columns: minmax(0, 1fr) minmax(92px, 112px) minmax(0, 1fr);
+    align-items: center;
+    gap: 0;
+    margin: 14px 0 0;
+    padding: 14px 12px 12px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--home-accent) 15%, color-mix(in srgb, var(--away-accent) 15%, rgba(124, 131, 255, 0.24)));
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--home-accent) 12%, #10171b) 0%,
+        color-mix(in srgb, var(--home-accent) 5%, #10171b) 33%,
+        #10171b 50%,
+        color-mix(in srgb, var(--away-accent) 5%, #10171b) 67%,
+        color-mix(in srgb, var(--away-accent) 12%, #10171b) 100%
+      );
+    box-shadow: none;
+  }
+
+  .atmosphereTeam,
+  .atmosphereScoreStage {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .atmosphereScoreStage::before,
+  .atmosphereScoreStage::after {
+    display: none;
+    content: none;
+  }
+
+  .atmosphereTeam {
+    align-content: center;
+    gap: 5px;
+    padding: 5px 4px;
+    border-radius: 0;
+  }
+
+  .atmosphereHero .atmosphereTeam .teamLogo.lg,
+  .atmosphereHero .atmosphereTeam .logoFallback.lg {
+    width: 50px;
+    height: 50px;
+    padding: 5px;
+  }
+
+  .atmosphereTeam strong {
+    display: -webkit-box;
+    min-height: 29px;
+    max-width: 136px;
+    color: #edf4f6;
+    font-size: 12px;
+    line-height: 1.18;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .atmosphereTeam span {
+    min-height: 22px;
+    padding: 0 8px;
+    border-color: color-mix(in srgb, var(--team-accent) 20%, rgba(213, 229, 234, 0.22));
+    background: transparent;
+    color: color-mix(in srgb, var(--team-accent) 22%, #dfe8ed);
+    font-size: 10px;
+  }
+
+  .atmosphereScoreStage {
+    grid-column: 2;
+    min-height: 104px;
+    max-width: 112px;
+    align-content: center;
+    gap: 4px;
+    padding: 8px 9px;
+    border-radius: 0;
+  }
+
+  .atmosphereStatusPill {
+    min-height: 22px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .atmosphereScoreline {
+    font-size: 26px;
+    text-shadow: none;
+  }
+
+  .atmosphereScoreStage strong {
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .atmosphereScoreStage p {
+    display: none;
+  }
+
+  .atmosphereHeroPrediction {
+    width: 100%;
+    margin: 6px 0 0;
+    padding: 9px 0 0;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, var(--sx-data-home) 10%, color-mix(in srgb, var(--sx-data-away) 10%, rgba(125, 146, 158, 0.24)));
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .atmosphereHeroPredictionLabels {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    text-align: center;
+  }
+
+  .atmosphereHeroPredictionLabels span {
+    display: none;
+  }
+
+  .atmospherePanel {
+    padding: 12px;
+  }
+
+  .atmosphereAiPanel {
+    min-height: 0;
+  }
+
+  .atmospherePressureCard {
+    padding: 10px 12px 12px;
+  }
+
+  .atmospherePressureHeader {
+    gap: 8px;
+  }
+
+  .atmospherePressureTeam {
+    gap: 7px;
+    font-size: 13px;
+  }
+
+  .atmospherePressureTeam i {
+    width: 5px;
+    height: 32px;
+  }
+
+  .atmospherePressureTitle {
+    min-width: 126px;
+    padding: 5px 8px;
+  }
+
+  .atmospherePressureTitle strong {
+    font-size: 11px;
+  }
+
+  .atmospherePressureEventRail {
+    height: 48px;
+    margin: 3px 0;
+  }
+
+  .pressureEventDot {
+    width: 30px;
+    height: 30px;
+  }
+
+  .pressureEventDot svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pressureEventDot.yellow .pressureCardIcon,
+  .pressureEventDot.red .pressureCardIcon {
+    width: 14px;
+    height: 18px;
+  }
+
+  .pressureBallIcon {
+    font-size: 18px;
+  }
+
+  .atmospherePressureGraph {
+    height: 102px;
+  }
+
+  .atmosphereComparePulseCard {
+    gap: 13px;
+    padding: 12px;
+  }
+
+  .atmosphereCompareDonuts {
+    gap: 8px;
+  }
+
+  .atmosphereCompareDonut > span {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+
+  .atmosphereCompareDonutBody {
+    grid-template-columns: minmax(24px, 1fr) 58px minmax(24px, 1fr);
+    gap: 6px;
+  }
+
+  .atmosphereCompareRing {
+    width: 58px;
+    height: 58px;
+  }
+
+  .atmosphereCompareRing::before {
+    inset: 8px;
+  }
+
+  .atmosphereCompareDonutBody strong {
+    font-size: 16px;
+  }
+
+  .atmosphereChatDock {
+    min-width: 0;
+    height: calc(var(--scorexp-viewport-height) - 56px);
+    min-height: 0;
+    align-self: stretch;
+    display: grid;
+    padding: 14px 0;
+  }
+
+  .atmosphereChatDock .matchChatRoom.embedded {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    border-radius: 8px;
+  }
+
+  .atmosphereChatDock .chatComposerWrap {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 980px) {
+  .atmosphereChatDock {
+    width: calc(100% - 20px);
+    min-width: 0;
+    margin: 10px auto 0;
+    padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 72px));
+  }
+
+  .atmosphereChatDock .matchChatRoom.embedded {
+    height: min(620px, calc(var(--scorexp-visual-viewport-height, 100dvh) - 84px));
+    min-height: 420px;
+    max-height: none;
+  }
+
+  .atmosphereChatDock .chatComposerWrap {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 560px) {
+  .statPeriodTabs button {
+    min-height: 34px;
+    font-size: 10px;
+  }
+
+  .formGoalsGraph {
+    padding: 10px;
+  }
+
+  .formGoalsHeader strong {
+    white-space: normal;
+  }
+
+  .formGoalBar {
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    gap: 6px;
+  }
+
+  .formGoalBar > strong {
+    font-size: 15px;
+  }
+}
+
+.scorexpLightTheme .statPeriodTabs,
+.scorexpLightTheme .formGoalsGraph {
+  border-color: var(--sx-line);
+  background: #ffffff;
+}
+
+.scorexpLightTheme .statPeriodTabs button {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .statPeriodTabs button.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .formGoalsHeader span {
+  color: var(--sx-accent);
+}
+
+.scorexpLightTheme .formGoalsHeader strong,
+.scorexpLightTheme .formGoalBar > strong {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .formGoalBarTrack {
+  border-color: var(--sx-line);
+  background: #eef4f7;
+}
+
+.scorexpLightTheme .formGoalBarTrack span {
+  color: #1f2d36;
+  text-shadow: none;
+}
+
+@media (min-width: 981px) {
+  .scorexpLightTheme .atmosphereHero {
+    border-color: color-mix(in srgb, var(--home-accent) 13%, color-mix(in srgb, var(--away-accent) 13%, rgba(37, 99, 235, 0.22)));
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--home-accent) 10%, #f8fbfd) 0%,
+        color-mix(in srgb, var(--home-accent) 4%, #f8fbfd) 33%,
+        #f8fbfd 50%,
+        color-mix(in srgb, var(--away-accent) 4%, #f8fbfd) 67%,
+        color-mix(in srgb, var(--away-accent) 10%, #f8fbfd) 100%
+      );
+  }
+
+  .scorexpLightTheme .atmosphereTeam,
+  .scorexpLightTheme .atmosphereScoreStage {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .scorexpLightTheme .atmosphereTeam span {
+    border-color: color-mix(in srgb, var(--team-accent) 18%, #cbd9e1);
+    background: transparent;
+    color: color-mix(in srgb, var(--team-accent) 32%, #344450);
   }
 }

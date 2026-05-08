@@ -453,7 +453,7 @@ function snapshotKey(date: string, timezone: string) {
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v5:${matchId}:${timezone}`;
+  return `football:match-detail:v6:${matchId}:${timezone}`;
 }
 
 function highlightsKey(date: string, timezone: string, limit: number, offset: number) {

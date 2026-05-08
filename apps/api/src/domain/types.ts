@@ -85,6 +85,11 @@ export interface ProviderMatchEvent {
 export interface ProviderStatistic {
   displayName?: string | null;
   value?: number | string | null;
+  period?: number | string | null;
+  half?: number | string | null;
+  group?: number | string | null;
+  scope?: number | string | null;
+  matchPeriod?: number | string | null;
 }
 
 export interface ProviderTeamStatistics {
@@ -262,6 +267,7 @@ export interface MatchDetailEvent {
 export interface MatchDetailStatistic {
   displayName: string;
   value: number | string | null;
+  period?: string | null;
 }
 
 export interface MatchDetailTeamStatistics {

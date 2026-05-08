@@ -696,7 +696,7 @@ export default function App() {
   };
 
   const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
-  const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel);
+  const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel && route.kind !== "atmosphere");
   const rootClassName = [
     "appRoot",
     route.kind !== "list" ? "routeMatchPage" : "",

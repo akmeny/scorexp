@@ -102,6 +102,7 @@ export interface MatchDetailEvent {
 export interface MatchDetailStatistic {
   displayName: string;
   value: number | string | null;
+  period?: string | null;
 }
 
 export interface MatchDetailTeamStatistics {

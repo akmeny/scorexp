@@ -10,7 +10,6 @@ import {
   Gauge,
   ListOrdered,
   MapPin,
-  MessageCircle,
   Moon,
   Percent,
   RefreshCw,
@@ -132,6 +131,20 @@ interface StatisticPair {
   found: boolean;
 }
 
+type StatisticPeriod = "all" | "first" | "second";
+
+interface StatisticRow {
+  name: string;
+  label: string;
+  homeDisplay: string;
+  awayDisplay: string;
+  homeNumber: number;
+  awayNumber: number;
+  homePercent: number;
+  awayPercent: number;
+  period: StatisticPeriod;
+}
+
 interface ComparisonMetric {
   key: ComparisonMetricKind;
   label: string;
@@ -194,10 +207,11 @@ export function MatchAtmosphereOverlay({
   );
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
-  const liveAtmosphere = useMemo(() => buildLiveAtmosphereData(activeMatch, detail, statisticRows), [activeMatch, detail, statisticRows]);
+  const totalStatisticRows = useMemo(() => statisticRowsForPeriod(statisticRows, "all"), [statisticRows]);
+  const liveAtmosphere = useMemo(() => buildLiveAtmosphereData(activeMatch, detail, totalStatisticRows), [activeMatch, detail, totalStatisticRows]);
   const predictionRows = useMemo(() => buildPredictionRows(activeMatch, prediction), [activeMatch, prediction]);
   const aiSummary = useMemo(() => buildAiSummary(activeMatch, predictionRows), [activeMatch, predictionRows]);
-  const insightRows = useMemo(() => buildInsightRows(activeMatch, detail, statisticRows, predictionRows), [activeMatch, detail, statisticRows, predictionRows]);
+  const insightRows = useMemo(() => buildInsightRows(activeMatch, detail, totalStatisticRows, predictionRows), [activeMatch, detail, totalStatisticRows, predictionRows]);
   const h2hMatches = useMemo(() => (detail?.headToHead ?? []).filter((item) => item.id !== activeMatch.id), [activeMatch.id, detail?.headToHead]);
   const h2hSummary = useMemo(() => summarizeResults(h2hMatches, activeMatch.homeTeam, activeMatch.awayTeam), [activeMatch, h2hMatches]);
   const h2hChartItems = useMemo<ComparisonChartItem[]>(
@@ -370,13 +384,6 @@ export function MatchAtmosphereOverlay({
               >
                 Özet
               </button>
-              <button
-                className={activeTab === "chat" ? "active" : ""}
-                type="button"
-                onClick={() => selectAtmosphereTab("chat", "atmosphere-chat")}
-              >
-                Sohbet
-              </button>
               <button type="button" onClick={() => selectAtmosphereTab("overview", "atmosphere-ai")}>
                 aiXp
               </button>
@@ -421,25 +428,6 @@ export function MatchAtmosphereOverlay({
               <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
             </section>
 
-            <nav className="atmosphereTabs" aria-label="Maç atmosferi sekmeleri">
-              <button
-                className={activeTab === "overview" ? "active" : ""}
-                type="button"
-                aria-selected={activeTab === "overview"}
-                onClick={() => selectAtmosphereTab("overview", "atmosphere-overview")}
-              >
-                Genel Bakış
-              </button>
-              <button
-                className={activeTab === "chat" ? "active" : ""}
-                type="button"
-                aria-selected={activeTab === "chat"}
-                onClick={() => selectAtmosphereTab("chat", "atmosphere-chat")}
-              >
-                Sohbet
-              </button>
-            </nav>
-
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
@@ -449,11 +437,6 @@ export function MatchAtmosphereOverlay({
                 <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
               </div>
             ) : null}
-
-            <section className="atmosphereChatSection atmosphereChatOnly" id="atmosphere-chat">
-              <PanelTitle icon={<MessageCircle size={17} />} label="Sohbet" />
-              <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
-            </section>
 
             <section className="atmosphereGrid atmosphereOverviewOnly">
               <section className="atmospherePanel atmosphereAiPanel" id="atmosphere-ai">
@@ -492,6 +475,12 @@ export function MatchAtmosphereOverlay({
               <section className="atmospherePanel">
                 <PanelTitle icon={<Shield size={17} />} label="Mukayese ve Form" />
                 <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
+                <FormGoalsGraph
+                  homeTeam={activeMatch.homeTeam}
+                  awayTeam={activeMatch.awayTeam}
+                  homeMatches={detail?.form?.home ?? []}
+                  awayMatches={detail?.form?.away ?? []}
+                />
                 <div className="atmosphereFormGrid">
                   <FormColumn team={activeMatch.homeTeam} matches={detail?.form?.home ?? []} />
                   <FormColumn team={activeMatch.awayTeam} matches={detail?.form?.away ?? []} />
@@ -529,6 +518,9 @@ export function MatchAtmosphereOverlay({
               <SignalMetric icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
             </section>
           </main>
+          <aside className="atmosphereChatDock" id="atmosphere-chat" aria-label="Maç sohbeti">
+            <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
+          </aside>
         </div>
       </section>
     </div>
@@ -790,32 +782,127 @@ function InsightCard({ item }: { item: InsightRow }) {
   );
 }
 
-function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: ReturnType<typeof buildStatisticRows> }) {
+function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: StatisticRow[] }) {
+  const [activePeriod, setActivePeriod] = useState<StatisticPeriod>("all");
+  const periodTabs = useMemo(() => buildStatisticPeriodTabs(rows), [rows]);
+  const activeRows = periodTabs.find((tab) => tab.key === activePeriod)?.rows ?? [];
+
+  useEffect(() => {
+    if (!periodTabs.some((tab) => tab.key === activePeriod)) {
+      setActivePeriod("all");
+    }
+  }, [activePeriod, periodTabs]);
+
   if (rows.length === 0) {
     return <EmptyAtmosphereState label="İstatistik verisi bekleniyor" />;
   }
 
   return (
     <div className="atmosphereStatList">
+      <div className="statPeriodTabs" role="tablist" aria-label="İstatistik periyodu">
+        {periodTabs.map((tab) => (
+          <button
+            className={activePeriod === tab.key ? "active" : ""}
+            type="button"
+            role="tab"
+            aria-selected={activePeriod === tab.key}
+            onClick={() => setActivePeriod(tab.key)}
+            key={tab.key}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
       <div className="atmosphereStatTeams">
         <span title={match.homeTeam.name}>{match.homeTeam.name}</span>
         <BarChart3 size={16} />
         <span title={match.awayTeam.name}>{match.awayTeam.name}</span>
       </div>
-      {rows.slice(0, 14).map((row) => (
-        <div className="atmosphereStatRow" key={row.name}>
-          <div className="atmosphereStatValues">
-            <strong>{row.homeDisplay}</strong>
-            <span>{row.label}</span>
-            <strong>{row.awayDisplay}</strong>
+      {activeRows.length > 0 ? (
+        activeRows.slice(0, 14).map((row) => (
+          <div className="atmosphereStatRow" key={`${row.period}:${row.name}`}>
+            <div className="atmosphereStatValues">
+              <strong>{row.homeDisplay}</strong>
+              <span>{row.label}</span>
+              <strong>{row.awayDisplay}</strong>
+            </div>
+            <div className="atmosphereStatBars" aria-hidden="true">
+              <i style={{ width: `${row.homePercent}%` }} />
+              <b style={{ width: `${row.awayPercent}%` }} />
+            </div>
           </div>
-          <div className="atmosphereStatBars" aria-hidden="true">
-            <i style={{ width: `${row.homePercent}%` }} />
-            <b style={{ width: `${row.awayPercent}%` }} />
-          </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <EmptyAtmosphereState label={`${periodTabs.find((tab) => tab.key === activePeriod)?.label ?? "Periyot"} ayrımı sağlayıcıda yok`} />
+      )}
     </div>
+  );
+}
+
+function FormGoalsGraph({
+  homeTeam,
+  awayTeam,
+  homeMatches,
+  awayMatches
+}: {
+  homeTeam: Team;
+  awayTeam: Team;
+  homeMatches: NormalizedMatch[];
+  awayMatches: NormalizedMatch[];
+}) {
+  const home = formGoalTotals(homeMatches, homeTeam.id);
+  const away = formGoalTotals(awayMatches, awayTeam.id);
+
+  if (home.played === 0 && away.played === 0) {
+    return <EmptyAtmosphereState label="Form gol grafiği için veri bekleniyor" />;
+  }
+
+  return (
+    <div className="formGoalsGraph" aria-label="Son 5 maç gol formu">
+      <div className="formGoalsHeader">
+        <span>Son 5 Maç Gol Formu</span>
+        <strong>
+          {homeTeam.name} {home.scored}:{home.conceded} · {awayTeam.name} {away.scored}:{away.conceded}
+        </strong>
+      </div>
+      <FormGoalBar label="Attığı gol" home={home.scored} away={away.scored} />
+      <FormGoalBar label="Yediği gol" home={home.conceded} away={away.conceded} reverseTone />
+    </div>
+  );
+}
+
+function FormGoalBar({ label, home, away, reverseTone = false }: { label: string; home: number; away: number; reverseTone?: boolean }) {
+  const homeShare = shareOfTotal(home, away) * 100;
+  const awayShare = 100 - homeShare;
+
+  return (
+    <div className={reverseTone ? "formGoalBar reverseTone" : "formGoalBar"}>
+      <strong>{home}</strong>
+      <div className="formGoalBarTrack">
+        <span>{label}</span>
+        <i style={{ width: `${homeShare}%` }} />
+        <b style={{ width: `${awayShare}%` }} />
+      </div>
+      <strong>{away}</strong>
+    </div>
+  );
+}
+
+function formGoalTotals(matches: NormalizedMatch[], teamId: string) {
+  return matches.slice(0, 5).reduce(
+    (total, match) => {
+      if (match.score.home === null || match.score.away === null) return total;
+      const isHome = match.homeTeam.id === teamId;
+      const isAway = match.awayTeam.id === teamId;
+      if (!isHome && !isAway) return total;
+
+      return {
+        played: total.played + 1,
+        scored: total.scored + (isHome ? match.score.home ?? 0 : match.score.away ?? 0),
+        conceded: total.conceded + (isHome ? match.score.away ?? 0 : match.score.home ?? 0)
+      };
+    },
+    { played: 0, scored: 0, conceded: 0 }
   );
 }
 
@@ -982,7 +1069,7 @@ function EmptyAtmosphereState({ label }: { label: string }) {
   );
 }
 
-function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | null, rows: ReturnType<typeof buildStatisticRows>): LiveAtmosphereData {
+function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | null, rows: StatisticRow[]): LiveAtmosphereData {
   const attacks = readStatisticPair(rows, ["Attacks", "Attack", "Total attacks"]);
   const dangerousAttacks = readStatisticPair(rows, ["Dangerous attacks", "Dangerous attack"]);
   const possession = readStatisticPair(rows, ["Possession", "Ball possession"], { percent: true });
@@ -1045,37 +1132,120 @@ function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | n
   };
 }
 
-function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) {
-  const home = detail?.statistics?.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? [];
-  const away = detail?.statistics?.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? [];
-  const homeMap = new Map(home.map((item) => [item.displayName, item]));
-  const awayMap = new Map(away.map((item) => [item.displayName, item]));
-  const names = Array.from(new Set([...statisticPriority, ...home.map((item) => item.displayName), ...away.map((item) => item.displayName)]));
+function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null): StatisticRow[] {
+  const home = normalizeStatisticEntries(detail?.statistics?.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? []);
+  const away = normalizeStatisticEntries(detail?.statistics?.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? []);
+  const homeMap = new Map(home.map((item) => [statisticKey(item.period, item.name), item]));
+  const awayMap = new Map(away.map((item) => [statisticKey(item.period, item.name), item]));
+  const preferredKeys = statisticPriority.map((name) => statisticKey("all", name));
+  const keys = Array.from(new Set([...preferredKeys, ...home.map((item) => statisticKey(item.period, item.name)), ...away.map((item) => statisticKey(item.period, item.name))]));
 
-  return names
-    .filter((name) => homeMap.has(name) || awayMap.has(name))
-    .map((name) => {
-      const homeValue = homeMap.get(name)?.value ?? null;
-      const awayValue = awayMap.get(name)?.value ?? null;
-      const homeNumber = comparableStatValue(name, homeValue);
-      const awayNumber = comparableStatValue(name, awayValue);
-      const total = Math.max(homeNumber + awayNumber, 0);
-
-      return {
-        name,
-        label: translateStatisticLabel(name),
-        homeDisplay: formatStatValue(name, homeValue),
-        awayDisplay: formatStatValue(name, awayValue),
-        homeNumber,
-        awayNumber,
-        homePercent: total > 0 ? Math.max(6, (homeNumber / total) * 100) : 50,
-        awayPercent: total > 0 ? Math.max(6, (awayNumber / total) * 100) : 50
-      };
+  return keys
+    .filter((key) => homeMap.has(key) || awayMap.has(key))
+    .map((key) => {
+      const [period, name] = splitStatisticKey(key);
+      const homeValue = homeMap.get(key)?.value ?? null;
+      const awayValue = awayMap.get(key)?.value ?? null;
+      return createStatisticRow(period, name, homeValue, awayValue);
     });
 }
 
+function normalizeStatisticEntries(statistics: MatchDetailStatistic[]) {
+  return statistics.map((item) => {
+    const parsed = parseStatisticPeriod(item.displayName, item.period);
+    return {
+      name: parsed.name,
+      period: parsed.period,
+      value: item.value
+    };
+  });
+}
+
+function parseStatisticPeriod(displayName: string, explicitPeriod?: string | number | null): { name: string; period: StatisticPeriod } {
+  const normalized = normalizeStatisticLookup(`${explicitPeriod ?? ""} ${displayName}`);
+  const explicit = parseExplicitStatisticPeriod(explicitPeriod);
+  const firstHalfPattern = /\b(1st|first|1h|1\.|ilk)\s*(half|period|yarı|yari)?\b|\b(first half|ilk yarı|ilk yari)\b/i;
+  const secondHalfPattern = /\b(2nd|second|2h|2\.|ikinci)\s*(half|period|yarı|yari)?\b|\b(second half|ikinci yarı|ikinci yari)\b/i;
+  const period: StatisticPeriod = explicit ?? (secondHalfPattern.test(normalized) ? "second" : firstHalfPattern.test(normalized) ? "first" : "all");
+  const name =
+    displayName
+      .replace(/\b(1st|first|1h|1\.|ilk)\s*(half|period|yarı|yari)?\b/gi, "")
+      .replace(/\b(2nd|second|2h|2\.|ikinci)\s*(half|period|yarı|yari)?\b/gi, "")
+      .replace(/\b(first half|second half|ilk yarı|ilk yari|ikinci yarı|ikinci yari)\b/gi, "")
+      .replace(/^[\s:|/.-]+|[\s:|/.-]+$/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim() || displayName;
+
+  return { name, period };
+}
+
+function parseExplicitStatisticPeriod(value: string | number | null | undefined): StatisticPeriod | null {
+  if (value === null || value === undefined || value === "") return null;
+  const normalized = normalizeStatisticLookup(String(value));
+  if (/^(1|1h|h1|first|first half|ilk|ilk yari|ilk yarı)$/.test(normalized)) return "first";
+  if (/^(2|2h|h2|second|second half|ikinci|ikinci yari|ikinci yarı)$/.test(normalized)) return "second";
+  if (/^(all|full|full time|match|total|tamami|tamamı)$/.test(normalized)) return "all";
+  return null;
+}
+
+function createStatisticRow(period: StatisticPeriod, name: string, homeValue: MatchDetailStatistic["value"], awayValue: MatchDetailStatistic["value"]): StatisticRow {
+  const homeNumber = comparableStatValue(name, homeValue);
+  const awayNumber = comparableStatValue(name, awayValue);
+  const total = Math.max(homeNumber + awayNumber, 0);
+
+  return {
+    name,
+    label: translateStatisticLabel(name),
+    homeDisplay: formatStatValue(name, homeValue),
+    awayDisplay: formatStatValue(name, awayValue),
+    homeNumber,
+    awayNumber,
+    homePercent: total > 0 ? Math.max(6, (homeNumber / total) * 100) : 50,
+    awayPercent: total > 0 ? Math.max(6, (awayNumber / total) * 100) : 50,
+    period
+  };
+}
+
+function statisticRowsForPeriod(rows: StatisticRow[], period: StatisticPeriod) {
+  return buildStatisticPeriodTabs(rows).find((tab) => tab.key === period)?.rows ?? [];
+}
+
+function buildStatisticPeriodTabs(rows: StatisticRow[]) {
+  const firstRows = rows.filter((row) => row.period === "first");
+  const secondRows = rows.filter((row) => row.period === "second");
+  const allRows = rows.filter((row) => row.period === "all");
+  const fullRows = allRows.length > 0 ? allRows : mergePeriodStatisticRows(firstRows, secondRows);
+
+  return [
+    { key: "all" as const, label: "Tamamı", rows: fullRows },
+    { key: "first" as const, label: "İlk Yarı", rows: firstRows },
+    { key: "second" as const, label: "İkinci Yarı", rows: secondRows }
+  ];
+}
+
+function mergePeriodStatisticRows(firstRows: StatisticRow[], secondRows: StatisticRow[]) {
+  const byName = new Map<string, { first?: StatisticRow; second?: StatisticRow }>();
+  for (const row of firstRows) byName.set(row.name, { ...byName.get(row.name), first: row });
+  for (const row of secondRows) byName.set(row.name, { ...byName.get(row.name), second: row });
+
+  return Array.from(byName.entries()).map(([name, pair]) => {
+    const homeNumber = (pair.first?.homeNumber ?? 0) + (pair.second?.homeNumber ?? 0);
+    const awayNumber = (pair.first?.awayNumber ?? 0) + (pair.second?.awayNumber ?? 0);
+    return createStatisticRow("all", name, homeNumber, awayNumber);
+  });
+}
+
+function statisticKey(period: StatisticPeriod, name: string) {
+  return `${period}:${name}`;
+}
+
+function splitStatisticKey(key: string): [StatisticPeriod, string] {
+  const [period, ...nameParts] = key.split(":");
+  return [(period === "first" || period === "second" ? period : "all") as StatisticPeriod, nameParts.join(":")];
+}
+
 function readStatisticPair(
-  rows: ReturnType<typeof buildStatisticRows>,
+  rows: StatisticRow[],
   aliases: string[],
   options: { percent?: boolean } = {}
 ): StatisticPair {
@@ -1328,7 +1498,7 @@ function buildAiSummary(match: NormalizedMatch, rows: ReturnType<typeof buildPre
 function buildInsightRows(
   match: NormalizedMatch,
   detail: MatchDetail | null,
-  stats: ReturnType<typeof buildStatisticRows>,
+  stats: StatisticRow[],
   predictions: ReturnType<typeof buildPredictionRows>
 ): InsightRow[] {
   const homeFormScore = formScore(detail?.form?.home ?? [], match.homeTeam.id);

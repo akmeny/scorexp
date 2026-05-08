@@ -50,6 +50,19 @@ interface MatchDetailPanelProps {
 
 type DetailTab = "details" | "chat" | "events" | "stats" | "h2h" | "form" | "standings";
 type AiStatus = "idle" | "analyzing" | "done";
+type StatisticPeriod = "all" | "first" | "second";
+
+interface StatisticRow {
+  name: string;
+  label: string;
+  homeDisplay: string;
+  awayDisplay: string;
+  homeNumber: number;
+  awayNumber: number;
+  homePercent: number;
+  awayPercent: number;
+  period: StatisticPeriod;
+}
 
 const analysisSteps = [
   "Geçmiş maçlar çekiliyor...",
@@ -460,27 +473,55 @@ function eventDescription(event: MatchDetailEvent) {
   return [event.player, event.assist ? `Asist: ${event.assist}` : null, event.substituted].filter(Boolean).join(" • ") || event.team.name;
 }
 
-function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: ReturnType<typeof buildStatisticRows> }) {
+function StatisticCompare({ match, rows }: { match: NormalizedMatch; rows: StatisticRow[] }) {
+  const [activePeriod, setActivePeriod] = useState<StatisticPeriod>("all");
+  const periodTabs = useMemo(() => buildStatisticPeriodTabs(rows), [rows]);
+  const activeRows = periodTabs.find((tab) => tab.key === activePeriod)?.rows ?? [];
+
+  useEffect(() => {
+    if (!periodTabs.some((tab) => tab.key === activePeriod)) {
+      setActivePeriod("all");
+    }
+  }, [activePeriod, periodTabs]);
+
   return (
     <div className="statCompareList">
+      <div className="statPeriodTabs" role="tablist" aria-label="İstatistik periyodu">
+        {periodTabs.map((tab) => (
+          <button
+            className={activePeriod === tab.key ? "active" : ""}
+            type="button"
+            role="tab"
+            aria-selected={activePeriod === tab.key}
+            onClick={() => setActivePeriod(tab.key)}
+            key={tab.key}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
       <div className="statTeams">
         <span>{match.homeTeam.name}</span>
         <BarChart3 size={16} />
         <span>{match.awayTeam.name}</span>
       </div>
-      {rows.map((row) => (
-        <div className="statCompareRow" key={row.name}>
-          <div className="statValues">
-            <strong>{row.homeDisplay}</strong>
-            <span>{row.label}</span>
-            <strong>{row.awayDisplay}</strong>
+      {activeRows.length > 0 ? (
+        activeRows.map((row) => (
+          <div className="statCompareRow" key={`${row.period}:${row.name}`}>
+            <div className="statValues">
+              <strong>{row.homeDisplay}</strong>
+              <span>{row.label}</span>
+              <strong>{row.awayDisplay}</strong>
+            </div>
+            <div className="statBars" aria-hidden="true">
+              <i style={{ width: `${row.homePercent}%` }} />
+              <b style={{ width: `${row.awayPercent}%` }} />
+            </div>
           </div>
-          <div className="statBars" aria-hidden="true">
-            <i style={{ width: `${row.homePercent}%` }} />
-            <b style={{ width: `${row.awayPercent}%` }} />
-          </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <div className="detailEmptyState">{periodTabs.find((tab) => tab.key === activePeriod)?.label ?? "Periyot"} ayrımı sağlayıcıda yok</div>
+      )}
     </div>
   );
 }
@@ -516,9 +557,61 @@ function FormView({
   awayForm: NormalizedMatch[];
 }) {
   return (
-    <div className="formGrid">
-      <TeamFormColumn team={match.homeTeam} matches={homeForm} />
-      <TeamFormColumn team={match.awayTeam} matches={awayForm} />
+    <div className="formDetailStack">
+      <FormGoalsGraph homeTeam={match.homeTeam} awayTeam={match.awayTeam} homeMatches={homeForm} awayMatches={awayForm} />
+      <div className="formGrid">
+        <TeamFormColumn team={match.homeTeam} matches={homeForm} />
+        <TeamFormColumn team={match.awayTeam} matches={awayForm} />
+      </div>
+    </div>
+  );
+}
+
+function FormGoalsGraph({
+  homeTeam,
+  awayTeam,
+  homeMatches,
+  awayMatches
+}: {
+  homeTeam: Team;
+  awayTeam: Team;
+  homeMatches: NormalizedMatch[];
+  awayMatches: NormalizedMatch[];
+}) {
+  const home = formGoalTotals(homeMatches, homeTeam.id);
+  const away = formGoalTotals(awayMatches, awayTeam.id);
+
+  if (home.played === 0 && away.played === 0) {
+    return <div className="detailEmptyState">Form gol grafiği için veri bekleniyor</div>;
+  }
+
+  return (
+    <div className="formGoalsGraph detailFormGoalsGraph" aria-label="Son 5 maç gol formu">
+      <div className="formGoalsHeader">
+        <span>Son 5 Maç Gol Formu</span>
+        <strong>
+          {homeTeam.name} {home.scored}:{home.conceded} · {awayTeam.name} {away.scored}:{away.conceded}
+        </strong>
+      </div>
+      <FormGoalBar label="Attığı gol" home={home.scored} away={away.scored} />
+      <FormGoalBar label="Yediği gol" home={home.conceded} away={away.conceded} reverseTone />
+    </div>
+  );
+}
+
+function FormGoalBar({ label, home, away, reverseTone = false }: { label: string; home: number; away: number; reverseTone?: boolean }) {
+  const homeShare = shareOfTotal(home, away) * 100;
+  const awayShare = 100 - homeShare;
+
+  return (
+    <div className={reverseTone ? "formGoalBar reverseTone" : "formGoalBar"}>
+      <strong>{home}</strong>
+      <div className="formGoalBarTrack">
+        <span>{label}</span>
+        <i style={{ width: `${homeShare}%` }} />
+        <b style={{ width: `${awayShare}%` }} />
+      </div>
+      <strong>{away}</strong>
     </div>
   );
 }
@@ -631,31 +724,112 @@ function StandingRow({
   );
 }
 
-function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null) {
-  const home = detail?.statistics?.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? [];
-  const away = detail?.statistics?.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? [];
-  const homeMap = new Map(home.map((item) => [item.displayName, item]));
-  const awayMap = new Map(away.map((item) => [item.displayName, item]));
-  const names = Array.from(new Set([...statisticPriority, ...home.map((item) => item.displayName), ...away.map((item) => item.displayName)]));
+function buildStatisticRows(match: NormalizedMatch, detail: MatchDetail | null): StatisticRow[] {
+  const home = normalizeStatisticEntries(detail?.statistics?.find((group) => group.team.id === match.homeTeam.id)?.statistics ?? []);
+  const away = normalizeStatisticEntries(detail?.statistics?.find((group) => group.team.id === match.awayTeam.id)?.statistics ?? []);
+  const homeMap = new Map(home.map((item) => [statisticKey(item.period, item.name), item]));
+  const awayMap = new Map(away.map((item) => [statisticKey(item.period, item.name), item]));
+  const preferredKeys = statisticPriority.map((name) => statisticKey("all", name));
+  const keys = Array.from(new Set([...preferredKeys, ...home.map((item) => statisticKey(item.period, item.name)), ...away.map((item) => statisticKey(item.period, item.name))]));
 
-  return names
-    .filter((name) => homeMap.has(name) || awayMap.has(name))
-    .map((name) => {
-      const homeValue = homeMap.get(name)?.value ?? null;
-      const awayValue = awayMap.get(name)?.value ?? null;
-      const homeNumber = comparableStatValue(name, homeValue);
-      const awayNumber = comparableStatValue(name, awayValue);
-      const total = Math.max(homeNumber + awayNumber, 0);
-
-      return {
-        name,
-        label: translateStatisticLabel(name),
-        homeDisplay: formatStatValue(name, homeValue),
-        awayDisplay: formatStatValue(name, awayValue),
-        homePercent: total > 0 ? Math.max(6, (homeNumber / total) * 100) : 50,
-        awayPercent: total > 0 ? Math.max(6, (awayNumber / total) * 100) : 50
-      };
+  return keys
+    .filter((key) => homeMap.has(key) || awayMap.has(key))
+    .map((key) => {
+      const [period, name] = splitStatisticKey(key);
+      const homeValue = homeMap.get(key)?.value ?? null;
+      const awayValue = awayMap.get(key)?.value ?? null;
+      return createStatisticRow(period, name, homeValue, awayValue);
     });
+}
+
+function normalizeStatisticEntries(statistics: MatchDetailStatistic[]) {
+  return statistics.map((item) => {
+    const parsed = parseStatisticPeriod(item.displayName, item.period);
+    return {
+      name: parsed.name,
+      period: parsed.period,
+      value: item.value
+    };
+  });
+}
+
+function parseStatisticPeriod(displayName: string, explicitPeriod?: string | number | null): { name: string; period: StatisticPeriod } {
+  const normalized = normalizeStatisticLookup(`${explicitPeriod ?? ""} ${displayName}`);
+  const explicit = parseExplicitStatisticPeriod(explicitPeriod);
+  const firstHalfPattern = /\b(1st|first|1h|1\.|ilk)\s*(half|period|yarı|yari)?\b|\b(first half|ilk yarı|ilk yari)\b/i;
+  const secondHalfPattern = /\b(2nd|second|2h|2\.|ikinci)\s*(half|period|yarı|yari)?\b|\b(second half|ikinci yarı|ikinci yari)\b/i;
+  const period: StatisticPeriod = explicit ?? (secondHalfPattern.test(normalized) ? "second" : firstHalfPattern.test(normalized) ? "first" : "all");
+  const name =
+    displayName
+      .replace(/\b(1st|first|1h|1\.|ilk)\s*(half|period|yarı|yari)?\b/gi, "")
+      .replace(/\b(2nd|second|2h|2\.|ikinci)\s*(half|period|yarı|yari)?\b/gi, "")
+      .replace(/\b(first half|second half|ilk yarı|ilk yari|ikinci yarı|ikinci yari)\b/gi, "")
+      .replace(/^[\s:|/.-]+|[\s:|/.-]+$/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim() || displayName;
+
+  return { name, period };
+}
+
+function parseExplicitStatisticPeriod(value: string | number | null | undefined): StatisticPeriod | null {
+  if (value === null || value === undefined || value === "") return null;
+  const normalized = normalizeStatisticLookup(String(value));
+  if (/^(1|1h|h1|first|first half|ilk|ilk yari|ilk yarı)$/.test(normalized)) return "first";
+  if (/^(2|2h|h2|second|second half|ikinci|ikinci yari|ikinci yarı)$/.test(normalized)) return "second";
+  if (/^(all|full|full time|match|total|tamami|tamamı)$/.test(normalized)) return "all";
+  return null;
+}
+
+function createStatisticRow(period: StatisticPeriod, name: string, homeValue: MatchDetailStatistic["value"], awayValue: MatchDetailStatistic["value"]): StatisticRow {
+  const homeNumber = comparableStatValue(name, homeValue);
+  const awayNumber = comparableStatValue(name, awayValue);
+  const total = Math.max(homeNumber + awayNumber, 0);
+
+  return {
+    name,
+    label: translateStatisticLabel(name),
+    homeDisplay: formatStatValue(name, homeValue),
+    awayDisplay: formatStatValue(name, awayValue),
+    homeNumber,
+    awayNumber,
+    homePercent: total > 0 ? Math.max(6, (homeNumber / total) * 100) : 50,
+    awayPercent: total > 0 ? Math.max(6, (awayNumber / total) * 100) : 50,
+    period
+  };
+}
+
+function buildStatisticPeriodTabs(rows: StatisticRow[]) {
+  const firstRows = rows.filter((row) => row.period === "first");
+  const secondRows = rows.filter((row) => row.period === "second");
+  const allRows = rows.filter((row) => row.period === "all");
+  const fullRows = allRows.length > 0 ? allRows : mergePeriodStatisticRows(firstRows, secondRows);
+
+  return [
+    { key: "all" as const, label: "Tamamı", rows: fullRows },
+    { key: "first" as const, label: "İlk Yarı", rows: firstRows },
+    { key: "second" as const, label: "İkinci Yarı", rows: secondRows }
+  ];
+}
+
+function mergePeriodStatisticRows(firstRows: StatisticRow[], secondRows: StatisticRow[]) {
+  const byName = new Map<string, { first?: StatisticRow; second?: StatisticRow }>();
+  for (const row of firstRows) byName.set(row.name, { ...byName.get(row.name), first: row });
+  for (const row of secondRows) byName.set(row.name, { ...byName.get(row.name), second: row });
+
+  return Array.from(byName.entries()).map(([name, pair]) => {
+    const homeNumber = (pair.first?.homeNumber ?? 0) + (pair.second?.homeNumber ?? 0);
+    const awayNumber = (pair.first?.awayNumber ?? 0) + (pair.second?.awayNumber ?? 0);
+    return createStatisticRow("all", name, homeNumber, awayNumber);
+  });
+}
+
+function statisticKey(period: StatisticPeriod, name: string) {
+  return `${period}:${name}`;
+}
+
+function splitStatisticKey(key: string): [StatisticPeriod, string] {
+  const [period, ...nameParts] = key.split(":");
+  return [(period === "first" || period === "second" ? period : "all") as StatisticPeriod, nameParts.join(":")];
 }
 
 function buildAiResult(match: NormalizedMatch, detail: MatchDetail | null, prediction: MatchDetailPrediction | null) {
@@ -744,6 +918,30 @@ function formScore(matches: NormalizedMatch[], teamId: string) {
     if (result === "draw") return total + 1;
     return total;
   }, 0);
+}
+
+function formGoalTotals(matches: NormalizedMatch[], teamId: string) {
+  return matches.slice(0, 5).reduce(
+    (total, match) => {
+      if (match.score.home === null || match.score.away === null) return total;
+      const isHome = match.homeTeam.id === teamId;
+      const isAway = match.awayTeam.id === teamId;
+      if (!isHome && !isAway) return total;
+
+      return {
+        played: total.played + 1,
+        scored: total.scored + (isHome ? match.score.home ?? 0 : match.score.away ?? 0),
+        conceded: total.conceded + (isHome ? match.score.away ?? 0 : match.score.home ?? 0)
+      };
+    },
+    { played: 0, scored: 0, conceded: 0 }
+  );
+}
+
+function shareOfTotal(home: number, away: number) {
+  const total = home + away;
+  if (!Number.isFinite(total) || total <= 0) return 0.5;
+  return Math.min(1, Math.max(0, home / total));
 }
 
 function formatScore(value: number | null, upcoming: boolean) {
@@ -893,6 +1091,14 @@ function formatStatValue(name: string, value: MatchDetailStatistic["value"]) {
   }
 
   return String(value);
+}
+
+function normalizeStatisticLookup(value: string) {
+  return value
+    .trim()
+    .replace(/[\u2010-\u2015]/g, "-")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 function parsePercent(value: string | null) {

@@ -442,11 +442,28 @@ function normalizeDetailStatistics(groups: ProviderTeamStatistics[] | null | und
             .filter((item) => cleanString(item.displayName))
             .map((item) => ({
               displayName: cleanString(item.displayName) ?? "Statistic",
-              value: item.value ?? null
+              value: item.value ?? null,
+              period: normalizeStatisticPeriodLabel(item)
             }))
         : []
     }))
     .filter((group) => group.statistics.length > 0);
+}
+
+function normalizeStatisticPeriodLabel(item: {
+  period?: number | string | null;
+  half?: number | string | null;
+  group?: number | string | null;
+  scope?: number | string | null;
+  matchPeriod?: number | string | null;
+}) {
+  return (
+    cleanString(item.period) ??
+    cleanString(item.half) ??
+    cleanString(item.matchPeriod) ??
+    cleanString(item.group) ??
+    cleanString(item.scope)
+  );
 }
 
 function normalizeMatchList(matches: ProviderMatch[] | null | undefined, timezone: string, fetchedAt: string) {
