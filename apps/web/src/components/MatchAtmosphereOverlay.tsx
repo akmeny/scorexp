@@ -201,6 +201,12 @@ export function MatchAtmosphereOverlay({
     if (!targetId) return;
 
     window.requestAnimationFrame(() => {
+      if (nextTab === "chat" && window.matchMedia("(max-width: 760px)").matches) {
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+        window.scrollTo({ top: 0, behavior: "auto" });
+        return;
+      }
+
       document.getElementById(targetId)?.scrollIntoView({
         block: "start",
         behavior: "smooth"

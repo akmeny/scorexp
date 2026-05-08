@@ -3030,6 +3030,8 @@ button:disabled {
 }
 
 .atmosphereScoreStage {
+  position: relative;
+  isolation: isolate;
   width: 100%;
   max-width: 560px;
   min-width: 0;
@@ -3037,11 +3039,46 @@ button:disabled {
   justify-items: center;
   gap: 9px;
   padding: 22px 24px;
-  border: 1px solid #314148;
-  border-radius: 8px;
-  background: rgba(17, 24, 27, 0.82);
-  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34);
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--home-accent) 18%, color-mix(in srgb, var(--away-accent) 18%, #314148));
+  border-radius: 30px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), rgba(17, 24, 27, 0.92) 38%, rgba(17, 24, 27, 0.92) 62%, color-mix(in srgb, var(--away-accent) 10%, transparent)),
+    rgba(17, 24, 27, 0.86);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
   text-align: center;
+}
+
+.atmosphereScoreStage::before {
+  content: "";
+  position: absolute;
+  left: -34px;
+  right: -34px;
+  top: 50%;
+  z-index: 0;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 16%, transparent), rgba(124, 131, 255, 0.1), color-mix(in srgb, var(--away-accent) 16%, transparent));
+  transform: translateY(-50%);
+}
+
+.atmosphereScoreStage::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.1), transparent 46%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 7%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--away-accent) 7%, transparent));
+  pointer-events: none;
+}
+
+.atmosphereScoreStage > * {
+  position: relative;
+  z-index: 1;
 }
 
 .atmosphereStatusPill {
@@ -3051,7 +3088,8 @@ button:disabled {
   padding: 0 12px;
   border-radius: 999px;
   color: #0b1114;
-  background: #eef6f8;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 14%, #eef6f8), color-mix(in srgb, var(--away-accent) 14%, #eef6f8));
   font-size: 12px;
   font-weight: 950;
 }
@@ -3066,11 +3104,12 @@ button:disabled {
 }
 
 .atmosphereScoreline {
-  color: #ff5360;
+  color: color-mix(in srgb, var(--away-accent) 62%, var(--home-accent));
   font-size: 44px;
   font-weight: 950;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 10px 24px color-mix(in srgb, var(--away-accent) 22%, transparent);
 }
 
 .atmosphereScoreStage strong {
@@ -8530,21 +8569,32 @@ body,
     min-height: 0 !important;
     max-height: none !important;
     display: grid !important;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     overflow: hidden !important;
     padding-bottom: 0 !important;
   }
 
   .matchAtmosphereShell.chatTabActive .atmosphereHero {
-    min-height: 150px;
+    grid-row: 1;
+    min-height: 132px;
     border-bottom: 0;
   }
 
+  .matchAtmosphereShell.chatTabActive .atmosphereHeroPrediction {
+    grid-row: 2;
+  }
+
+  .matchAtmosphereShell.chatTabActive .atmosphereTabs {
+    grid-row: 3;
+  }
+
   .matchAtmosphereShell.chatTabActive .atmosphereScoreStage {
-    min-height: 132px;
+    min-height: 102px;
+    max-width: 112px;
   }
 
   .matchAtmosphereShell.chatTabActive .atmosphereChatSection {
+    grid-row: 4;
     width: 100%;
     min-height: 0;
     display: grid;
@@ -9216,9 +9266,23 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereScoreStage {
-  border-color: var(--sx-line);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--sx-shadow);
+  border-color: color-mix(in srgb, var(--home-accent) 15%, color-mix(in srgb, var(--away-accent) 15%, var(--sx-line)));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), rgba(255, 255, 255, 0.92) 38%, rgba(255, 255, 255, 0.92) 62%, color-mix(in srgb, var(--away-accent) 10%, transparent)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 18px 38px rgba(28, 45, 59, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.scorexpLightTheme .atmosphereScoreStage::before {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 13%, transparent), rgba(37, 99, 235, 0.08), color-mix(in srgb, var(--away-accent) 13%, transparent));
+}
+
+.scorexpLightTheme .atmosphereScoreStage::after {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.72), transparent 48%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 7%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--away-accent) 7%, transparent));
 }
 
 .scorexpLightTheme .atmosphereCompactHeroInner {
@@ -9830,14 +9894,22 @@ body.scorexpLightTheme,
     align-content: center;
     gap: 4px;
     padding: 8px 10px;
-    border: 1px solid rgba(255, 83, 96, 0.28);
-    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--home-accent) 16%, color-mix(in srgb, var(--away-accent) 16%, rgba(255, 255, 255, 0.18)));
+    border-radius: 32px;
     background:
-      radial-gradient(circle at 50% 20%, rgba(255, 83, 96, 0.16), transparent 62%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 11%, transparent), rgba(13, 20, 24, 0.94) 42%, rgba(13, 20, 24, 0.94) 58%, color-mix(in srgb, var(--away-accent) 11%, transparent)),
+      radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--away-accent) 10%, rgba(255, 255, 255, 0.04)), transparent 62%),
       rgba(13, 20, 24, 0.96);
     box-shadow:
-      0 14px 34px rgba(0, 0, 0, 0.3),
+      0 12px 28px rgba(0, 0, 0, 0.24),
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .atmosphereScoreStage::before {
+    left: -28px;
+    right: -28px;
+    height: 34px;
+    opacity: 0.9;
   }
 
   .atmosphereStatusPill {
@@ -9904,6 +9976,11 @@ body.scorexpLightTheme,
     max-width: 96px;
   }
 
+  .matchAtmosphereShell.chatTabActive .atmosphereScoreStage {
+    min-height: 94px;
+    max-width: 96px;
+  }
+
   .atmosphereScoreline {
     font-size: 22px;
   }
@@ -9928,9 +10005,10 @@ body.scorexpLightTheme,
   }
 
   .scorexpLightTheme .atmosphereScoreStage {
-    border-color: rgba(225, 29, 72, 0.2);
+    border-color: color-mix(in srgb, var(--home-accent) 14%, color-mix(in srgb, var(--away-accent) 14%, rgba(37, 99, 235, 0.18)));
     background:
-      radial-gradient(circle at 50% 20%, rgba(225, 29, 72, 0.1), transparent 62%),
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 11%, transparent), rgba(255, 255, 255, 0.95) 42%, rgba(255, 255, 255, 0.95) 58%, color-mix(in srgb, var(--away-accent) 11%, transparent)),
+      radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--away-accent) 8%, rgba(255, 255, 255, 0.6)), transparent 62%),
       rgba(255, 255, 255, 0.96);
   }
 
