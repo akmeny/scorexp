@@ -12340,3 +12340,26 @@ body.scorexpLightTheme,
     color: color-mix(in srgb, var(--team-accent) 32%, #344450);
   }
 }
+
+@media (min-width: 981px) {
+  .atmosphereCompactHero {
+    left: calc(clamp(180px, 17vw, 214px) + 12px);
+    right: auto;
+    width: clamp(410px, 47vw, 590px);
+  }
+}
+
+@media (max-width: 760px) {
+  .atmosphereCompactHero {
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .atmosphereCompactHero {
+    left: 8px;
+    right: 8px;
+  }
+}
