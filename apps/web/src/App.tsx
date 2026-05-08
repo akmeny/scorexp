@@ -48,9 +48,11 @@ const notificationBadge = "/icons/notification-badge.png";
 const notificationImage = "/icons/icon-512.png";
 const notificationSound = "/audio/notification.mp3";
 const favoriteNotificationPermissionPromptKey = "scorexp:favoriteNotificationPermissionPrompted";
+const pushDeviceIdStorageKey = "scorexp:pushDeviceId";
 
 let notificationAudioElement: HTMLAudioElement | null = null;
 let favoriteNotificationPermissionPromptedInMemory = false;
+let pushDeviceIdInMemory: string | null = null;
 
 type GoalDisplayScore = Pick<MatchScore, "home" | "away">;
 type GoalPresentation = {
@@ -126,6 +128,7 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [colorMode, setColorMode] = useState<ColorMode>(() => readColorMode());
   const auth = useAuthProfile();
+  const pushDeviceId = useMemo(() => readPushDeviceId(), []);
   const desktopLayout = useDesktopLayout();
   const previousScoresRef = useRef<Map<string, string>>(new Map());
   const previousScoresProcessedAtRef = useRef(0);
@@ -534,10 +537,10 @@ export default function App() {
 
   useEffect(() => {
     const accessToken = auth.session?.access_token;
-    if (!accessToken || !notificationsEnabled || readNotificationPermission() !== "granted") return;
+    if (!notificationsEnabled || readNotificationPermission() !== "granted") return;
 
-    void ensureFavoritePushNotifications(accessToken, Array.from(favoriteIds)).catch(() => undefined);
-  }, [auth.session?.access_token, favoriteIds, notificationsEnabled]);
+    void ensureFavoritePushNotifications(accessToken, pushDeviceId, Array.from(favoriteIds)).catch(() => undefined);
+  }, [auth.session?.access_token, favoriteIds, notificationsEnabled, pushDeviceId]);
 
   const syncProfileNotificationPermission = (permission: NotificationPermission | null) => {
     if (!auth.profile || !permission) return;
@@ -562,8 +565,10 @@ export default function App() {
         if (notificationsEnabled) {
           void requestFavoriteNotificationPermissionOnce().then((permission) => {
             syncProfileNotificationPermission(permission);
-            if (permission === "granted" && auth.session?.access_token) {
-              void ensureFavoritePushNotifications(auth.session.access_token, nextFavoriteIds).catch(() => undefined);
+            if (permission === "granted") {
+              void ensureFavoritePushNotifications(auth.session?.access_token ?? null, pushDeviceId, nextFavoriteIds).catch(
+                () => undefined
+              );
             }
           });
           primeNotificationSound();
@@ -676,12 +681,12 @@ export default function App() {
       if (permission === "granted") primeNotificationSound();
     }
 
-    if (auth.session?.access_token) {
-      if (nextEnabled && permission === "granted") {
-        await ensureFavoritePushNotifications(auth.session.access_token, Array.from(favoriteIds)).catch(() => undefined);
-      } else if (!nextEnabled) {
-        await disableFavoritePushNotifications(auth.session.access_token).catch(() => undefined);
-      }
+    if (nextEnabled && permission === "granted") {
+      await ensureFavoritePushNotifications(auth.session?.access_token ?? null, pushDeviceId, Array.from(favoriteIds)).catch(
+        () => undefined
+      );
+    } else if (!nextEnabled) {
+      await disableFavoritePushNotifications(auth.session?.access_token ?? null, pushDeviceId).catch(() => undefined);
     }
 
     await auth.updateProfile({
@@ -934,6 +939,39 @@ function readFavorites() {
   } catch {
     return new Set<string>();
   }
+}
+
+function readPushDeviceId() {
+  if (pushDeviceIdInMemory) return pushDeviceIdInMemory;
+
+  try {
+    const existing = window.localStorage.getItem(pushDeviceIdStorageKey);
+    if (existing && isValidPushDeviceId(existing)) {
+      pushDeviceIdInMemory = existing;
+      return existing;
+    }
+
+    const next = createPushDeviceId();
+    window.localStorage.setItem(pushDeviceIdStorageKey, next);
+    pushDeviceIdInMemory = next;
+    return next;
+  } catch {
+    pushDeviceIdInMemory = createPushDeviceId();
+    return pushDeviceIdInMemory;
+  }
+}
+
+function createPushDeviceId() {
+  const raw =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+
+  return raw.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96);
+}
+
+function isValidPushDeviceId(value: string) {
+  return /^[a-zA-Z0-9_-]{16,96}$/.test(value);
 }
 
 function readColorMode(): ColorMode {
@@ -1353,7 +1391,7 @@ async function syncFavoriteMonitorServiceWorker(config: FavoriteMonitorServiceWo
   }
 }
 
-async function ensureFavoritePushNotifications(accessToken: string, favoriteIds: string[]) {
+async function ensureFavoritePushNotifications(accessToken: string | null | undefined, deviceId: string, favoriteIds: string[]) {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
   if (readNotificationPermission() !== "granted") return;
 
@@ -1376,17 +1414,19 @@ async function ensureFavoritePushNotifications(accessToken: string, favoriteIds:
 
   await registerPushSubscription({
     accessToken,
+    deviceId,
     subscription: serialized
   });
   await syncFavoriteNotifications({
     accessToken,
+    deviceId,
     favoriteIds
   });
 }
 
-async function disableFavoritePushNotifications(accessToken: string) {
+async function disableFavoritePushNotifications(accessToken: string | null | undefined, deviceId: string) {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    await syncFavoriteNotifications({ accessToken, favoriteIds: [] });
+    await syncFavoriteNotifications({ accessToken, deviceId, favoriteIds: [] });
     return;
   }
 
@@ -1396,12 +1436,13 @@ async function disableFavoritePushNotifications(accessToken: string) {
   if (subscription) {
     await unregisterPushSubscription({
       accessToken,
+      deviceId,
       endpoint: subscription.endpoint
     }).catch(() => undefined);
     await subscription.unsubscribe().catch(() => undefined);
   }
 
-  await syncFavoriteNotifications({ accessToken, favoriteIds: [] }).catch(() => undefined);
+  await syncFavoriteNotifications({ accessToken, deviceId, favoriteIds: [] }).catch(() => undefined);
 }
 
 function serializePushSubscription(subscription: PushSubscription): SerializedPushSubscription | null {

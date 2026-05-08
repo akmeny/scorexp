@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AppEnv } from "../config/env.js";
 import type { PushNotificationService } from "../services/pushNotifications.js";
 import type { AuthUserSnapshot, UserProfileStore } from "../storage/userProfileStore.js";
-import { isSupabaseAuthConfigured, resolveAuthUser } from "./auth.js";
+import { resolveAuthUser } from "./auth.js";
 
 const pushSubscriptionSchema = z.object({
   endpoint: z.string().url(),
@@ -34,12 +34,11 @@ export async function registerNotificationRoutes(
   });
 
   app.put("/api/v1/notifications/subscription", async (request, reply) => {
-    const user = await requireAuthUser(request, reply, env);
-    if (!user) return reply;
+    const identity = await resolveNotificationIdentity(request, reply, env, profileStore);
+    if (!identity) return reply;
 
-    await profileStore.ensureProfile(user);
     const subscription = pushSubscriptionSchema.parse(request.body);
-    const record = await pushService.subscribe(user.id, subscription, request.headers["user-agent"] ?? null);
+    const record = await pushService.subscribe(identity.id, subscription, headerString(request.headers["user-agent"]));
     reply.header("Cache-Control", "no-store");
 
     return {
@@ -49,23 +48,22 @@ export async function registerNotificationRoutes(
   });
 
   app.delete("/api/v1/notifications/subscription", async (request, reply) => {
-    const user = await requireAuthUser(request, reply, env);
-    if (!user) return reply;
+    const identity = await resolveNotificationIdentity(request, reply, env, profileStore);
+    if (!identity) return reply;
 
     const { endpoint } = unsubscribeSchema.parse(request.body);
-    await pushService.unsubscribe(user.id, endpoint);
+    await pushService.unsubscribe(identity.id, endpoint);
     reply.header("Cache-Control", "no-store");
 
     return { ok: true };
   });
 
   app.put("/api/v1/notifications/favorites", async (request, reply) => {
-    const user = await requireAuthUser(request, reply, env);
-    if (!user) return reply;
+    const identity = await resolveNotificationIdentity(request, reply, env, profileStore);
+    if (!identity) return reply;
 
-    await profileStore.ensureProfile(user);
     const { favoriteIds } = favoriteSyncSchema.parse(request.body);
-    await pushService.syncFavorites(user.id, favoriteIds);
+    await pushService.syncFavorites(identity.id, favoriteIds);
     reply.header("Cache-Control", "no-store");
 
     return {
@@ -75,17 +73,37 @@ export async function registerNotificationRoutes(
   });
 }
 
-async function requireAuthUser(request: FastifyRequest, reply: FastifyReply, env: AppEnv): Promise<AuthUserSnapshot | null> {
-  if (!isSupabaseAuthConfigured(env)) {
-    reply.code(503).send({ message: "Auth is not configured" });
+async function resolveNotificationIdentity(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  env: AppEnv,
+  profileStore: UserProfileStore
+): Promise<{ id: string; user: AuthUserSnapshot | null } | null> {
+  if (request.headers.authorization) {
+    const user = await resolveAuthUser(request, env);
+    if (!user) {
+      reply.code(401).send({ message: "Invalid bearer token" });
+      return null;
+    }
+
+    await profileStore.ensureProfile(user);
+    return { id: user.id, user };
+  }
+
+  const deviceId = normalizeDeviceId(headerString(request.headers["x-scorexp-device-id"]));
+  if (!deviceId) {
+    reply.code(401).send({ message: "Missing notification identity" });
     return null;
   }
 
-  const user = await resolveAuthUser(request, env);
-  if (!user) {
-    reply.code(401).send({ message: "Missing bearer token" });
-    return null;
-  }
+  return { id: `device:${deviceId}`, user: null };
+}
 
-  return user;
+function headerString(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value ?? null;
+}
+
+function normalizeDeviceId(value: string | null) {
+  const normalized = value?.trim() ?? "";
+  return /^[a-zA-Z0-9_-]{16,96}$/.test(normalized) ? normalized : null;
 }

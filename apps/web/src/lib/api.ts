@@ -268,7 +268,8 @@ export async function fetchNotificationPublicKey(signal?: AbortSignal): Promise<
 }
 
 export async function registerPushSubscription(options: {
-  accessToken: string;
+  accessToken?: string | null;
+  deviceId?: string | null;
   subscription: SerializedPushSubscription;
   signal?: AbortSignal;
 }): Promise<void> {
@@ -276,10 +277,7 @@ export async function registerPushSubscription(options: {
     method: "PUT",
     signal: options.signal,
     cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${options.accessToken}`,
-      "Content-Type": "application/json"
-    },
+    headers: notificationIdentityHeaders(options.accessToken, options.deviceId),
     body: JSON.stringify(options.subscription)
   });
 
@@ -289,7 +287,8 @@ export async function registerPushSubscription(options: {
 }
 
 export async function unregisterPushSubscription(options: {
-  accessToken: string;
+  accessToken?: string | null;
+  deviceId?: string | null;
   endpoint: string;
   signal?: AbortSignal;
 }): Promise<void> {
@@ -297,10 +296,7 @@ export async function unregisterPushSubscription(options: {
     method: "DELETE",
     signal: options.signal,
     cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${options.accessToken}`,
-      "Content-Type": "application/json"
-    },
+    headers: notificationIdentityHeaders(options.accessToken, options.deviceId),
     body: JSON.stringify({ endpoint: options.endpoint })
   });
 
@@ -310,7 +306,8 @@ export async function unregisterPushSubscription(options: {
 }
 
 export async function syncFavoriteNotifications(options: {
-  accessToken: string;
+  accessToken?: string | null;
+  deviceId?: string | null;
   favoriteIds: string[];
   signal?: AbortSignal;
 }): Promise<void> {
@@ -318,16 +315,27 @@ export async function syncFavoriteNotifications(options: {
     method: "PUT",
     signal: options.signal,
     cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${options.accessToken}`,
-      "Content-Type": "application/json"
-    },
+    headers: notificationIdentityHeaders(options.accessToken, options.deviceId),
     body: JSON.stringify({ favoriteIds: options.favoriteIds })
   });
 
   if (!response.ok) {
     throw new Error(`Sync favorite notifications failed (${response.status})`);
   }
+}
+
+function notificationIdentityHeaders(accessToken?: string | null, deviceId?: string | null) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  } else if (deviceId) {
+    headers["X-ScoreXP-Device-Id"] = deviceId;
+  }
+
+  return headers;
 }
 
 function resolveApiBase(value: string | undefined) {
