@@ -2,6 +2,9 @@
   --scorexp-display-scale: 1.1;
   --scorexp-viewport-width: 100vw;
   --scorexp-viewport-height: 100vh;
+  --sx-data-home: #38bdf8;
+  --sx-data-away: #fb923c;
+  --sx-data-draw: #facc15;
   color-scheme: dark;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1686,6 +1689,10 @@ button:disabled {
   gap: 8px;
 }
 
+.detailMetaFooter {
+  margin: 14px 0 0;
+}
+
 .detailFact {
   min-width: 0;
   display: grid;
@@ -1865,7 +1872,7 @@ button:disabled {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7c83ff, #3fe0a0);
+  background: linear-gradient(90deg, var(--sx-data-home), var(--sx-data-away));
   transition: width 450ms ease;
 }
 
@@ -1911,7 +1918,7 @@ button:disabled {
   position: absolute;
   inset: auto auto 0 0;
   height: 2px;
-  background: #3fe0a0;
+  background: var(--sx-data-home);
 }
 
 .aiProbabilityBars span,
@@ -2092,12 +2099,12 @@ button:disabled {
 
 .statBars i {
   justify-self: end;
-  background: #7c83ff;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 28%, transparent), var(--sx-data-home));
 }
 
 .statBars b {
   justify-self: start;
-  background: #3fe0a0;
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 28%, transparent));
 }
 
 .emptyDetail {
@@ -2155,96 +2162,283 @@ button:disabled {
 }
 
 .comparisonGraphCard {
+  --comparison-home: var(--sx-data-home);
+  --comparison-draw: var(--sx-data-draw);
+  --comparison-away: var(--sx-data-away);
   display: grid;
-  gap: 9px;
-  padding: 10px;
-  border: 1px solid #26343a;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--comparison-home) 14%, color-mix(in srgb, var(--comparison-away) 12%, #26343a));
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(124, 131, 255, 0.08), transparent 56%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)),
+    linear-gradient(90deg, color-mix(in srgb, var(--comparison-home) 10%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--comparison-away) 10%, transparent)),
     #0d1417;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.comparisonLineHeader {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.comparisonLineHeader div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.comparisonLineHeader span {
+  color: #93a6ae;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.comparisonLineHeader strong {
+  overflow: hidden;
+  color: #f3fbfd;
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparisonLineHeader b {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #eaf4f7;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
 }
 
 .comparisonStats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
+  gap: 8px;
 }
 
 .comparisonStat {
   min-width: 0;
   display: grid;
   gap: 4px;
-  padding: 8px;
-  border: 1px solid #26343a;
+  position: relative;
+  overflow: hidden;
+  padding: 10px 9px 9px;
+  border: 1px solid rgba(54, 71, 78, 0.86);
   border-radius: 8px;
-  background: #10191d;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006)),
+    #10191d;
+}
+
+.comparisonStat::before {
+  content: "";
+  height: 3px;
+  position: absolute;
+  inset: 0 0 auto;
+  background: #9dafb6;
+}
+
+.comparisonStat.home::before {
+  background: var(--comparison-home);
+}
+
+.comparisonStat.draw::before {
+  background: var(--comparison-draw);
+}
+
+.comparisonStat.away::before {
+  background: var(--comparison-away);
+}
+
+.comparisonStat.isLeader {
+  border-color: color-mix(in srgb, var(--comparison-home) 18%, color-mix(in srgb, var(--comparison-away) 18%, #52666e));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.012)),
+    #111d21;
 }
 
 .comparisonStat span {
   overflow: hidden;
-  color: #9dafb6;
-  font-size: 10px;
-  font-weight: 780;
+  color: #a5b8bf;
+  font-size: 11px;
+  font-weight: 820;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .comparisonStat strong {
   color: #edf7fa;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 950;
   line-height: 1;
 }
 
-.comparisonSparkline {
+.comparisonLineCanvas {
   min-width: 0;
-  display: grid;
-  gap: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(54, 71, 78, 0.7);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    #0a1114;
+  background-size: auto, 33.333% 100%, auto;
 }
 
-.comparisonSparkline svg {
+.comparisonLineCanvas svg {
   width: 100%;
-  height: 58px;
+  height: 138px;
   display: block;
   overflow: visible;
 }
 
-.comparisonSparkline path {
-  fill: none;
-  stroke: #26343a;
-  stroke-width: 1.5;
+.comparisonGridLine {
+  stroke: rgba(156, 178, 186, 0.17);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
-.comparisonSparkline polyline {
+.comparisonArea {
+  opacity: 0.74;
+}
+
+.comparisonLine {
   fill: none;
-  stroke: #7c83ff;
-  stroke-width: 3;
+  stroke-width: 5.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.32));
 }
 
-.comparisonSparkline circle {
-  fill: #7c83ff;
-  stroke: #0d1417;
-  stroke-width: 1.5;
+.comparisonStopHome {
+  stop-color: var(--comparison-home);
 }
 
-.comparisonSparkline circle.draw {
-  fill: #c5ced3;
+.comparisonStopDraw {
+  stop-color: var(--comparison-draw);
 }
 
-.comparisonSparkline circle.away {
-  fill: #3fe0a0;
+.comparisonStopAway {
+  stop-color: var(--comparison-away);
+}
+
+.comparisonAreaStopTop {
+  stop-color: color-mix(in srgb, var(--sx-data-home) 32%, transparent);
+}
+
+.comparisonAreaStopBottom {
+  stop-color: color-mix(in srgb, var(--sx-data-away) 5%, transparent);
+}
+
+.comparisonPointHalo {
+  opacity: 0.18;
+}
+
+.comparisonPointGroup.home .comparisonPoint,
+.comparisonPointGroup.home .comparisonPointHalo {
+  fill: var(--comparison-home);
+}
+
+.comparisonPointGroup.draw .comparisonPoint,
+.comparisonPointGroup.draw .comparisonPointHalo {
+  fill: var(--comparison-draw);
+}
+
+.comparisonPointGroup.away .comparisonPoint,
+.comparisonPointGroup.away .comparisonPointHalo {
+  fill: var(--comparison-away);
+}
+
+.comparisonPoint {
+  stroke: #0a1114;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.comparisonPointGroup.isLeader .comparisonPoint {
+  stroke: #f4fbfd;
 }
 
 .comparisonAxis {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  color: #90a3aa;
+  gap: 6px;
+}
+
+.comparisonAxis span {
+  min-width: 0;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
+  border: 1px solid rgba(54, 71, 78, 0.72);
+  border-radius: 999px;
+  color: #a5b8bf;
   font-size: 10px;
-  font-weight: 850;
-  text-align: center;
+  font-weight: 900;
+}
+
+.comparisonAxis i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #9dafb6;
+}
+
+.comparisonAxis .home i {
+  background: var(--comparison-home);
+}
+
+.comparisonAxis .draw i {
+  background: var(--comparison-draw);
+}
+
+.comparisonAxis .away i {
+  background: var(--comparison-away);
+}
+
+.comparisonAxis b,
+.comparisonAxis em {
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparisonAxis b {
+  color: #f1f8fa;
+  font-weight: 950;
+}
+
+.comparisonLineInsight {
+  margin: 0;
+  color: #9fb2ba;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.atmosphereComparisonChart {
+  margin-bottom: 12px;
 }
 
 .compactMatchList {
@@ -2728,7 +2922,7 @@ button:disabled {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7c83ff, #3fe0a0);
+  background: linear-gradient(90deg, var(--sx-data-home), var(--sx-data-away));
   transition: width 300ms ease;
 }
 
@@ -2777,7 +2971,7 @@ button:disabled {
   position: absolute;
   inset: auto auto 0 0;
   height: 3px;
-  background: #3fe0a0;
+  background: var(--sx-data-home);
 }
 
 .aiModalBars span,
@@ -3163,7 +3357,7 @@ button:disabled {
   gap: 8px;
   margin: 4px 0 0;
   padding: 13px 0 0;
-  border-top: 1px solid color-mix(in srgb, var(--home-accent) 12%, color-mix(in srgb, var(--away-accent) 12%, rgba(180, 202, 211, 0.13)));
+  border-top: 1px solid color-mix(in srgb, var(--sx-data-home) 12%, color-mix(in srgb, var(--sx-data-away) 12%, rgba(180, 202, 211, 0.13)));
   background: transparent;
   box-shadow: none;
 }
@@ -3211,27 +3405,129 @@ button:disabled {
 }
 
 .atmosphereHeroPredictionRail .home {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 30%, transparent), var(--home-accent));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 30%, transparent), var(--sx-data-home));
 }
 
 .atmosphereHeroPredictionRail .draw {
-  background: linear-gradient(90deg, rgba(183, 196, 204, 0.42), rgba(231, 237, 241, 0.72));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-draw) 28%, transparent), var(--sx-data-draw));
 }
 
 .atmosphereHeroPredictionRail .away {
-  background: linear-gradient(90deg, var(--away-accent), color-mix(in srgb, var(--away-accent) 30%, transparent));
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 30%, transparent));
 }
 
 .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--home-accent) 72%, #ffffff);
+  color: color-mix(in srgb, var(--sx-data-home) 72%, #ffffff);
 }
 
 .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--away-accent) 72%, #ffffff);
+  color: color-mix(in srgb, var(--sx-data-away) 72%, #ffffff);
 }
 
 .atmosphereCompactHero {
-  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 120;
+  height: clamp(58px, 10dvh, 96px);
+  display: block;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.matchAtmosphereShell.compactHeroVisible .atmosphereCompactHero {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.atmosphereCompactHeroInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: clamp(12px, 3vw, 34px);
+  padding: max(8px, env(safe-area-inset-top)) clamp(18px, 4vw, 54px) 8px;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--home-accent) 20%, color-mix(in srgb, var(--away-accent) 20%, rgba(255, 255, 255, 0.18)));
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 28%, rgba(10, 17, 20, 0.96)), rgba(10, 17, 20, 0.97) 41%, rgba(10, 17, 20, 0.97) 59%, color-mix(in srgb, var(--away-accent) 28%, rgba(10, 17, 20, 0.96))),
+    rgba(10, 17, 20, 0.96);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+}
+
+.atmosphereCompactHeroInner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--home-accent), rgba(255, 255, 255, 0.42), var(--away-accent));
+}
+
+.atmosphereCompactHeroInner::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+}
+
+.atmosphereCompactHeroInner .teamLogo.lg,
+.atmosphereCompactHeroInner .logoFallback.lg {
+  width: clamp(38px, 7dvh, 58px);
+  height: clamp(38px, 7dvh, 58px);
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.atmosphereCompactHeroInner .logoFallback.lg {
+  font-size: clamp(12px, 2dvh, 18px);
+}
+
+.atmosphereCompactScoreline {
+  min-width: clamp(72px, 13vw, 140px);
+  min-height: clamp(34px, 6dvh, 58px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(16px, 3vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--home-accent) 20%, color-mix(in srgb, var(--away-accent) 20%, rgba(255, 255, 255, 0.16)));
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 68%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 16%, transparent), rgba(255, 255, 255, 0.06), color-mix(in srgb, var(--away-accent) 16%, transparent));
+  color: #f3f8fb;
+  font-size: clamp(18px, 3.6dvh, 34px);
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.42);
+}
+
+.atmosphereCompactScoreline.upcoming {
+  font-size: clamp(17px, 3.2dvh, 30px);
 }
 
 .atmosphereNotice {
@@ -3306,6 +3602,476 @@ button:disabled {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.atmosphereLiveStack {
+  width: min(1180px, calc(100% - 40px));
+  display: grid;
+  gap: 14px;
+  margin: 18px auto 0;
+}
+
+.atmospherePressureCard,
+.atmosphereComparePulseCard {
+  min-width: 0;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 6%, transparent), rgba(17, 24, 27, 0.96) 38%, rgba(17, 24, 27, 0.96) 62%, color-mix(in srgb, var(--sx-data-away) 6%, transparent)),
+    #141b1e;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.atmospherePressureCard {
+  padding: 12px 16px 14px;
+}
+
+.atmospherePressureHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.atmospherePressureTeam {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #eff8fa;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.atmospherePressureTeam.away {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.atmospherePressureTeam span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmospherePressureTeam i {
+  width: 7px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: var(--sx-data-home);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--sx-data-home) 38%, transparent);
+}
+
+.atmospherePressureTeam.away i {
+  background: var(--sx-data-away);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--sx-data-away) 38%, transparent);
+}
+
+.atmospherePressureTitle {
+  min-width: 154px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--sx-data-home) 14%, color-mix(in srgb, var(--sx-data-away) 14%, #314148));
+  border-radius: 8px;
+  background: rgba(9, 13, 15, 0.52);
+}
+
+.atmospherePressureTitle span {
+  color: #9dafb6;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.atmospherePressureTitle strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #f4fbfd;
+  font-size: 12px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.atmospherePressureTitle em {
+  color: #edf7fa;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.atmospherePressureTitle b {
+  color: #7f929b;
+  font-size: 12px;
+}
+
+.atmospherePressureEventRail {
+  position: relative;
+  height: 30px;
+  margin: 4px 0;
+}
+
+.atmospherePressureEventRail.away {
+  margin-top: 5px;
+}
+
+.pressureEventDot {
+  position: absolute;
+  top: 50%;
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(8, 12, 14, 0.84);
+  color: #f5fbfd;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transform: translate(-50%, -50%);
+}
+
+.pressureEventDot svg {
+  width: 8px;
+  height: 8px;
+  stroke-width: 3;
+}
+
+.pressureEventDot.goal,
+.pressureEventDot.penalty {
+  border-color: color-mix(in srgb, var(--sx-data-home) 22%, var(--sx-data-away));
+}
+
+.pressureEventDot.corner svg {
+  color: #f43f5e;
+}
+
+.pressureEventDot.yellow .pressureCardIcon,
+.pressureEventDot.red .pressureCardIcon {
+  display: block;
+  width: 7px;
+  height: 9px;
+  border-radius: 2px;
+  transform: rotate(8deg);
+}
+
+.compareCardIcon {
+  display: block;
+  width: 13px;
+  height: 18px;
+  border-radius: 3px;
+  transform: rotate(8deg);
+}
+
+.pressureEventDot.yellow .pressureCardIcon,
+.compareCardIcon.yellow {
+  background: #facc15;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.26);
+}
+
+.pressureEventDot.red .pressureCardIcon,
+.compareCardIcon.red {
+  background: #ef4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.26);
+}
+
+.pressureBallIcon {
+  display: block;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.atmospherePressureGraph {
+  position: relative;
+  min-width: 0;
+  height: 119px;
+  overflow: hidden;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sx-data-home) 10%, rgba(37, 99, 235, 0.08)) 0 50%, color-mix(in srgb, var(--sx-data-away) 10%, rgba(249, 115, 22, 0.08)) 50% 100%),
+    #0f171a;
+}
+
+.atmospherePressureGraph.isEmpty {
+  opacity: 0.76;
+}
+
+.atmospherePressureBars {
+  position: absolute;
+  inset: 12px;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(90, minmax(2px, 1fr));
+  gap: 2px;
+}
+
+.atmospherePressureBars span {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+}
+
+.atmospherePressureBars span.future {
+  opacity: 0.38;
+}
+
+.atmospherePressureBars i,
+.atmospherePressureBars b {
+  width: 100%;
+  display: block;
+  min-height: 2px;
+}
+
+.atmospherePressureBars i {
+  align-self: end;
+  border-radius: 7px 7px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sx-data-home) 58%, #ffffff), var(--sx-data-home));
+  box-shadow: 0 -5px 16px color-mix(in srgb, var(--sx-data-home) 20%, transparent);
+}
+
+.atmospherePressureBars b {
+  align-self: start;
+  border-radius: 0 0 7px 7px;
+  background: linear-gradient(180deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 58%, #ffffff));
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--sx-data-away) 20%, transparent);
+}
+
+.atmospherePressureMidline {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  z-index: 2;
+  height: 1px;
+  background: rgba(229, 237, 241, 0.58);
+}
+
+.atmospherePressureHalf {
+  position: absolute;
+  left: 14px;
+  z-index: 3;
+  color: rgba(238, 247, 250, 0.48);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.atmospherePressureHalf.home {
+  top: 10px;
+}
+
+.atmospherePressureHalf.away {
+  bottom: 10px;
+}
+
+.atmospherePressureAxis {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: #d9e4e8;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.atmospherePressureAxis i {
+  height: 5px;
+  border-radius: 999px;
+  background-image: radial-gradient(circle, rgba(218, 226, 230, 0.42) 0 2px, transparent 2.5px);
+  background-size: 22px 5px;
+}
+
+.atmosphereComparePulseCard {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.atmosphereCompareDonuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.atmosphereCompareDonut {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.atmosphereCompareDonut > span {
+  max-width: 100%;
+  overflow: hidden;
+  color: #f0f8fa;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereCompareDonutBody {
+  width: min(100%, 230px);
+  display: grid;
+  grid-template-columns: minmax(34px, 1fr) 78px minmax(34px, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.atmosphereCompareDonutBody strong {
+  color: #f4fbfd;
+  font-size: 21px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.atmosphereCompareDonutBody strong:last-child {
+  text-align: left;
+}
+
+.atmosphereCompareRing {
+  --home-deg: 180deg;
+  position: relative;
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: conic-gradient(from 180deg, var(--sx-data-home) 0deg var(--home-deg), var(--sx-data-away) var(--home-deg) 360deg);
+  box-shadow:
+    0 14px 30px color-mix(in srgb, var(--sx-data-home) 16%, transparent),
+    0 14px 30px color-mix(in srgb, var(--sx-data-away) 16%, transparent);
+}
+
+.atmosphereCompareRing::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: inherit;
+  background: #141b1e;
+}
+
+.atmosphereCompareRing em {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: #9aa5ab;
+  font-style: normal;
+}
+
+.atmosphereCompareTeams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+  align-items: center;
+  color: #9dafb6;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.atmosphereCompareTeams span:last-child {
+  text-align: right;
+}
+
+.atmosphereCompareTeams b {
+  height: 1px;
+  background: #36474f;
+}
+
+.atmosphereCompareLines {
+  display: grid;
+  gap: 10px;
+}
+
+.atmosphereCompareLine {
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 34px 46px minmax(0, 1fr) 46px 34px;
+  align-items: center;
+  gap: 10px;
+}
+
+.compareLineIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2c3b42;
+  border-radius: 8px;
+  background: #10171a;
+  color: #f5fbfd;
+}
+
+.compareLineIcon.home svg {
+  color: var(--sx-data-home);
+}
+
+.compareLineIcon.away svg {
+  color: var(--sx-data-away);
+}
+
+.atmosphereCompareLine > strong {
+  color: #f5fbfd;
+  font-size: 17px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.atmosphereCompareLine > strong:nth-last-child(2) {
+  text-align: left;
+}
+
+.compareLineCenter {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.compareLineCenter > span {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 14px;
+  font-weight: 850;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compareLineTrack {
+  height: 9px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.compareLineTrack i,
+.compareLineTrack b {
+  display: block;
+  min-width: 6px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.compareLineTrack i {
+  justify-self: end;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 30%, transparent), var(--sx-data-home));
+}
+
+.compareLineTrack b {
+  justify-self: start;
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 30%, transparent));
 }
 
 .atmosphereGrid,
@@ -3392,7 +4158,7 @@ button:disabled {
   position: absolute;
   inset: auto auto 0 0;
   height: 3px;
-  background: #7c83ff;
+  background: var(--sx-data-home);
 }
 
 .atmosphereProbabilityBars span,
@@ -3424,14 +4190,14 @@ button:disabled {
 
 .atmosphereInsight.form {
   background:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--home-accent) 12%, transparent), transparent 46%),
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--away-accent) 12%, transparent), transparent 46%),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--sx-data-home) 12%, transparent), transparent 46%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--sx-data-away) 12%, transparent), transparent 46%),
     #10171a;
 }
 
 .atmosphereInsight.comparison {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 7%, transparent), color-mix(in srgb, var(--away-accent) 7%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--sx-data-home) 7%, transparent), color-mix(in srgb, var(--sx-data-away) 7%, transparent)),
     #10171a;
 }
 
@@ -3473,15 +4239,15 @@ button:disabled {
 }
 
 .atmosphereInsightGraph .home {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 35%, transparent), var(--home-accent));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 35%, transparent), var(--sx-data-home));
 }
 
 .atmosphereInsightGraph .draw {
-  background: linear-gradient(90deg, #9dafb6, #d8e1e5);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-draw) 35%, transparent), var(--sx-data-draw));
 }
 
 .atmosphereInsightGraph .away {
-  background: linear-gradient(90deg, var(--away-accent), color-mix(in srgb, var(--away-accent) 35%, transparent));
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 35%, transparent));
 }
 
 .atmosphereInsightLegend {
@@ -3508,11 +4274,15 @@ button:disabled {
 }
 
 .atmosphereInsightLegend .home {
-  border-color: color-mix(in srgb, var(--home-accent) 35%, #26343a);
+  border-color: color-mix(in srgb, var(--sx-data-home) 35%, #26343a);
+}
+
+.atmosphereInsightLegend .draw {
+  border-color: color-mix(in srgb, var(--sx-data-draw) 35%, #26343a);
 }
 
 .atmosphereInsightLegend .away {
-  border-color: color-mix(in srgb, var(--away-accent) 35%, #26343a);
+  border-color: color-mix(in srgb, var(--sx-data-away) 35%, #26343a);
 }
 
 .atmosphereInsightGauge {
@@ -3527,7 +4297,7 @@ button:disabled {
   height: 100%;
   display: block;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7c83ff, #3fe0a0);
+  background: linear-gradient(90deg, var(--sx-data-home), var(--sx-data-away));
 }
 
 .atmosphereInsight p {
@@ -3610,12 +4380,12 @@ button:disabled {
 
 .atmosphereStatBars i {
   justify-self: end;
-  background: #7c83ff;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 28%, transparent), var(--sx-data-home));
 }
 
 .atmosphereStatBars b {
   justify-self: start;
-  background: #ff5360;
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 28%, transparent));
 }
 
 .atmosphereHistorySummary {
@@ -4172,6 +4942,17 @@ button:disabled {
     padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 72px));
   }
 
+  .atmosphereCompactHero {
+    top: 0;
+    z-index: 120;
+  }
+
+  .atmosphereCompactHeroInner {
+    grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(0, 1fr);
+    gap: clamp(10px, 2.6vw, 20px);
+    padding: max(7px, env(safe-area-inset-top)) 14px 7px;
+  }
+
   .atmosphereHero {
     min-height: auto;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
@@ -4230,6 +5011,107 @@ button:disabled {
 
   .atmosphereSignalStrip {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .atmosphereLiveStack {
+    width: calc(100% - 20px);
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .atmospherePressureCard {
+    padding: 10px 12px 12px;
+  }
+
+  .atmospherePressureHeader {
+    gap: 8px;
+  }
+
+  .atmospherePressureTeam {
+    gap: 7px;
+    font-size: 13px;
+  }
+
+  .atmospherePressureTeam i {
+    width: 5px;
+    height: 32px;
+  }
+
+  .atmospherePressureTitle {
+    min-width: 134px;
+    padding: 5px 8px;
+  }
+
+  .atmospherePressureTitle strong {
+    font-size: 11px;
+  }
+
+  .atmospherePressureGraph {
+    height: 97px;
+  }
+
+  .atmospherePressureBars {
+    inset: 10px;
+    gap: 1px;
+  }
+
+  .atmospherePressureMidline {
+    left: 10px;
+    right: 10px;
+  }
+
+  .atmospherePressureEventRail {
+    height: 28px;
+  }
+
+  .pressureEventDot {
+    width: 14px;
+    height: 14px;
+  }
+
+  .atmosphereComparePulseCard {
+    gap: 13px;
+    padding: 12px;
+  }
+
+  .atmosphereCompareDonuts {
+    gap: 8px;
+  }
+
+  .atmosphereCompareDonut > span {
+    font-size: 13px;
+  }
+
+  .atmosphereCompareDonutBody {
+    grid-template-columns: minmax(28px, 1fr) 64px minmax(28px, 1fr);
+    gap: 8px;
+  }
+
+  .atmosphereCompareRing {
+    width: 64px;
+    height: 64px;
+  }
+
+  .atmosphereCompareRing::before {
+    inset: 8px;
+  }
+
+  .atmosphereCompareDonutBody strong {
+    font-size: 17px;
+  }
+
+  .atmosphereCompareLine {
+    grid-template-columns: 30px 38px minmax(0, 1fr) 38px 30px;
+    gap: 7px;
+  }
+
+  .compareLineIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .atmosphereCompareLine > strong {
+    font-size: 15px;
   }
 
   .atmosphereGrid,
@@ -4340,6 +5222,147 @@ button:disabled {
 
   .atmosphereSignalStrip {
     grid-template-columns: 1fr;
+  }
+
+  .atmospherePressureHeader {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .atmospherePressureTeam {
+    font-size: 11.5px;
+  }
+
+  .atmospherePressureTitle {
+    min-width: 112px;
+    padding: 5px 6px;
+  }
+
+  .atmospherePressureTitle span {
+    font-size: 9px;
+  }
+
+  .atmospherePressureTitle strong {
+    gap: 3px;
+    font-size: 10px;
+  }
+
+  .atmospherePressureEventRail {
+    height: 26px;
+    margin: 3px 0;
+  }
+
+  .pressureEventDot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .pressureEventDot svg {
+    width: 7px;
+    height: 7px;
+  }
+
+  .atmospherePressureGraph {
+    height: 78px;
+  }
+
+  .atmospherePressureBars {
+    inset: 8px;
+    grid-template-columns: repeat(90, minmax(1px, 1fr));
+  }
+
+  .atmospherePressureAxis {
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .atmospherePressureAxis i {
+    background-size: 16px 5px;
+  }
+
+  .atmosphereComparePulseCard {
+    padding: 10px 8px;
+  }
+
+  .atmosphereCompareDonuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .atmosphereCompareDonut {
+    gap: 7px;
+  }
+
+  .atmosphereCompareDonut > span {
+    min-height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+
+  .atmosphereCompareDonutBody {
+    grid-template-columns: minmax(18px, 1fr) 50px minmax(18px, 1fr);
+    gap: 4px;
+  }
+
+  .atmosphereCompareRing {
+    width: 50px;
+    height: 50px;
+  }
+
+  .atmosphereCompareRing::before {
+    inset: 7px;
+  }
+
+  .atmosphereCompareRing svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .atmosphereCompareDonutBody strong {
+    font-size: 14px;
+  }
+
+  .atmosphereCompareLine {
+    min-height: 38px;
+    grid-template-columns: 26px 30px minmax(0, 1fr) 30px 26px;
+    gap: 5px;
+  }
+
+  .compareLineIcon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+  }
+
+  .compareLineIcon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .compareCardIcon {
+    width: 11px;
+    height: 16px;
+  }
+
+  .atmosphereCompareLine > strong {
+    font-size: 13px;
+  }
+
+  .compareLineCenter > span {
+    font-size: 12px;
+  }
+
+  .compareLineTrack {
+    height: 7px;
+    gap: 4px;
+  }
+
+  .compareLineTrack i,
+  .compareLineTrack b {
+    height: 7px;
   }
 
   .atmosphereTimelineItem {
@@ -5985,7 +7008,43 @@ button:disabled {
 
 .aiProgress i,
 .aiProbabilityBars i {
-  background: var(--sx-good);
+  background: linear-gradient(90deg, var(--sx-data-home), var(--sx-data-away));
+}
+
+.aiProbabilityBars div.home,
+.aiModalBars div.home,
+.atmosphereProbabilityBars div.home {
+  border-color: color-mix(in srgb, var(--sx-data-home) 34%, #28453f);
+}
+
+.aiProbabilityBars div.draw,
+.aiModalBars div.draw,
+.atmosphereProbabilityBars div.draw {
+  border-color: color-mix(in srgb, var(--sx-data-draw) 34%, #28453f);
+}
+
+.aiProbabilityBars div.away,
+.aiModalBars div.away,
+.atmosphereProbabilityBars div.away {
+  border-color: color-mix(in srgb, var(--sx-data-away) 34%, #28453f);
+}
+
+.aiProbabilityBars div.home i,
+.aiModalBars div.home i,
+.atmosphereProbabilityBars div.home i {
+  background: var(--sx-data-home);
+}
+
+.aiProbabilityBars div.draw i,
+.aiModalBars div.draw i,
+.atmosphereProbabilityBars div.draw i {
+  background: var(--sx-data-draw);
+}
+
+.aiProbabilityBars div.away i,
+.aiModalBars div.away i,
+.atmosphereProbabilityBars div.away i {
+  background: var(--sx-data-away);
 }
 
 .eventTimeline,
@@ -6028,11 +7087,11 @@ button:disabled {
 }
 
 .statBars i {
-  background: var(--sx-accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 28%, transparent), var(--sx-data-home));
 }
 
 .statBars b {
-  background: var(--sx-good);
+  background: linear-gradient(90deg, var(--sx-data-away), color-mix(in srgb, var(--sx-data-away) 28%, transparent));
 }
 
 .formChip {
@@ -7697,6 +8756,9 @@ button:disabled {
   --sx-live: #EF4444;
   --sx-warn: #F59E0B;
   --sx-good: #22C55E;
+  --sx-data-home: #38bdf8;
+  --sx-data-away: #fb923c;
+  --sx-data-draw: #facc15;
   background: var(--sx-bg);
   color: var(--sx-text);
 }
@@ -8439,79 +9501,12 @@ body,
 }
 
 @media (min-width: 761px) {
-  .matchAtmosphereShell.chatTabActive .atmosphereCompactHero {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    height: 0;
-    display: flex;
-    justify-content: center;
-    opacity: 0;
-    overflow: visible;
-    pointer-events: none;
-    transform: translateY(-10px);
-    transition:
-      opacity 160ms ease,
-      transform 160ms ease;
-  }
-
-  .matchAtmosphereShell.chatTabActive.chatHeroCompact .atmosphereCompactHero {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
   .atmosphereCompactHeroInner {
-    height: 74px;
-    min-width: 250px;
-    display: grid;
-    grid-template-columns: 52px auto 52px;
-    align-items: center;
-    justify-content: center;
-    gap: 34px;
-    padding: 8px 20px;
-    border: 1px solid rgba(124, 131, 255, 0.28);
-    border-radius: 0 0 8px 8px;
-    background: rgba(10, 17, 20, 0.94);
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.26);
-    backdrop-filter: blur(16px);
-    pointer-events: auto;
+    grid-template-columns: minmax(0, 1fr) minmax(86px, auto) minmax(0, 1fr);
   }
 
   .atmosphereCompactHeroInner.withScore {
-    min-width: 330px;
-    grid-template-columns: 52px auto auto 52px;
-    gap: 22px;
-  }
-
-  .atmosphereCompactHeroInner .teamLogo.lg,
-  .atmosphereCompactHeroInner .logoFallback.lg {
-    width: 42px;
-    height: 42px;
-    padding: 4px;
-  }
-
-  .atmosphereCompactHeroInner .logoFallback.lg {
-    font-size: 13px;
-  }
-
-  .atmosphereCompactScoreline {
-    min-width: 58px;
-    color: #f3f8fb;
-    font-size: 17px;
-    font-weight: 950;
-    line-height: 1;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .atmosphereCompactHeroInner .atmosphereStatusPill {
-    min-height: 34px;
-    padding: 0 18px;
-    border: 1px solid rgba(255, 83, 96, 0.3);
-    background: rgba(255, 83, 96, 0.14);
-    color: #ff6d78;
-    font-size: 13px;
+    grid-template-columns: minmax(0, 1fr) minmax(86px, auto) minmax(0, 1fr);
   }
 }
 
@@ -8873,6 +9868,9 @@ html.scorexpLightTheme {
   --sx-live: #e11d48;
   --sx-good: #059669;
   --sx-warn: #d97706;
+  --sx-data-home: #1d4ed8;
+  --sx-data-away: #c2410c;
+  --sx-data-draw: #a16207;
   --sx-shadow: 0 12px 34px rgba(28, 45, 59, 0.11);
   --sx-shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 10px 26px rgba(28, 45, 59, 0.08);
   --sx-input-bg: #ffffff;
@@ -9326,8 +10324,17 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .atmosphereCompactHeroInner {
   border-color: var(--sx-line);
-  background: rgba(255, 255, 255, 0.94);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 18%, #ffffff), rgba(255, 255, 255, 0.97) 41%, rgba(255, 255, 255, 0.97) 59%, color-mix(in srgb, var(--away-accent) 18%, #ffffff)),
+    rgba(255, 255, 255, 0.94);
   box-shadow: 0 12px 30px rgba(28, 45, 59, 0.12);
+}
+
+.scorexpLightTheme .atmosphereCompactScoreline {
+  border-color: color-mix(in srgb, var(--home-accent) 16%, color-mix(in srgb, var(--away-accent) 16%, var(--sx-line)));
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 70%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), rgba(37, 99, 235, 0.05), color-mix(in srgb, var(--away-accent) 10%, transparent));
 }
 
 .scorexpLightTheme .atmosphereTabs {
@@ -9379,7 +10386,7 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereHeroPrediction {
-  border-color: color-mix(in srgb, var(--home-accent) 10%, color-mix(in srgb, var(--away-accent) 10%, var(--sx-line)));
+  border-color: color-mix(in srgb, var(--sx-data-home) 10%, color-mix(in srgb, var(--sx-data-away) 10%, var(--sx-line)));
   background: transparent;
   box-shadow: none;
 }
@@ -9390,23 +10397,23 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--home-accent) 72%, #8a300a);
+  color: color-mix(in srgb, var(--sx-data-home) 82%, #0f172a);
 }
 
 .scorexpLightTheme .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
-  color: color-mix(in srgb, var(--away-accent) 72%, #8a300a);
+  color: color-mix(in srgb, var(--sx-data-away) 82%, #1f1308);
 }
 
 .scorexpLightTheme .atmosphereInsight.form {
   background:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--home-accent) 10%, transparent), transparent 48%),
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--away-accent) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--sx-data-home) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--sx-data-away) 10%, transparent), transparent 48%),
     #ffffff;
 }
 
 .scorexpLightTheme .atmosphereInsight.comparison {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 6%, transparent), color-mix(in srgb, var(--away-accent) 6%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--sx-data-home) 6%, transparent), color-mix(in srgb, var(--sx-data-away) 6%, transparent)),
     #ffffff;
 }
 
@@ -9755,8 +10762,6 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .summaryPill,
-.scorexpLightTheme .comparisonGraphCard,
-.scorexpLightTheme .comparisonStat,
 .scorexpLightTheme .compactMatchRow,
 .scorexpLightTheme .teamFormColumn,
 .scorexpLightTheme .highlightActions button {
@@ -9764,25 +10769,75 @@ body.scorexpLightTheme,
   background: #ffffff;
 }
 
+.scorexpLightTheme .comparisonGraphCard {
+  border-color: color-mix(in srgb, var(--comparison-home) 12%, color-mix(in srgb, var(--comparison-away) 10%, var(--sx-line)));
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.035), rgba(255, 255, 255, 0)),
+    linear-gradient(90deg, color-mix(in srgb, var(--comparison-home) 8%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--comparison-away) 8%, transparent)),
+    #ffffff;
+  box-shadow: 0 10px 22px rgba(28, 45, 59, 0.07);
+}
+
+.scorexpLightTheme .comparisonStat {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 251, 253, 0.94)),
+    #ffffff;
+}
+
+.scorexpLightTheme .comparisonStat.isLeader {
+  border-color: color-mix(in srgb, var(--comparison-home) 15%, color-mix(in srgb, var(--comparison-away) 15%, var(--sx-line-strong)));
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.045), rgba(255, 255, 255, 0.95)),
+    #ffffff;
+}
+
 .scorexpLightTheme .sectionTitle {
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .comparisonLineHeader span,
+.scorexpLightTheme .comparisonLineInsight,
 .scorexpLightTheme .comparisonStat span,
-.scorexpLightTheme .comparisonAxis {
+.scorexpLightTheme .comparisonAxis span {
   color: var(--sx-muted);
 }
 
+.scorexpLightTheme .comparisonLineHeader strong,
+.scorexpLightTheme .comparisonLineHeader b,
 .scorexpLightTheme .comparisonStat strong,
+.scorexpLightTheme .comparisonAxis b,
 .scorexpLightTheme .compactMatchRow b {
   color: var(--sx-text);
 }
 
-.scorexpLightTheme .comparisonSparkline path {
-  stroke: #d7e3ea;
+.scorexpLightTheme .comparisonLineHeader b {
+  border-color: var(--sx-line);
+  background: #f6fafc;
 }
 
-.scorexpLightTheme .comparisonSparkline circle {
+.scorexpLightTheme .comparisonLineCanvas {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.035), rgba(255, 255, 255, 0)),
+    linear-gradient(90deg, rgba(28, 45, 59, 0.045) 1px, transparent 1px),
+    #f8fbfd;
+  background-size: auto, 33.333% 100%, auto;
+}
+
+.scorexpLightTheme .comparisonGridLine {
+  stroke: rgba(87, 109, 121, 0.18);
+}
+
+.scorexpLightTheme .comparisonAreaStopTop {
+  stop-color: color-mix(in srgb, var(--sx-data-home) 17%, transparent);
+}
+
+.scorexpLightTheme .comparisonAreaStopBottom {
+  stop-color: color-mix(in srgb, var(--sx-data-away) 3%, transparent);
+}
+
+.scorexpLightTheme .comparisonPoint {
   stroke: #ffffff;
 }
 
@@ -10028,6 +11083,18 @@ body.scorexpLightTheme,
   .atmosphereScoreline {
     font-size: 22px;
   }
+
+  .atmosphereCompareLine {
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+  }
+
+  .atmosphereCompareLine .compareLineIcon {
+    display: none;
+  }
+
+  .compareLineCenter > span {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -10222,6 +11289,88 @@ body.scorexpLightTheme,
 .scorexpLightTheme .atmosphereProbabilityBars div {
   border-color: var(--sx-line);
   background: #f7fafc;
+}
+
+.scorexpLightTheme .atmosphereProbabilityBars div.home,
+.scorexpLightTheme .aiProbabilityBars div.home,
+.scorexpLightTheme .aiModalBars div.home {
+  border-color: color-mix(in srgb, var(--sx-data-home) 34%, var(--sx-line));
+}
+
+.scorexpLightTheme .atmosphereProbabilityBars div.draw,
+.scorexpLightTheme .aiProbabilityBars div.draw,
+.scorexpLightTheme .aiModalBars div.draw {
+  border-color: color-mix(in srgb, var(--sx-data-draw) 34%, var(--sx-line));
+}
+
+.scorexpLightTheme .atmosphereProbabilityBars div.away,
+.scorexpLightTheme .aiProbabilityBars div.away,
+.scorexpLightTheme .aiModalBars div.away {
+  border-color: color-mix(in srgb, var(--sx-data-away) 34%, var(--sx-line));
+}
+
+.scorexpLightTheme .atmospherePressureCard,
+.scorexpLightTheme .atmosphereComparePulseCard {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sx-data-home) 7%, #ffffff), rgba(255, 255, 255, 0.96) 38%, rgba(255, 255, 255, 0.96) 62%, color-mix(in srgb, var(--sx-data-away) 7%, #ffffff)),
+    #ffffff;
+  box-shadow: 0 16px 36px rgba(28, 45, 59, 0.1);
+}
+
+.scorexpLightTheme .atmospherePressureTitle,
+.scorexpLightTheme .pressureEventDot,
+.scorexpLightTheme .compareLineIcon {
+  border-color: var(--sx-line);
+  background: #ffffff;
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmospherePressureTeam,
+.scorexpLightTheme .atmospherePressureTitle strong,
+.scorexpLightTheme .atmospherePressureTitle em,
+.scorexpLightTheme .atmosphereCompareDonut > span,
+.scorexpLightTheme .atmosphereCompareDonutBody strong,
+.scorexpLightTheme .atmosphereCompareLine > strong,
+.scorexpLightTheme .compareLineCenter > span {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmospherePressureTitle span,
+.scorexpLightTheme .atmosphereCompareTeams {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmospherePressureGraph {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sx-data-home) 9%, #f6fbff) 0 50%, color-mix(in srgb, var(--sx-data-away) 9%, #fff8f2) 50% 100%),
+    #ffffff;
+}
+
+.scorexpLightTheme .atmospherePressureMidline,
+.scorexpLightTheme .atmosphereCompareTeams b {
+  background: #d5e1e8;
+}
+
+.scorexpLightTheme .atmospherePressureHalf {
+  color: rgba(40, 57, 68, 0.42);
+}
+
+.scorexpLightTheme .atmospherePressureAxis {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmospherePressureAxis i {
+  background-image: radial-gradient(circle, rgba(100, 116, 139, 0.34) 0 2px, transparent 2.5px);
+}
+
+.scorexpLightTheme .atmosphereCompareRing::before {
+  background: #ffffff;
+}
+
+.scorexpLightTheme .atmosphereCompareRing em {
+  color: #7b8790;
 }
 
 .scorexpLightTheme .atmosphereTeam span {
@@ -10461,15 +11610,18 @@ body.scorexpLightTheme,
     margin: 2px 0 0 !important;
     padding: 11px 0 0 !important;
     border: 0 !important;
-    border-top: 1px solid color-mix(in srgb, var(--home-accent) 10%, color-mix(in srgb, var(--away-accent) 10%, rgba(125, 146, 158, 0.24))) !important;
+    border-top: 1px solid color-mix(in srgb, var(--sx-data-home) 10%, color-mix(in srgb, var(--sx-data-away) 10%, rgba(125, 146, 158, 0.24))) !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
   }
 
-  .scorexpLightTheme .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong,
+  .scorexpLightTheme .atmosphereHeroPrediction.home .atmosphereHeroPredictionLabels strong {
+    color: var(--sx-data-home) !important;
+  }
+
   .scorexpLightTheme .atmosphereHeroPrediction.away .atmosphereHeroPredictionLabels strong {
-    color: #ea580c !important;
+    color: var(--sx-data-away) !important;
   }
 }
 

@@ -102,6 +102,31 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
     return () => window.clearInterval(interval);
   }, [data?.refreshPolicy.clientRefreshSeconds, load]);
 
+  useEffect(() => {
+    const refreshOnResume = () => {
+      if (document.visibilityState === "visible") {
+        void load(true);
+      }
+    };
+    const refreshOnPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted || document.visibilityState === "visible") {
+        void load(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshOnResume);
+    window.addEventListener("focus", refreshOnResume);
+    window.addEventListener("online", refreshOnResume);
+    window.addEventListener("pageshow", refreshOnPageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshOnResume);
+      window.removeEventListener("focus", refreshOnResume);
+      window.removeEventListener("online", refreshOnResume);
+      window.removeEventListener("pageshow", refreshOnPageShow);
+    };
+  }, [load]);
+
   return {
     data,
     loading,

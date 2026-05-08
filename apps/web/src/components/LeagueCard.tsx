@@ -40,7 +40,7 @@ export function LeagueCard({
       <div className="leagueHeader">
         <button className="leagueTitleButton" type="button" onClick={() => onToggle(group.key)}>
           <div className="leagueIdentity">
-            <TeamLogo src={group.country.logo} label={countryName} size="md" />
+            <TeamLogo src={group.country.logo} label={countryName} size="md" variant="flag" />
             <div>
               <span>{countryName}</span>
               <strong>{group.league.name}</strong>

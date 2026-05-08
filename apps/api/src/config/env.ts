@@ -7,6 +7,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, "../../../..");
 const defaultSupabaseUrl = "https://mpysngxgbfiquhwfplag.supabase.co";
 const defaultSupabaseAnonKey = "sb_publishable_uO8hvTlCUL21OBOCNvzOdQ_-CE-NWLA";
+const defaultVapidPublicKey = "BOwRGm4mIyhcwI866eJLK9BSVcUr4mSwQvzNHIGVhHvJl-qJ-nGDtURiD0PuzeyqCVd-ny4r8EOrC6dw1aOJSZk";
+const defaultVapidPrivateKey = "18pntqM8LaqdKFQfWrm9byjFkctWze_aR0uTtuSvsUQ";
 
 dotenv.config({ path: path.join(repoRoot, ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: false });
@@ -33,7 +35,12 @@ const schema = z.object({
   FINISHED_REFRESH_SECONDS: numberFromEnv(86400),
   CLIENT_REFRESH_SECONDS: numberFromEnv(100),
   SUPABASE_URL: z.string().url().default(defaultSupabaseUrl),
-  SUPABASE_ANON_KEY: z.string().default(defaultSupabaseAnonKey)
+  SUPABASE_ANON_KEY: z.string().default(defaultSupabaseAnonKey),
+  VAPID_PUBLIC_KEY: z.string().default(defaultVapidPublicKey),
+  VAPID_PRIVATE_KEY: z.string().default(defaultVapidPrivateKey),
+  VAPID_SUBJECT: z.string().default("mailto:admin@scorexp.com"),
+  PUSH_NOTIFICATION_TTL_SECONDS: numberFromEnv(180),
+  PUSH_MONITOR_MAX_GAP_SECONDS: numberFromEnv(180)
 });
 
 const parsed = schema.safeParse(process.env);
@@ -64,6 +71,11 @@ export const env = {
   clientRefreshSeconds: parsed.data.CLIENT_REFRESH_SECONDS,
   supabaseUrl: parsed.data.SUPABASE_URL.replace(/\/$/, ""),
   supabaseAnonKey: parsed.data.SUPABASE_ANON_KEY,
+  vapidPublicKey: parsed.data.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: parsed.data.VAPID_PRIVATE_KEY,
+  vapidSubject: parsed.data.VAPID_SUBJECT,
+  pushNotificationTtlSeconds: parsed.data.PUSH_NOTIFICATION_TTL_SECONDS,
+  pushMonitorMaxGapSeconds: parsed.data.PUSH_MONITOR_MAX_GAP_SECONDS,
   repoRoot
 };
 

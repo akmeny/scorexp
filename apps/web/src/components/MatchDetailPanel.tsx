@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { ComparisonMomentumChart } from "./ComparisonMomentumChart";
 import { TeamLogo } from "./TeamLogo";
 import { localizeCountryName } from "../lib/localization";
 import { formatMatchStatusLabel } from "../lib/matchStatus";
@@ -229,16 +230,19 @@ export function MatchDetailPanel({
       {tab === "details" ? (
         <div className="detailContent">
           <div className="detailFactGrid">
-            <DetailFact icon={<CalendarClock size={16} />} label="Tarih ve saat" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
-            <DetailFact icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
-            <DetailFact icon={<Activity size={16} />} label="Durum" value={formatStatusDescription(activeMatch.status.description)} />
-            <DetailFact icon={<Target size={16} />} label="Tur" value={activeMatch.round ? formatRound(activeMatch.round) : null} />
             <DetailFact icon={<UserRound size={16} />} label="Hakem" value={formatReferee(detail)} />
-            <DetailFact icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail)} />
-            <DetailFact icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail)} />
           </div>
 
           <AiPredictionCard status={aiStatus} step={aiStep} result={aiResult} onStart={startAiPrediction} />
+
+          <div className="detailFactGrid detailMetaFooter">
+            <DetailFact icon={<CalendarClock size={16} />} label="Başlangıç" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
+            <DetailFact icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
+            <DetailFact icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail)} />
+            <DetailFact icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail)} />
+            <DetailFact icon={<Activity size={16} />} label="Durum" value={formatStatusDescription(activeMatch.status.description)} />
+            <DetailFact icon={<Target size={16} />} label="Tur" value={activeMatch.round ? formatRound(activeMatch.round) : null} />
+          </div>
         </div>
       ) : null}
 
@@ -277,6 +281,7 @@ export function MatchDetailPanel({
           <StandingsView match={activeMatch} standings={detail?.standings ?? null} />
         </div>
       ) : null}
+
     </aside>
   );
 }
@@ -417,7 +422,7 @@ function AiPredictionCard({
           {result.probabilities ? (
             <div className="aiProbabilityBars">
               {result.probabilities.map((item) => (
-                <div key={item.label}>
+                <div className={item.key} key={item.label}>
                   <span>{item.label}</span>
                   <b>{item.value}</b>
                   <i style={{ width: item.value }} />
@@ -491,66 +496,13 @@ function HeadToHeadView({ match, matches }: { match: NormalizedMatch; matches: N
 
   return (
     <div className="h2hBlock">
-      <ComparisonGraph items={items} />
+      <ComparisonMomentumChart items={items} />
       <div className="compactMatchList">
         {pastMatches.slice(0, 10).map((item) => (
           <CompactMatchRow key={item.id} match={item} focusTeamId={match.homeTeam.id} />
         ))}
       </div>
     </div>
-  );
-}
-
-function ComparisonGraph({
-  items
-}: {
-  items: readonly {
-    label: string;
-    shortLabel: string;
-    value: number;
-    suffix: string;
-    tone: "home" | "draw" | "away";
-  }[];
-}) {
-  const maxValue = Math.max(1, ...items.map((item) => item.value));
-  const points = items
-    .map((item, index) => {
-      const x = 12 + index * 38;
-      const y = 42 - (item.value / maxValue) * 30;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  return (
-    <section className="comparisonGraphCard" aria-label="Mukayese grafiği">
-      <div className="comparisonStats">
-        {items.map((item) => (
-          <div className={`comparisonStat ${item.tone}`} key={item.tone}>
-            <span title={item.label}>{item.label}</span>
-            <strong>
-              {item.value}
-              {item.suffix}
-            </strong>
-          </div>
-        ))}
-      </div>
-      <div className="comparisonSparkline" aria-hidden="true">
-        <svg viewBox="0 0 100 48" preserveAspectRatio="none">
-          <path d="M12 42 H88" />
-          <polyline points={points} />
-          {items.map((item, index) => {
-            const cx = 12 + index * 38;
-            const cy = 42 - (item.value / maxValue) * 30;
-            return <circle className={item.tone} cx={cx} cy={cy} r="3.2" key={item.tone} />;
-          })}
-        </svg>
-        <div className="comparisonAxis">
-          {items.map((item) => (
-            <span key={item.tone}>{item.shortLabel}</span>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -724,7 +676,11 @@ function buildAiResult(match: NormalizedMatch, detail: MatchDetail | null, predi
     return {
       title: `${leader.label} öne çıkıyor`,
       summary: `aiXp analizi ${leader.label} tarafını ${leader.value} ile bir adım öne koyuyor. Güven seviyesi ${confidence}; aralarındaki maçlar, form, puan durumu ve erişilebilir oyuncu verileri birlikte değerlendirildi.`,
-      probabilities: probabilities.map((item) => ({ label: item.key === "home" ? "1" : item.key === "draw" ? "X" : "2", value: item.value ?? "0%" }))
+      probabilities: probabilities.map((item) => ({
+        key: item.key,
+        label: item.key === "home" ? "1" : item.key === "draw" ? "X" : "2",
+        value: item.value ?? "0%"
+      }))
     };
   }
 

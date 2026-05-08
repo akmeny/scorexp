@@ -5,9 +5,12 @@ import { HighlightlyClient } from "./provider/highlightly.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerFootballRoutes } from "./routes/football.js";
+import { registerNotificationRoutes } from "./routes/notifications.js";
+import { PushNotificationService } from "./services/pushNotifications.js";
 import { ScoreboardService } from "./services/scoreboard.js";
 import { createHotCache } from "./storage/cache.js";
 import { JsonFileStore, type DurableStore } from "./storage/jsonStore.js";
+import { createPushSubscriptionStore } from "./storage/pushSubscriptionStore.js";
 import { createRedisDurableStore, type RedisDurableStore } from "./storage/redisStore.js";
 import { createUserProfileStore } from "./storage/userProfileStore.js";
 import { startScoreboardPoller } from "./worker/poller.js";
@@ -38,6 +41,8 @@ if (env.durableStore === "redis" && env.redisUrl) {
 const highlightly = new HighlightlyClient(env);
 const scoreboard = new ScoreboardService(env, highlightly, cache, store);
 const userProfileStore = await createUserProfileStore(env);
+const pushSubscriptionStore = await createPushSubscriptionStore(env);
+const pushNotifications = new PushNotificationService(env, pushSubscriptionStore, console);
 
 app.get("/api/health", async () => ({
   ok: true,
@@ -49,13 +54,15 @@ app.get("/api/health", async () => ({
 
 await registerFootballRoutes(app, scoreboard, env);
 await registerAuthRoutes(app, env, userProfileStore);
+await registerNotificationRoutes(app, env, userProfileStore, pushNotifications);
 await registerChatRoutes(app, { env, profileStore: userProfileStore });
 
-const stopPoller = startScoreboardPoller(scoreboard, env, console);
+const stopPoller = startScoreboardPoller(scoreboard, env, console, pushNotifications);
 
 const shutdown = async () => {
   stopPoller();
   await redisDurableStore?.close();
+  await pushNotifications.close();
   await userProfileStore.close();
   await cache.close();
   await app.close();

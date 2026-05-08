@@ -110,7 +110,7 @@ export function AiPredictionModal({ match, timezone, onRequestClose }: AiPredict
             {result.probabilities ? (
               <div className="aiModalBars">
                 {result.probabilities.map((item) => (
-                  <div key={item.label}>
+                  <div className={item.key} key={item.label}>
                     <span>{item.label}</span>
                     <b>{item.value}</b>
                     <i style={{ width: item.value }} />
@@ -156,7 +156,7 @@ function resultFromPrediction(match: NormalizedMatch, prediction: MatchDetailPre
   return {
     title: `${leader.team} öne çıkıyor`,
     summary: `aiXp, mevcut veri setinde ${leader.team} tarafını ${leader.value} ile önde görüyor. Güven seviyesi ${confidence}.`,
-    probabilities: probabilities.map((item) => ({ label: item.label, value: item.value ?? "0%" }))
+    probabilities: probabilities.map((item) => ({ key: item.key, label: item.label, value: item.value ?? "0%" }))
   };
 }
 

@@ -154,8 +154,8 @@ export class ScoreboardService {
     return snapshot;
   }
 
-  async warmScoreboard(date: string, timezone: string): Promise<void> {
-    await this.getScoreboard({ date, timezone, view: "all" });
+  async warmScoreboard(date: string, timezone: string): Promise<ScoreboardSnapshot> {
+    return this.getScoreboard({ date, timezone, view: "all" });
   }
 
   private async refresh(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {

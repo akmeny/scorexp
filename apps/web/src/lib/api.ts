@@ -5,6 +5,10 @@ const fallbackLocalApi = "http://localhost:4000";
 const configuredBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
 const apiBase = resolveApiBase(configuredBase);
 
+export function getApiBaseUrl() {
+  return apiBase;
+}
+
 export interface FetchScoreboardOptions {
   date: string;
   timezone: string;
@@ -61,6 +65,20 @@ export interface UpdateUserProfileOptions {
   notificationsEnabled?: boolean;
   notificationPermission?: UserProfile["notificationPermission"];
   signal?: AbortSignal;
+}
+
+export interface NotificationPublicKeyResponse {
+  enabled: boolean;
+  publicKey: string | null;
+}
+
+export interface SerializedPushSubscription {
+  endpoint: string;
+  expirationTime?: number | null;
+  keys?: {
+    p256dh?: string;
+    auth?: string;
+  };
 }
 
 export async function fetchAuthStatus(signal?: AbortSignal): Promise<AuthStatus> {
@@ -234,6 +252,82 @@ export async function updateUserProfile(options: UpdateUserProfileOptions): Prom
 
   const payload = (await response.json()) as { profile: UserProfile };
   return payload.profile;
+}
+
+export async function fetchNotificationPublicKey(signal?: AbortSignal): Promise<NotificationPublicKeyResponse> {
+  const response = await fetch(new URL("/api/v1/notifications/vapid-public-key", apiBase), {
+    signal,
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Notification public key request failed (${response.status})`);
+  }
+
+  return (await response.json()) as NotificationPublicKeyResponse;
+}
+
+export async function registerPushSubscription(options: {
+  accessToken: string;
+  subscription: SerializedPushSubscription;
+  signal?: AbortSignal;
+}): Promise<void> {
+  const response = await fetch(new URL("/api/v1/notifications/subscription", apiBase), {
+    method: "PUT",
+    signal: options.signal,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${options.accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(options.subscription)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Register push subscription failed (${response.status})`);
+  }
+}
+
+export async function unregisterPushSubscription(options: {
+  accessToken: string;
+  endpoint: string;
+  signal?: AbortSignal;
+}): Promise<void> {
+  const response = await fetch(new URL("/api/v1/notifications/subscription", apiBase), {
+    method: "DELETE",
+    signal: options.signal,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${options.accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ endpoint: options.endpoint })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unregister push subscription failed (${response.status})`);
+  }
+}
+
+export async function syncFavoriteNotifications(options: {
+  accessToken: string;
+  favoriteIds: string[];
+  signal?: AbortSignal;
+}): Promise<void> {
+  const response = await fetch(new URL("/api/v1/notifications/favorites", apiBase), {
+    method: "PUT",
+    signal: options.signal,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${options.accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ favoriteIds: options.favoriteIds })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Sync favorite notifications failed (${response.status})`);
+  }
 }
 
 function resolveApiBase(value: string | undefined) {

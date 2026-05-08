@@ -26,6 +26,14 @@ import { compareTr, localizeCountryName, normalizeName } from "./lib/localizatio
 import { useAuthProfile } from "./hooks/useAuthProfile";
 import { useMatchDetail } from "./hooks/useMatchDetail";
 import { useScoreboard } from "./hooks/useScoreboard";
+import {
+  fetchNotificationPublicKey,
+  getApiBaseUrl,
+  registerPushSubscription,
+  syncFavoriteNotifications,
+  unregisterPushSubscription,
+  type SerializedPushSubscription
+} from "./lib/api";
 import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, MatchScore, NormalizedMatch, ScoreboardView } from "./types";
 import "./styles/app.css";
 
@@ -33,6 +41,8 @@ const timezone = "Europe/Istanbul";
 const GOAL_PENDING_MS = 16_000;
 const GOAL_CONFIRMED_MS = 20_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
+const SCORE_CATCH_UP_GRACE_MS = 45_000;
+const FAVORITE_NOTIFICATION_CATCH_UP_GRACE_MS = 90_000;
 const notificationIcon = "/icons/icon-192.png";
 const notificationBadge = "/icons/notification-badge.png";
 const notificationImage = "/icons/icon-512.png";
@@ -60,6 +70,23 @@ type FavoriteMatchSnapshot = {
   redCardsAway: number;
   statusGroup: NormalizedMatch["status"]["group"];
   statusDescription: string;
+};
+type FavoriteMonitorServiceWorkerConfig = {
+  apiBase: string;
+  date: string;
+  timezone: string;
+  favoriteIds: string[];
+  snapshots: Array<[string, FavoriteMatchSnapshot]>;
+  notificationsEnabled: boolean;
+  notificationPermission: NotificationPermission | null;
+  refreshSeconds: number;
+};
+type PeriodicSyncManagerLike = {
+  register: (tag: string, options?: { minInterval?: number }) => Promise<void>;
+  unregister?: (tag: string) => Promise<void>;
+};
+type ServiceWorkerRegistrationWithPeriodicSync = ServiceWorkerRegistration & {
+  periodicSync?: PeriodicSyncManagerLike;
 };
 type MatchRoute =
   | { kind: "list" }
@@ -101,8 +128,12 @@ export default function App() {
   const auth = useAuthProfile();
   const desktopLayout = useDesktopLayout();
   const previousScoresRef = useRef<Map<string, string>>(new Map());
+  const previousScoresProcessedAtRef = useRef(0);
   const previousStatusRef = useRef<Map<string, NormalizedMatch["status"]["group"]>>(new Map());
   const favoriteSnapshotsRef = useRef<Map<string, FavoriteMatchSnapshot>>(new Map());
+  const favoriteSnapshotsProcessedAtRef = useRef(0);
+  const hiddenStartedAtRef = useRef<number | null>(typeof document !== "undefined" && document.visibilityState === "hidden" ? Date.now() : null);
+  const syncScoresAsBaselineRef = useRef(false);
   const hasAutoSelectedInitialMatchRef = useRef(false);
   const [goalPresentations, setGoalPresentations] = useState<GoalPresentationRecord>({});
   const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
@@ -225,6 +256,48 @@ export default function App() {
   }, [auth]);
 
   useEffect(() => {
+    const markResumeBaseline = () => {
+      const hiddenStartedAt = hiddenStartedAtRef.current;
+      hiddenStartedAtRef.current = null;
+
+      if (hiddenStartedAt && Date.now() - hiddenStartedAt > SCORE_CATCH_UP_GRACE_MS) {
+        syncScoresAsBaselineRef.current = true;
+        setGoalPresentations({});
+      }
+
+      reload();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenStartedAtRef.current = Date.now();
+        setGoalPresentations({});
+        return;
+      }
+
+      markResumeBaseline();
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        syncScoresAsBaselineRef.current = true;
+        setGoalPresentations({});
+      }
+      markResumeBaseline();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", markResumeBaseline);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", markResumeBaseline);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [reload]);
+
+  useEffect(() => {
     if (!allMatches.length) return;
 
     const now = Date.now();
@@ -232,6 +305,12 @@ export default function App() {
     const nextScores = new Map<string, string>();
     const nextPresentations: GoalPresentationRecord = {};
     const stalePresentationIds = new Set<string>();
+    const refreshMs = Math.max(10, data?.refreshPolicy.clientRefreshSeconds ?? 30) * 1000;
+    const staleScoreSync =
+      previousScoresProcessedAtRef.current > 0 &&
+      now - previousScoresProcessedAtRef.current > Math.max(SCORE_CATCH_UP_GRACE_MS, refreshMs * 2 + 15_000);
+    const shouldAnimateGoals =
+      document.visibilityState === "visible" && !syncScoresAsBaselineRef.current && !staleScoreSync;
 
     for (const match of allMatches) {
       const scoreKey = scoreSnapshot(match);
@@ -246,7 +325,7 @@ export default function App() {
         }
       }
 
-      if (side && match.status.group === "live") {
+      if (shouldAnimateGoals && side && match.status.group === "live") {
         const previousScore =
           existingPresentation && existingPresentation.expiresAt > now
             ? presentationDisplayScore(existingPresentation, now)
@@ -264,6 +343,8 @@ export default function App() {
     }
 
     previousScoresRef.current = nextScores;
+    previousScoresProcessedAtRef.current = now;
+    syncScoresAsBaselineRef.current = false;
 
     if (Object.keys(nextPresentations).length > 0 || stalePresentationIds.size > 0) {
       setGoalPresentations((current) => {
@@ -271,8 +352,10 @@ export default function App() {
         for (const id of stalePresentationIds) delete next[id];
         return { ...next, ...nextPresentations };
       });
+    } else if (!shouldAnimateGoals) {
+      setGoalPresentations((current) => (Object.keys(current).length > 0 ? {} : current));
     }
-  }, [allMatches, goalPresentations]);
+  }, [allMatches, data?.refreshPolicy.clientRefreshSeconds, goalPresentations]);
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -408,8 +491,13 @@ export default function App() {
   useEffect(() => {
     if (!allMatches.length) return;
 
+    const now = Date.now();
     const previousSnapshots = favoriteSnapshotsRef.current;
     const nextSnapshots = new Map<string, FavoriteMatchSnapshot>();
+    const refreshMs = Math.max(10, data?.refreshPolicy.clientRefreshSeconds ?? 30) * 1000;
+    const staleNotificationSync =
+      favoriteSnapshotsProcessedAtRef.current > 0 &&
+      now - favoriteSnapshotsProcessedAtRef.current > Math.max(FAVORITE_NOTIFICATION_CATCH_UP_GRACE_MS, refreshMs * 3 + 20_000);
 
     for (const match of allMatches) {
       if (!favoriteIds.has(match.id)) continue;
@@ -417,8 +505,8 @@ export default function App() {
       const nextSnapshot = favoriteSnapshot(match);
       const previousSnapshot = previousSnapshots.get(match.id);
 
-      if (previousSnapshot) {
-        const events = favoriteMatchEvents(previousSnapshot, nextSnapshot, match);
+      if (previousSnapshot && !staleNotificationSync) {
+        const events = favoriteMatchNotificationEvents(previousSnapshot, nextSnapshot, match);
         for (const event of events) {
           emitFavoriteNotification(event.title, event.body, match.id);
         }
@@ -428,7 +516,28 @@ export default function App() {
     }
 
     favoriteSnapshotsRef.current = nextSnapshots;
-  }, [allMatches, favoriteIds]);
+    favoriteSnapshotsProcessedAtRef.current = now;
+  }, [allMatches, data?.refreshPolicy.clientRefreshSeconds, favoriteIds]);
+
+  useEffect(() => {
+    void syncFavoriteMonitorServiceWorker({
+      apiBase: getApiBaseUrl(),
+      date,
+      timezone,
+      favoriteIds: Array.from(favoriteIds),
+      snapshots: Array.from(favoriteSnapshotsRef.current.entries()),
+      notificationsEnabled,
+      notificationPermission: readNotificationPermission(),
+      refreshSeconds: data?.refreshPolicy.clientRefreshSeconds ?? 60
+    });
+  }, [data?.checksum, data?.refreshPolicy.clientRefreshSeconds, date, favoriteIds, notificationsEnabled]);
+
+  useEffect(() => {
+    const accessToken = auth.session?.access_token;
+    if (!accessToken || !notificationsEnabled || readNotificationPermission() !== "granted") return;
+
+    void ensureFavoritePushNotifications(accessToken, Array.from(favoriteIds)).catch(() => undefined);
+  }, [auth.session?.access_token, favoriteIds, notificationsEnabled]);
 
   const syncProfileNotificationPermission = (permission: NotificationPermission | null) => {
     if (!auth.profile || !permission) return;
@@ -449,8 +558,14 @@ export default function App() {
         next.delete(id);
       } else {
         next.add(id);
+        const nextFavoriteIds = Array.from(next);
         if (notificationsEnabled) {
-          void requestFavoriteNotificationPermissionOnce().then(syncProfileNotificationPermission);
+          void requestFavoriteNotificationPermissionOnce().then((permission) => {
+            syncProfileNotificationPermission(permission);
+            if (permission === "granted" && auth.session?.access_token) {
+              void ensureFavoritePushNotifications(auth.session.access_token, nextFavoriteIds).catch(() => undefined);
+            }
+          });
           primeNotificationSound();
         }
       }
@@ -559,6 +674,14 @@ export default function App() {
     if (nextEnabled) {
       permission = await requestNotificationPermissionValue();
       if (permission === "granted") primeNotificationSound();
+    }
+
+    if (auth.session?.access_token) {
+      if (nextEnabled && permission === "granted") {
+        await ensureFavoritePushNotifications(auth.session.access_token, Array.from(favoriteIds)).catch(() => undefined);
+      } else if (!nextEnabled) {
+        await disableFavoritePushNotifications(auth.session.access_token).catch(() => undefined);
+      }
     }
 
     await auth.updateProfile({
@@ -1012,6 +1135,18 @@ function scoreIncreaseSide(previous: string, current: string): GoalHighlightSide
   return null;
 }
 
+function scoreDecreaseSide(previous: string, current: string): GoalHighlightSide | null {
+  const [previousHome, previousAway] = previous.split(":").map(toScoreNumber);
+  const [currentHome, currentAway] = current.split(":").map(toScoreNumber);
+  const homeDecreased = currentHome < previousHome;
+  const awayDecreased = currentAway < previousAway;
+
+  if (homeDecreased && awayDecreased) return "both";
+  if (homeDecreased) return "home";
+  if (awayDecreased) return "away";
+  return null;
+}
+
 function toScoreNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -1055,6 +1190,68 @@ function favoriteSnapshot(match: NormalizedMatch): FavoriteMatchSnapshot {
     statusGroup: match.status.group,
     statusDescription: match.status.description
   };
+}
+
+function favoriteMatchNotificationEvents(previous: FavoriteMatchSnapshot, current: FavoriteMatchSnapshot, match: NormalizedMatch) {
+  const events: { title: string; body: string }[] = [];
+  const scoreSide = scoreIncreaseSide(previous.scoreKey, current.scoreKey);
+  const cancelledGoalSide = scoreDecreaseSide(previous.scoreKey, current.scoreKey);
+
+  for (const side of expandSides(scoreSide)) {
+    const team = side === "home" ? match.homeTeam.name : match.awayTeam.name;
+    events.push({
+      title: "Gol",
+      body: `${team} gol attı. Skor: ${formatNotificationScore(match)}`
+    });
+  }
+
+  for (const side of expandSides(cancelledGoalSide)) {
+    const team = side === "home" ? match.homeTeam.name : match.awayTeam.name;
+    events.push({
+      title: "Gol iptal",
+      body: `${team} golü iptal edildi. Skor: ${formatNotificationScore(match)}`
+    });
+  }
+
+  if (current.redCardsHome > previous.redCardsHome) {
+    events.push({
+      title: "Kırmızı kart",
+      body: `${match.homeTeam.name} kırmızı kart gördü.`
+    });
+  }
+
+  if (current.redCardsAway > previous.redCardsAway) {
+    events.push({
+      title: "Kırmızı kart",
+      body: `${match.awayTeam.name} kırmızı kart gördü.`
+    });
+  }
+
+  const previousDescription = previous.statusDescription.toLowerCase();
+  const currentDescription = current.statusDescription.toLowerCase();
+
+  if (current.statusGroup === "live" && previous.statusGroup !== "live") {
+    events.push({
+      title: "Maç başladı",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} başladı.`
+    });
+  }
+
+  if (currentDescription === "second half" && previousDescription !== "second half") {
+    events.push({
+      title: "İkinci yarı başladı",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} maçında ikinci yarı başladı.`
+    });
+  }
+
+  if (current.statusGroup === "finished" && previous.statusGroup !== "finished") {
+    events.push({
+      title: "Maç bitti",
+      body: `${match.homeTeam.name} - ${match.awayTeam.name} bitti. Skor: ${formatNotificationScore(match)}`
+    });
+  }
+
+  return events;
 }
 
 function favoriteMatchEvents(previous: FavoriteMatchSnapshot, current: FavoriteMatchSnapshot, match: NormalizedMatch) {
@@ -1121,6 +1318,133 @@ function formatNotificationScore(match: NormalizedMatch) {
   return `${match.score.home}-${match.score.away}`;
 }
 
+async function syncFavoriteMonitorServiceWorker(config: FavoriteMonitorServiceWorkerConfig) {
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const registration = (await navigator.serviceWorker.ready) as ServiceWorkerRegistrationWithPeriodicSync;
+    const message = {
+      type: "SCOREXP_FAVORITES_CONFIG",
+      payload: config
+    };
+
+    registration.active?.postMessage(message);
+    navigator.serviceWorker.controller?.postMessage(message);
+
+    const periodicSync = registration.periodicSync;
+    if (!periodicSync) return;
+
+    const tag = "scorexp-favorite-monitor";
+    const shouldRun = config.favoriteIds.length > 0 && config.notificationsEnabled && config.notificationPermission === "granted";
+
+    if (!shouldRun) {
+      await periodicSync.unregister?.(tag);
+      return;
+    }
+
+    const permission = await readPeriodicBackgroundSyncPermission();
+    if (permission === "denied") return;
+
+    await periodicSync.register(tag, {
+      minInterval: Math.max(60_000, config.refreshSeconds * 1000)
+    });
+  } catch {
+    // Background sync is progressive enhancement; foreground polling still handles supported browsers.
+  }
+}
+
+async function ensureFavoritePushNotifications(accessToken: string, favoriteIds: string[]) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (readNotificationPermission() !== "granted") return;
+
+  const publicConfig = await fetchNotificationPublicKey();
+  if (!publicConfig.enabled || !publicConfig.publicKey) return;
+
+  const registration = await navigator.serviceWorker.ready;
+  const pushManager = registration.pushManager;
+  if (!pushManager) return;
+
+  const existingSubscription = await pushManager.getSubscription();
+  const subscription =
+    existingSubscription ??
+    (await pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicConfig.publicKey)
+    }));
+  const serialized = serializePushSubscription(subscription);
+  if (!serialized) return;
+
+  await registerPushSubscription({
+    accessToken,
+    subscription: serialized
+  });
+  await syncFavoriteNotifications({
+    accessToken,
+    favoriteIds
+  });
+}
+
+async function disableFavoritePushNotifications(accessToken: string) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    await syncFavoriteNotifications({ accessToken, favoriteIds: [] });
+    return;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+
+  if (subscription) {
+    await unregisterPushSubscription({
+      accessToken,
+      endpoint: subscription.endpoint
+    }).catch(() => undefined);
+    await subscription.unsubscribe().catch(() => undefined);
+  }
+
+  await syncFavoriteNotifications({ accessToken, favoriteIds: [] }).catch(() => undefined);
+}
+
+function serializePushSubscription(subscription: PushSubscription): SerializedPushSubscription | null {
+  const payload = subscription.toJSON() as SerializedPushSubscription;
+  const p256dh = payload.keys?.p256dh;
+  const auth = payload.keys?.auth;
+
+  if (!payload.endpoint || !p256dh || !auth) return null;
+
+  return {
+    endpoint: payload.endpoint,
+    expirationTime: subscription.expirationTime ?? payload.expirationTime ?? null,
+    keys: {
+      p256dh,
+      auth
+    }
+  };
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  const output = new Uint8Array(raw.length);
+
+  for (let index = 0; index < raw.length; index += 1) {
+    output[index] = raw.charCodeAt(index);
+  }
+
+  return output;
+}
+
+async function readPeriodicBackgroundSyncPermission() {
+  if (!("permissions" in navigator)) return null;
+
+  try {
+    const status = await navigator.permissions.query({ name: "periodic-background-sync" as PermissionName });
+    return status.state;
+  } catch {
+    return null;
+  }
+}
+
 async function requestFavoriteNotificationPermissionOnce(): Promise<NotificationPermission | null> {
   if (!("Notification" in window)) return null;
   if (Notification.permission !== "default") return Notification.permission;
@@ -1168,6 +1492,7 @@ async function showSystemNotification(title: string, body: string, matchId: stri
 
   try {
     const options: NotificationOptions & {
+      actions?: Array<{ action: string; title: string; icon?: string }>;
       image?: string;
       renotify?: boolean;
       requireInteraction?: boolean;
@@ -1178,6 +1503,7 @@ async function showSystemNotification(title: string, body: string, matchId: stri
       icon: notificationIcon,
       badge: notificationBadge,
       image: notificationImage,
+      actions: [{ action: "open", title: "Maçı aç" }],
       data: { matchId, url: "/" },
       tag: `scorexp:${matchId}:${Date.now()}`,
       renotify: true,

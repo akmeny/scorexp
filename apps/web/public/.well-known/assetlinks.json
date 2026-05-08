@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.scorexp.app",
+      "sha256_cert_fingerprints": [
+        "F1:01:B1:79:BE:C2:38:BB:59:44:A0:61:F8:AA:4B:63:10:59:89:B0:EE:10:54:B1:34:32:8C:16:0D:C6:09:71",
+        "E6:72:83:F8:43:B3:BC:AD:7F:EA:49:EF:38:B7:FA:2E:C8:93:C7:04:B4:F2:63:05:F9:D7:52:9D:5E:ED:E8:45",
+        "CA:7C:B2:9A:6D:F0:16:6D:B0:9C:1B:CC:12:16:85:D8:16:8D:F8:46:68:C6:BC:1B:AD:0C:1C:60:E8:8F:75:0D"
+      ]
+    }
+  }
+]
