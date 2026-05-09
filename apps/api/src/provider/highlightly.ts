@@ -1,5 +1,13 @@
 import type { AppEnv } from "../config/env.js";
-import type { ProviderHighlight, ProviderMatch, ProviderMatchDetail, ProviderStandingsResponse } from "../domain/types.js";
+import type {
+  ProviderHighlight,
+  ProviderLineupsResponse,
+  ProviderMatch,
+  ProviderMatchDetail,
+  ProviderMatchEvent,
+  ProviderStandingsResponse,
+  ProviderTeamStatistics
+} from "../domain/types.js";
 
 export interface HighlightlyFetchResult {
   matches: ProviderMatch[];
@@ -33,6 +41,21 @@ export interface HighlightlyHighlightsResult {
   };
 }
 
+export interface HighlightlyEventsResult {
+  events: ProviderMatchEvent[];
+  requestCount: number;
+}
+
+export interface HighlightlyStatisticsResult {
+  statistics: ProviderTeamStatistics[];
+  requestCount: number;
+}
+
+export interface HighlightlyLineupsResult {
+  lineups: ProviderLineupsResponse | null;
+  requestCount: number;
+}
+
 interface MatchesResponse {
   data?: ProviderMatch[];
   pagination?: {
@@ -53,6 +76,8 @@ interface HighlightsResponse {
 
 type MatchDetailResponse = ProviderMatchDetail[] | { data?: ProviderMatchDetail[] };
 type MatchListResponse = ProviderMatch[] | { data?: ProviderMatch[] };
+type EventListResponse = ProviderMatchEvent[] | { data?: ProviderMatchEvent[] };
+type StatisticsResponse = ProviderTeamStatistics[] | { data?: ProviderTeamStatistics[] };
 
 export class HighlightlyClient {
   constructor(private readonly appEnv: AppEnv) {}
@@ -182,6 +207,23 @@ export class HighlightlyClient {
     };
 
     return { highlights, pagination, requestCount: 1, rateLimit };
+  }
+
+  async getEvents(matchId: string): Promise<HighlightlyEventsResult> {
+    const payload = await this.getJson<EventListResponse | null>(`/events/${encodeURIComponent(matchId)}`, {});
+    if (!payload) return { events: [], requestCount: 1 };
+    return { events: Array.isArray(payload) ? payload : payload.data ?? [], requestCount: 1 };
+  }
+
+  async getStatistics(matchId: string): Promise<HighlightlyStatisticsResult> {
+    const payload = await this.getJson<StatisticsResponse | null>(`/statistics/${encodeURIComponent(matchId)}`, {});
+    if (!payload) return { statistics: [], requestCount: 1 };
+    return { statistics: Array.isArray(payload) ? payload : payload.data ?? [], requestCount: 1 };
+  }
+
+  async getLineups(matchId: string): Promise<HighlightlyLineupsResult> {
+    const payload = await this.getJson<ProviderLineupsResponse | null>(`/lineups/${encodeURIComponent(matchId)}`, {});
+    return { lineups: payload, requestCount: 1 };
   }
 
   async getHeadToHead(teamIdOne: string, teamIdTwo: string): Promise<ProviderMatch[]> {

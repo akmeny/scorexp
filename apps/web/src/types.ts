@@ -159,6 +159,26 @@ export interface MatchDetailStandings {
   groups: MatchDetailStandingGroup[];
 }
 
+export interface MatchLineupPlayer {
+  id: string | null;
+  name: string;
+  number: number | null;
+  position: string | null;
+}
+
+export interface MatchLineupTeam {
+  team: Team;
+  formation: string | null;
+  initialLineup: MatchLineupPlayer[][];
+  substitutes: MatchLineupPlayer[];
+}
+
+export interface MatchLineups {
+  home: MatchLineupTeam | null;
+  away: MatchLineupTeam | null;
+  fetchedAt: string | null;
+}
+
 export interface MatchDetail {
   id: string;
   checksum: string;
@@ -194,6 +214,7 @@ export interface MatchDetail {
     away: NormalizedMatch[];
   };
   standings: MatchDetailStandings | null;
+  lineups: MatchLineups | null;
   topPlayers: {
     home: MatchDetailTopPlayer[];
     away: MatchDetailTopPlayer[];

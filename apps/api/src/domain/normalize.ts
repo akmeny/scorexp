@@ -7,6 +7,8 @@ import type {
   MatchScore,
   NormalizedMatch,
   ProviderHighlight,
+  ProviderLineupPlayer,
+  ProviderLineupsResponse,
   ProviderMatchDetail,
   ProviderMatchEvent,
   ProviderPrediction,
@@ -154,6 +156,9 @@ export function normalizeMatchDetail(
     homeForm?: ProviderMatch[];
     awayForm?: ProviderMatch[];
     standings?: ProviderStandingsResponse | null;
+    events?: ProviderMatchEvent[] | null;
+    statistics?: ProviderTeamStatistics[] | null;
+    lineups?: ProviderLineupsResponse | null;
   } = {}
 ): MatchDetail {
   const match = normalizeMatch(raw, timezone, fetchedAt);
@@ -178,14 +183,15 @@ export function normalizeMatchDetail(
       status: cleanString(raw.forecast?.status),
       temperature: normalizeNumber(raw.forecast?.temperature)
     },
-    events: normalizeDetailEvents(raw.events),
-    statistics: normalizeDetailStatistics(raw.statistics),
+    events: normalizeDetailEvents(context.events ?? raw.events),
+    statistics: normalizeDetailStatistics(context.statistics ?? raw.statistics),
     headToHead: normalizeMatchList(context.headToHead, timezone, fetchedAt),
     form: {
       home: normalizeMatchList(context.homeForm, timezone, fetchedAt),
       away: normalizeMatchList(context.awayForm, timezone, fetchedAt)
     },
     standings: normalizeStandings(context.standings, match),
+    lineups: normalizeLineups(context.lineups, match, fetchedAt),
     topPlayers: {
       home: normalizeTopPlayers(raw.homeTeam?.topPlayers),
       away: normalizeTopPlayers(raw.awayTeam?.topPlayers)
@@ -522,6 +528,51 @@ function normalizeStandings(raw: ProviderStandingsResponse | null | undefined, f
       season: raw?.league?.season !== undefined && raw.league.season !== null ? String(raw.league.season) : fallbackMatch.league.season
     },
     groups: normalizedGroups
+  };
+}
+
+function normalizeLineups(raw: ProviderLineupsResponse | null | undefined, fallbackMatch: NormalizedMatch, fetchedAt: string) {
+  if (!raw?.homeTeam && !raw?.awayTeam) return null;
+
+  const home = normalizeLineupTeam(raw.homeTeam, fallbackMatch.homeTeam);
+  const away = normalizeLineupTeam(raw.awayTeam, fallbackMatch.awayTeam);
+  if (!home && !away) return null;
+
+  return {
+    home,
+    away,
+    fetchedAt
+  };
+}
+
+function normalizeLineupTeam(raw: ProviderLineupsResponse["homeTeam"], fallbackTeam: NormalizedMatch["homeTeam"]) {
+  if (!raw) return null;
+
+  const initialLineup = Array.isArray(raw.initialLineup)
+    ? raw.initialLineup
+        .map((row) => (Array.isArray(row) ? row.map(normalizeLineupPlayer).filter((player) => player.name) : []))
+        .filter((row) => row.length > 0)
+    : [];
+  const substitutes = Array.isArray(raw.substitutes)
+    ? raw.substitutes.map(normalizeLineupPlayer).filter((player) => player.name)
+    : [];
+
+  if (initialLineup.length === 0 && substitutes.length === 0 && !cleanString(raw.formation)) return null;
+
+  return {
+    team: normalizeTeam(raw, fallbackTeam.name),
+    formation: cleanString(raw.formation),
+    initialLineup,
+    substitutes
+  };
+}
+
+function normalizeLineupPlayer(player: ProviderLineupPlayer) {
+  return {
+    id: providerEntityId(player.id),
+    name: cleanString(player.name) ?? "",
+    number: normalizeNumber(player.number),
+    position: cleanString(player.position)
   };
 }
 

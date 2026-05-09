@@ -2551,6 +2551,130 @@ button:disabled {
   gap: 8px;
 }
 
+.lineupsBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.lineupTeamColumn {
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+}
+
+.lineupTeamHeader {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.lineupTeamHeader strong,
+.lineupTeamHeader span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineupTeamHeader strong {
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.lineupTeamHeader span {
+  color: #8ea4ad;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.lineupPitch {
+  min-height: 172px;
+  display: grid;
+  align-content: space-evenly;
+  gap: 7px;
+  padding: 10px 8px;
+  border: 1px solid rgba(73, 101, 111, 0.58);
+  border-radius: 7px;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(237, 247, 250, 0.08) 50%, transparent 51%),
+    radial-gradient(circle at 50% 50%, rgba(237, 247, 250, 0.1) 0 18%, transparent 19%),
+    linear-gradient(135deg, rgba(28, 101, 82, 0.72), rgba(11, 48, 57, 0.92));
+}
+
+.lineupPitch em {
+  color: #b8c8cf;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 750;
+  text-align: center;
+}
+
+.lineupPitchRow {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.lineupPlayerPill {
+  min-width: 0;
+  max-width: 86px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(159, 220, 234, 0.35);
+  border-radius: 6px;
+  background: rgba(7, 13, 16, 0.7);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.22);
+}
+
+.lineupPlayerPill b {
+  flex: 0 0 auto;
+  color: #7bdcff;
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineupPlayerPill em {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineupPlayerPill.compact {
+  max-width: 112px;
+  padding: 3px 5px;
+  background: rgba(13, 20, 23, 0.86);
+}
+
+.lineupBench {
+  display: grid;
+  gap: 6px;
+}
+
+.lineupBench > span {
+  color: #8ea4ad;
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.lineupBench > div {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
 .standingsTable {
   overflow: hidden;
   border: 1px solid #26343a;
@@ -11674,6 +11798,14 @@ body.scorexpLightTheme,
 }
 
 @media (max-width: 760px) {
+  .lineupsBlock {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lineupPitch {
+    min-height: 150px;
+  }
+
   body.scorexpLightTheme {
     background: var(--sx-bg) !important;
   }
@@ -11750,6 +11882,8 @@ body.scorexpLightTheme,
 .scorexpLightTheme .aiLog span.active,
 .scorexpLightTheme .summaryPill strong,
 .scorexpLightTheme .teamFormTitle,
+.scorexpLightTheme .lineupTeamHeader strong,
+.scorexpLightTheme .lineupPlayerPill em,
 .scorexpLightTheme .compactMatchRow strong,
 .scorexpLightTheme .highlightMatchLine strong,
 .scorexpLightTheme .highlightActions button,
@@ -11777,9 +11911,24 @@ body.scorexpLightTheme,
 .scorexpLightTheme .summaryPill,
 .scorexpLightTheme .compactMatchRow,
 .scorexpLightTheme .teamFormColumn,
+.scorexpLightTheme .lineupPlayerPill,
 .scorexpLightTheme .highlightActions button {
   border-color: var(--sx-line);
   background: #ffffff;
+}
+
+.scorexpLightTheme .lineupPitch {
+  border-color: var(--sx-line);
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(27, 43, 54, 0.08) 50%, transparent 51%),
+    radial-gradient(circle at 50% 50%, rgba(27, 43, 54, 0.08) 0 18%, transparent 19%),
+    linear-gradient(135deg, rgba(224, 246, 237, 0.92), rgba(229, 242, 248, 0.96));
+}
+
+.scorexpLightTheme .lineupTeamHeader span,
+.scorexpLightTheme .lineupBench > span,
+.scorexpLightTheme .lineupPitch em {
+  color: var(--sx-muted);
 }
 
 .scorexpLightTheme .comparisonGraphCard {

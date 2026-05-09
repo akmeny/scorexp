@@ -164,6 +164,24 @@ export interface ProviderStandingsResponse {
   groups?: ProviderStandingGroup[] | null;
 }
 
+export interface ProviderLineupPlayer {
+  id?: number | string | null;
+  name?: string | null;
+  number?: number | string | null;
+  position?: string | null;
+}
+
+export interface ProviderLineupTeam extends ProviderTeam {
+  formation?: string | null;
+  substitutes?: ProviderLineupPlayer[] | null;
+  initialLineup?: ProviderLineupPlayer[][] | null;
+}
+
+export interface ProviderLineupsResponse {
+  homeTeam?: ProviderLineupTeam | null;
+  awayTeam?: ProviderLineupTeam | null;
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -324,6 +342,26 @@ export interface MatchDetailStandings {
   groups: MatchDetailStandingGroup[];
 }
 
+export interface MatchLineupPlayer {
+  id: string | null;
+  name: string;
+  number: number | null;
+  position: string | null;
+}
+
+export interface MatchLineupTeam {
+  team: Team;
+  formation: string | null;
+  initialLineup: MatchLineupPlayer[][];
+  substitutes: MatchLineupPlayer[];
+}
+
+export interface MatchLineups {
+  home: MatchLineupTeam | null;
+  away: MatchLineupTeam | null;
+  fetchedAt: string | null;
+}
+
 export interface MatchDetail {
   id: string;
   checksum: string;
@@ -354,6 +392,7 @@ export interface MatchDetail {
     away: NormalizedMatch[];
   };
   standings: MatchDetailStandings | null;
+  lineups: MatchLineups | null;
   topPlayers: {
     home: MatchDetailTopPlayer[];
     away: MatchDetailTopPlayer[];

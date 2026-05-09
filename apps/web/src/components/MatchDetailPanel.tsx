@@ -48,7 +48,7 @@ interface MatchDetailPanelProps {
   chatSlot?: ReactNode;
 }
 
-type DetailTab = "details" | "chat" | "events" | "stats" | "h2h" | "form" | "standings";
+type DetailTab = "details" | "chat" | "events" | "stats" | "lineups" | "h2h" | "form" | "standings";
 type AiStatus = "idle" | "analyzing" | "done";
 type StatisticPeriod = "all" | "first" | "second";
 
@@ -277,6 +277,12 @@ export function MatchDetailPanel({
         </div>
       ) : null}
 
+      {tab === "lineups" ? (
+        <div className="detailContent">
+          <LineupsView match={activeMatch} lineups={detail?.lineups ?? null} />
+        </div>
+      ) : null}
+
       {tab === "h2h" ? (
         <div className="detailContent">
           <HeadToHeadView match={activeMatch} matches={detail?.headToHead ?? []} />
@@ -307,6 +313,7 @@ function buildTabs(match: NormalizedMatch, detail: MatchDetail | null, statistic
 
   if (!isUpcoming && (detail?.events?.length ?? 0) > 0) tabs.push({ key: "events", label: "Özet" });
   if (!isUpcoming && statisticRowCount > 0) tabs.push({ key: "stats", label: "İstatistik" });
+  if (detail?.lineups?.home || detail?.lineups?.away) tabs.push({ key: "lineups", label: "Kadrolar" });
   if ((detail?.headToHead?.length ?? 0) > 0) tabs.push({ key: "h2h", label: "Mukayese" });
   if ((detail?.form?.home.length ?? 0) > 0 || (detail?.form?.away.length ?? 0) > 0) tabs.push({ key: "form", label: "Form" });
   if ((detail?.standings?.groups.length ?? 0) > 0) tabs.push({ key: "standings", label: "Puan" });
@@ -670,6 +677,72 @@ function StandingsView({ match, standings }: { match: NormalizedMatch; standings
         </section>
       ))}
     </div>
+  );
+}
+
+function LineupsView({ match, lineups }: { match: NormalizedMatch; lineups: MatchDetail["lineups"] }) {
+  if (!lineups?.home && !lineups?.away) return null;
+
+  return (
+    <div className="lineupsBlock">
+      <LineupTeamColumn fallbackTeam={match.homeTeam} lineup={lineups.home} />
+      <LineupTeamColumn fallbackTeam={match.awayTeam} lineup={lineups.away} />
+    </div>
+  );
+}
+
+function LineupTeamColumn({ fallbackTeam, lineup }: { fallbackTeam: Team; lineup: NonNullable<MatchDetail["lineups"]>["home"] }) {
+  const team = lineup?.team ?? fallbackTeam;
+  const starters = lineup?.initialLineup.flat() ?? [];
+  const substitutes = lineup?.substitutes ?? [];
+
+  return (
+    <section className="lineupTeamColumn">
+      <div className="lineupTeamHeader">
+        <TeamLogo src={team.logo} label={team.name} size="sm" />
+        <div>
+          <strong>{team.name}</strong>
+          <span>{lineup?.formation ?? "Diziliş bekleniyor"}</span>
+        </div>
+      </div>
+
+      <div className="lineupPitch">
+        {(lineup?.initialLineup ?? []).map((row, index) => (
+          <div className="lineupPitchRow" key={`${team.id}:row:${index}`}>
+            {row.map((player, playerIndex) => (
+              <PlayerPill player={player} key={`${player.id ?? player.name}:${playerIndex}`} />
+            ))}
+          </div>
+        ))}
+        {starters.length === 0 ? <em>Kadro verisi bekleniyor</em> : null}
+      </div>
+
+      {substitutes.length > 0 ? (
+        <div className="lineupBench">
+          <span>Yedekler</span>
+          <div>
+            {substitutes.slice(0, 9).map((player, index) => (
+              <PlayerPill player={player} compact key={`${player.id ?? player.name}:sub:${index}`} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function PlayerPill({
+  player,
+  compact = false
+}: {
+  player: NonNullable<NonNullable<MatchDetail["lineups"]>["home"]>["substitutes"][number];
+  compact?: boolean;
+}) {
+  return (
+    <span className={`lineupPlayerPill ${compact ? "compact" : ""}`} title={player.position ?? player.name}>
+      {player.number !== null ? <b>{player.number}</b> : null}
+      <em>{player.name}</em>
+    </span>
   );
 }
 

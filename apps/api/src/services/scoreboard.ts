@@ -15,8 +15,11 @@ import type {
   MatchDetail,
   MatchDetailCacheEntry,
   NormalizedMatch,
+  ProviderLineupsResponse,
   ProviderMatch,
+  ProviderMatchEvent,
   ProviderStandingsResponse,
+  ProviderTeamStatistics,
   RefreshPolicy,
   ScoreboardSnapshot,
   ScoreboardView,
@@ -30,7 +33,16 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
 const HIGHLIGHTS_REFRESH_SECONDS = 60;
-const LIVE_PROVIDER_REFRESH_MIN_SECONDS = 60;
+const SCOREBOARD_LIVE_REFRESH_SECONDS = 30;
+const LIVE_DETAIL_PROVIDER_REFRESH_SECONDS = 120;
+const LIVE_EVENTS_REFRESH_SECONDS = 60;
+const LIVE_STATISTICS_REFRESH_SECONDS = 300;
+const LINEUPS_REFRESH_SECONDS = 600;
+const LINEUPS_DATA_TTL_SECONDS = 12 * 60 * 60;
+const EMPTY_LIVE_FEED_CUTOFF_MINUTE = 15;
+const EMPTY_LIVE_FEED_DISABLE_SECONDS = 8 * 60 * 60;
+const UPCOMING_LINEUP_PREFETCH_LIMIT = 80;
+const UPCOMING_LINEUP_PREFETCH_CONCURRENCY = 2;
 const LIVE_CARD_ENRICHMENT_ENABLED = false;
 const STALE_CLIENT_RETRY_SECONDS = 10;
 const PROVIDER_FAILURE_BACKOFF_SECONDS = 60;
@@ -54,6 +66,11 @@ interface HighlightsQuery {
   timezone: string;
   limit: number;
   offset: number;
+}
+
+interface CachedSupplement<T> {
+  value: T;
+  requestCount: number;
 }
 
 export class ScoreboardService {
@@ -109,6 +126,10 @@ export class ScoreboardService {
     const key = matchDetailKey(query.matchId, query.timezone);
     const cached = await this.cache.get<MatchDetailCacheEntry>(key);
     const detailBackoffSeconds = this.remainingBackoffSeconds(this.detailBackoffUntil, key);
+
+    if (cached?.detail.match.status.group === "finished") {
+      return lockDetail(cached.detail, this.appEnv);
+    }
 
     if (cached && (detailBackoffSeconds || new Date(cached.expiresAt).getTime() > Date.now())) {
       return cached.detail;
@@ -245,6 +266,7 @@ export class ScoreboardService {
     await this.cache.set(key, entry, ttlFromEntry(entry));
     await this.store.saveSnapshot(key, entry);
     this.queueLiveCardEnrichment(key, timezone, entry);
+    this.queueUpcomingLineupPrefetch(merged);
 
     const isPast = isBeforeLocalDate(date, timezone);
     const canLockDate = isPast && merged.every((match) => match.status.group === "finished");
@@ -266,6 +288,32 @@ export class ScoreboardService {
 
     this.cardEnrichmentInFlight.set(key, promise);
     void promise.catch(() => undefined);
+  }
+
+  private queueUpcomingLineupPrefetch(matches: NormalizedMatch[]): void {
+    const now = Date.now();
+    const candidates = matches
+      .filter((match) => this.upcomingLineupBucket(match, now))
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(0, UPCOMING_LINEUP_PREFETCH_LIMIT);
+
+    if (candidates.length === 0) return;
+
+    void mapWithConcurrency(candidates, UPCOMING_LINEUP_PREFETCH_CONCURRENCY, async (match) => {
+      await this.prefetchUpcomingLineups(match, now);
+    }).catch(() => undefined);
+  }
+
+  private async prefetchUpcomingLineups(match: NormalizedMatch, now: number): Promise<void> {
+    const bucket = this.upcomingLineupBucket(match, now);
+    if (!bucket) return;
+
+    const attemptKey = lineupAttemptKey(match.providerId, bucket);
+    const attempted = await this.cache.get<{ attemptedAt: string }>(attemptKey);
+    if (attempted) return;
+
+    await this.cache.set(attemptKey, { attemptedAt: new Date().toISOString() }, LINEUPS_DATA_TTL_SECONDS);
+    await this.getLineupsForMatch(match);
   }
 
   private async enrichAndPersistLiveMatchCards(
@@ -338,11 +386,17 @@ export class ScoreboardService {
       throw new Error(`Match detail not found (${matchId})`);
     }
 
-    const statusGroup = normalizeMatch(response.match, timezone, fetchedAt).status.group;
+    const normalizedMatch = normalizeMatch(response.match, timezone, fetchedAt);
+    const statusGroup = normalizedMatch.status.group;
     const refreshPolicy = this.pickDetailRefreshPolicy(statusGroup, new Date());
-    const context = await this.getMatchContext(response.match, timezone);
+    const context = await this.getMatchContext(response.match, normalizedMatch, timezone);
+    const hydratedMatch = {
+      ...response.match,
+      events: preferNonEmptyList(context.events, response.match.events),
+      statistics: preferNonEmptyStatistics(context.statistics, response.match.statistics)
+    };
     const detail = normalizeMatchDetail(
-      response.match,
+      hydratedMatch,
       timezone,
       fetchedAt,
       refreshPolicy.nextProviderRefreshAt,
@@ -353,20 +407,20 @@ export class ScoreboardService {
       detail,
       fetchedAt,
       expiresAt: detail.expiresAt,
-      providerRequestCount: response.requestCount
+      providerRequestCount: response.requestCount + context.requestCount
     };
 
     await this.cache.set(key, entry, ttlFromEntry(entry));
     return entry;
   }
 
-  private async getMatchContext(match: ProviderMatch, timezone: string) {
+  private async getMatchContext(match: ProviderMatch, normalizedMatch: NormalizedMatch, timezone: string) {
     const homeTeamId = teamId(match.homeTeam?.id);
     const awayTeamId = teamId(match.awayTeam?.id);
     const leagueId = teamId(match.league?.id);
     const season = match.league?.season !== undefined && match.league.season !== null ? String(match.league.season) : null;
 
-    const [headToHead, homeForm, awayForm, standings] = await Promise.all([
+    const [headToHead, homeForm, awayForm, standings, events, statistics, lineups] = await Promise.all([
       homeTeamId && awayTeamId
         ? this.getCachedSupplement<ProviderMatch[]>(
             `football:h2h:${[homeTeamId, awayTeamId].sort().join(":")}`,
@@ -374,19 +428,19 @@ export class ScoreboardService {
             () => this.highlightly.getHeadToHead(homeTeamId, awayTeamId),
             []
           )
-        : Promise.resolve([]),
+        : Promise.resolve(cachedSupplement<ProviderMatch[]>([])),
       homeTeamId
         ? this.getCachedSupplement<ProviderMatch[]>(`football:form:${homeTeamId}`, 21_600, () =>
             this.highlightly.getLastFiveGames(homeTeamId),
             []
           )
-        : Promise.resolve([]),
+        : Promise.resolve(cachedSupplement<ProviderMatch[]>([])),
       awayTeamId
         ? this.getCachedSupplement<ProviderMatch[]>(`football:form:${awayTeamId}`, 21_600, () =>
             this.highlightly.getLastFiveGames(awayTeamId),
             []
           )
-        : Promise.resolve([]),
+        : Promise.resolve(cachedSupplement<ProviderMatch[]>([])),
       leagueId && season
         ? this.getCachedSupplement<ProviderStandingsResponse | null>(
             `football:standings:${leagueId}:${season}:${timezone}`,
@@ -394,14 +448,28 @@ export class ScoreboardService {
             () => this.highlightly.getStandings(leagueId, season),
             null
           )
-        : Promise.resolve(null)
+        : Promise.resolve(cachedSupplement(null)),
+      this.getEventsForMatch(normalizedMatch),
+      this.getStatisticsForMatch(normalizedMatch),
+      this.shouldFetchLineups(normalizedMatch) ? this.getLineupsForMatch(normalizedMatch) : Promise.resolve(cachedSupplement(null))
     ]);
 
     return {
-      headToHead,
-      homeForm,
-      awayForm,
-      standings
+      headToHead: headToHead.value,
+      homeForm: homeForm.value,
+      awayForm: awayForm.value,
+      standings: standings.value,
+      events: events.value,
+      statistics: statistics.value,
+      lineups: lineups.value,
+      requestCount:
+        headToHead.requestCount +
+        homeForm.requestCount +
+        awayForm.requestCount +
+        standings.requestCount +
+        events.requestCount +
+        statistics.requestCount +
+        lineups.requestCount
     };
   }
 
@@ -410,17 +478,108 @@ export class ScoreboardService {
     ttlSeconds: number,
     fetcher: () => Promise<T>,
     fallback: T
-  ): Promise<T> {
+  ): Promise<CachedSupplement<T>> {
     const cached = await this.cache.get<{ value: T }>(key);
-    if (cached) return cached.value;
+    if (cached) return { value: cached.value, requestCount: 0 };
 
     try {
       const fresh = await fetcher();
       await this.cache.set(key, { value: fresh }, ttlSeconds);
-      return fresh;
+      return { value: fresh, requestCount: 1 };
     } catch {
-      return fallback;
+      return { value: fallback, requestCount: 0 };
     }
+  }
+
+  private async getEventsForMatch(match: NormalizedMatch): Promise<CachedSupplement<ProviderMatchEvent[] | null>> {
+    if (match.status.group !== "live") return cachedSupplement(null);
+    if (await this.isDisabled(emptyFeedDisabledKey("events", match.providerId))) return cachedSupplement([]);
+
+    const key = liveFeedKey("events", match.providerId);
+    const cached = await this.cache.get<{ value: ProviderMatchEvent[] }>(key);
+    if (cached) return cachedSupplement(cached.value);
+
+    try {
+      const result = await this.highlightly.getEvents(match.providerId);
+      const events = result.events;
+      await this.cache.set(key, { value: events }, LIVE_EVENTS_REFRESH_SECONDS);
+
+      if (events.length === 0 && shouldDisableEmptyLiveFeed(match)) {
+        await this.disableEmptyFeed("events", match.providerId);
+      }
+
+      return { value: events, requestCount: result.requestCount };
+    } catch {
+      return cachedSupplement(null);
+    }
+  }
+
+  private async getStatisticsForMatch(match: NormalizedMatch): Promise<CachedSupplement<ProviderTeamStatistics[] | null>> {
+    if (match.status.group !== "live") return cachedSupplement(null);
+    if (await this.isDisabled(emptyFeedDisabledKey("statistics", match.providerId))) return cachedSupplement([]);
+
+    const key = liveFeedKey("statistics", match.providerId);
+    const cached = await this.cache.get<{ value: ProviderTeamStatistics[] }>(key);
+    if (cached) return cachedSupplement(cached.value);
+
+    try {
+      const result = await this.highlightly.getStatistics(match.providerId);
+      const statistics = result.statistics;
+      await this.cache.set(key, { value: statistics }, LIVE_STATISTICS_REFRESH_SECONDS);
+
+      if (!hasTeamStatistics(statistics) && shouldDisableEmptyLiveFeed(match)) {
+        await this.disableEmptyFeed("statistics", match.providerId);
+      }
+
+      return { value: statistics, requestCount: result.requestCount };
+    } catch {
+      return cachedSupplement(null);
+    }
+  }
+
+  private async getLineupsForMatch(match: NormalizedMatch): Promise<CachedSupplement<ProviderLineupsResponse | null>> {
+    const disabledKey = lineupDisabledKey(match.providerId);
+    if (await this.isDisabled(disabledKey)) return cachedSupplement(null);
+
+    const key = lineupsKey(match.providerId);
+    const cached = await this.cache.get<{ value: ProviderLineupsResponse | null }>(key);
+    if (cached) return cachedSupplement(cached.value);
+
+    try {
+      const result = await this.highlightly.getLineups(match.providerId);
+      const lineups = hasLineupData(result.lineups) ? result.lineups : null;
+      await this.cache.set(key, { value: lineups }, lineups ? LINEUPS_DATA_TTL_SECONDS : LINEUPS_REFRESH_SECONDS);
+
+      if (!lineups && match.status.group === "live" && shouldDisableEmptyLiveFeed(match)) {
+        await this.cache.set(disabledKey, { disabledAt: new Date().toISOString() }, EMPTY_LIVE_FEED_DISABLE_SECONDS);
+      }
+
+      return { value: lineups, requestCount: result.requestCount };
+    } catch {
+      return cachedSupplement(null);
+    }
+  }
+
+  private shouldFetchLineups(match: NormalizedMatch): boolean {
+    if (match.status.group === "live") return true;
+    return Boolean(this.upcomingLineupBucket(match, Date.now()));
+  }
+
+  private upcomingLineupBucket(match: NormalizedMatch, now: number): "30m" | "15m" | null {
+    if (match.status.group !== "upcoming") return null;
+
+    const minutesUntilKickoff = (match.timestamp - now) / 60_000;
+    if (minutesUntilKickoff <= 30 && minutesUntilKickoff > 15) return "30m";
+    if (minutesUntilKickoff <= 15 && minutesUntilKickoff >= -2) return "15m";
+    return null;
+  }
+
+  private async isDisabled(key: string) {
+    return Boolean(await this.cache.get<{ disabledAt: string }>(key));
+  }
+
+  private async disableEmptyFeed(kind: "events" | "statistics", matchId: string) {
+    await this.cache.set(emptyFeedDisabledKey(kind, matchId), { disabledAt: new Date().toISOString() }, EMPTY_LIVE_FEED_DISABLE_SECONDS);
   }
 
   private buildSnapshot(date: string, timezone: string, matches: NormalizedMatch[], fetchedAt: string): ScoreboardSnapshot {
@@ -453,7 +612,7 @@ export class ScoreboardService {
     const hasLiveMatch = matches.some((match) => match.status.group === "live");
     const isPast = isBeforeLocalDate(date, timezone, now);
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
-    const liveRefreshSeconds = Math.max(this.appEnv.liveRefreshSeconds, LIVE_PROVIDER_REFRESH_MIN_SECONDS);
+    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, SCOREBOARD_LIVE_REFRESH_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
         ? liveRefreshSeconds
@@ -471,10 +630,9 @@ export class ScoreboardService {
 
   private pickDetailRefreshPolicy(statusGroup: NormalizedMatch["status"]["group"], now: Date): RefreshPolicy {
     const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
-    const liveRefreshSeconds = Math.max(this.appEnv.liveRefreshSeconds, LIVE_PROVIDER_REFRESH_MIN_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
-        ? liveRefreshSeconds
+        ? LIVE_DETAIL_PROVIDER_REFRESH_SECONDS
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -482,7 +640,7 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: providerRefreshSeconds,
+      clientRefreshSeconds: reason === "live" ? SCOREBOARD_LIVE_REFRESH_SECONDS : providerRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
@@ -510,11 +668,74 @@ function snapshotKey(date: string, timezone: string) {
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v6:${matchId}:${timezone}`;
+  return `football:match-detail:v7:${matchId}:${timezone}`;
 }
 
 function highlightsKey(date: string, timezone: string, limit: number, offset: number) {
   return `football:highlights:v1:${date}:${timezone}:${limit}:${offset}`;
+}
+
+function liveFeedKey(kind: "events" | "statistics", matchId: string) {
+  return `football:${kind}:v1:${matchId}`;
+}
+
+function emptyFeedDisabledKey(kind: "events" | "statistics", matchId: string) {
+  return `football:${kind}:disabled:v1:${matchId}`;
+}
+
+function lineupsKey(matchId: string) {
+  return `football:lineups:v1:${matchId}`;
+}
+
+function lineupAttemptKey(matchId: string, bucket: "30m" | "15m") {
+  return `football:lineups:attempt:v1:${matchId}:${bucket}`;
+}
+
+function lineupDisabledKey(matchId: string) {
+  return `football:lineups:disabled:v1:${matchId}`;
+}
+
+function cachedSupplement<T>(value: T): CachedSupplement<T> {
+  return { value, requestCount: 0 };
+}
+
+function shouldDisableEmptyLiveFeed(match: NormalizedMatch) {
+  return match.status.group === "live" && typeof match.status.minute === "number" && match.status.minute >= EMPTY_LIVE_FEED_CUTOFF_MINUTE;
+}
+
+function hasTeamStatistics(statistics: ProviderTeamStatistics[] | null | undefined) {
+  return Array.isArray(statistics) && statistics.some((group) => Array.isArray(group.statistics) && group.statistics.length > 0);
+}
+
+function preferNonEmptyList<T>(primary: T[] | null | undefined, fallback: T[] | null | undefined) {
+  if (Array.isArray(primary) && primary.length > 0) return primary;
+  if (Array.isArray(fallback) && fallback.length > 0) return fallback;
+  return primary ?? fallback;
+}
+
+function preferNonEmptyStatistics(
+  primary: ProviderTeamStatistics[] | null | undefined,
+  fallback: ProviderTeamStatistics[] | null | undefined
+) {
+  if (hasTeamStatistics(primary)) return primary;
+  if (hasTeamStatistics(fallback)) return fallback;
+  return primary ?? fallback;
+}
+
+function hasLineupData(lineups: ProviderLineupsResponse | null | undefined) {
+  return Boolean(
+    lineups &&
+      (hasLineupTeamData(lineups.homeTeam) || hasLineupTeamData(lineups.awayTeam))
+  );
+}
+
+function hasLineupTeamData(team: ProviderLineupsResponse["homeTeam"]) {
+  return Boolean(
+    team &&
+      (team.formation ||
+        (Array.isArray(team.initialLineup) && team.initialLineup.some((row) => Array.isArray(row) && row.length > 0)) ||
+        (Array.isArray(team.substitutes) && team.substitutes.length > 0))
+  );
 }
 
 function teamId(value: number | string | null | undefined) {
@@ -574,6 +795,18 @@ function lockSnapshot(snapshot: ScoreboardSnapshot, appEnv: AppEnv): ScoreboardS
       providerRefreshSeconds: appEnv.finishedRefreshSeconds,
       clientRefreshSeconds: appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: snapshot.expiresAt
+    }
+  };
+}
+
+function lockDetail(detail: MatchDetail, appEnv: AppEnv): MatchDetail {
+  return {
+    ...detail,
+    refreshPolicy: {
+      reason: "locked",
+      providerRefreshSeconds: appEnv.finishedRefreshSeconds,
+      clientRefreshSeconds: appEnv.clientRefreshSeconds,
+      nextProviderRefreshAt: detail.expiresAt
     }
   };
 }
