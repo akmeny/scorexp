@@ -51,7 +51,22 @@ export interface NormalizedMatch {
     description: string;
     group: StatusGroup;
     minute: number | null;
+    addedTime: number | null;
   };
+  review: {
+    active: boolean;
+    label: string | null;
+    kind: "var";
+    minute: number | null;
+    side: "home" | "away" | null;
+    decision: string | null;
+  } | null;
+  latestDecision: {
+    kind: "goal" | "goalCancelled" | "penalty" | "penaltyCancelled" | "redCard" | "var" | "event";
+    label: string;
+    minute: number | null;
+    side: "home" | "away" | null;
+  } | null;
   score: MatchScore;
   redCards: {
     home: number;

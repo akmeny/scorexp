@@ -120,8 +120,11 @@ export function normalizeMatch(raw: ProviderMatch, timezone: string, updatedAt =
     status: {
       description: statusDescription,
       group: classifyStatus(statusDescription),
-      minute: normalizeMinute(raw.state?.clock)
+      minute: normalizeMinute(raw.state?.clock),
+      addedTime: normalizeAddedTime(raw.state)
     },
+    review: normalizeMatchReview(raw),
+    latestDecision: normalizeLatestDecision(raw),
     score: parseScore(raw.state?.score?.current, raw.state?.score?.penalties),
     redCards: normalizeRedCards(raw),
     isTopTier: isTopTier(countryName, leagueName),
@@ -297,6 +300,8 @@ export function createSnapshotChecksum(snapshot: Omit<ScoreboardSnapshot, "check
       matches: league.matches.map((match) => ({
         id: match.id,
         status: match.status,
+        review: match.review,
+        latestDecision: match.latestDecision,
         score: match.score,
         redCards: match.redCards,
         localTime: match.localTime
@@ -324,6 +329,8 @@ function createMatchDetailChecksum(detail: Omit<MatchDetail, "checksum">): strin
   const stableShape = {
     id: detail.id,
     status: detail.match.status,
+    review: detail.match.review,
+    latestDecision: detail.match.latestDecision,
     score: detail.match.score,
     redCards: detail.match.redCards,
     events: detail.events,
@@ -409,6 +416,178 @@ function providerTeamSide(team: ProviderMatch["homeTeam"], raw: ProviderMatch) {
 function providerEntityId(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return null;
   return String(value);
+}
+
+function normalizeAddedTime(state: ProviderMatch["state"]) {
+  const candidates = [
+    state?.injuryTime,
+    state?.stoppageTime,
+    state?.addedTime,
+    state?.additionalTime,
+    state?.extraTime,
+    state?.clockExtra,
+    state?.clockLabel
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = parseAddedTime(candidate);
+    if (parsed !== null) return parsed;
+  }
+
+  return null;
+}
+
+function parseAddedTime(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
+
+  const text = value.trim();
+  const explicit = text.match(/\(\s*\+?\s*(\d+)\s*\)|\+\s*(\d+)/);
+  const plain = text.match(/^(\d{1,2})$/);
+  const parsed = Number(explicit?.[1] ?? explicit?.[2] ?? plain?.[1]);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function normalizeMatchReview(raw: ProviderMatch): NormalizedMatch["review"] {
+  const event = latestProviderEvent(raw.events, (item) => isVarReviewEvent(item.type));
+  if (!event || isFinalVarDecision(event.type)) return null;
+
+  return {
+    active: true,
+    label: "VAR",
+    kind: "var",
+    minute: parseProviderEventMinute(event.time),
+    side: providerTeamSide(event.team, raw),
+    decision: null
+  };
+}
+
+function normalizeLatestDecision(raw: ProviderMatch): NormalizedMatch["latestDecision"] {
+  const event = latestProviderEvent(raw.events, (item) => isFinalVarDecision(item.type));
+  if (!event) return null;
+
+  const kind = decisionKind(event.type);
+  if (!kind) return null;
+
+  return {
+    kind,
+    label: decisionLabel(kind),
+    minute: parseProviderEventMinute(event.time),
+    side: providerTeamSide(event.team, raw)
+  };
+}
+
+function latestProviderEvent(
+  events: ProviderMatchEvent[] | null | undefined,
+  predicate: (event: ProviderMatchEvent) => boolean
+) {
+  if (!Array.isArray(events)) return null;
+
+  return events.reduce<ProviderMatchEvent | null>((latest, event) => {
+    if (!predicate(event)) return latest;
+    if (!latest) return event;
+
+    const latestMinute = parseProviderEventMinute(latest.time) ?? -1;
+    const eventMinute = parseProviderEventMinute(event.time) ?? -1;
+    return eventMinute >= latestMinute ? event : latest;
+  }, null);
+}
+
+function isVarReviewEvent(value: string | null | undefined) {
+  const normalized = normalizeEventLookup(value);
+  return normalized.includes("var") || normalized.includes("video assistant") || normalized.includes("review");
+}
+
+function isFinalVarDecision(value: string | null | undefined) {
+  const normalized = normalizeEventLookup(value);
+  if (!isVarReviewEvent(value)) return false;
+
+  const stillReviewing =
+    normalized.includes("check") ||
+    normalized.includes("review") ||
+    normalized.includes("possible") ||
+    normalized.includes("pending") ||
+    normalized.includes("checking");
+  const hasFinalWord =
+    normalized.includes("confirmed") ||
+    normalized.includes("cancel") ||
+    normalized.includes("iptal") ||
+    normalized.includes("disallow") ||
+    normalized.includes("overturn") ||
+    normalized.includes("awarded") ||
+    normalized.includes("given") ||
+    normalized.includes("decision") ||
+    normalized.includes("no goal") ||
+    normalized.includes("no penalty");
+
+  if (stillReviewing && !hasFinalWord) return false;
+
+  return (
+    hasFinalWord ||
+    normalized.includes("red card") ||
+    normalized.includes("kirmizi") ||
+    normalized.includes("penalty") ||
+    normalized.includes("penalti") ||
+    normalized.includes("goal") ||
+    normalized.includes("gol")
+  );
+}
+
+function decisionKind(value: string | null | undefined): NonNullable<NormalizedMatch["latestDecision"]>["kind"] | null {
+  const normalized = normalizeEventLookup(value);
+  if (
+    (normalized.includes("cancel") || normalized.includes("iptal") || normalized.includes("disallow") || normalized.includes("no goal")) &&
+    (normalized.includes("goal") || normalized.includes("gol"))
+  ) {
+    return "goalCancelled";
+  }
+  if (
+    (normalized.includes("cancel") || normalized.includes("iptal") || normalized.includes("overturn") || normalized.includes("no penalty")) &&
+    (normalized.includes("penalty") || normalized.includes("penalti"))
+  ) {
+    return "penaltyCancelled";
+  }
+  if ((normalized.includes("red") && normalized.includes("card")) || normalized.includes("kirmizi")) return "redCard";
+  if (normalized.includes("penalty") || normalized.includes("penalti")) return "penalty";
+  if (normalized.includes("goal") || normalized.includes("gol")) return "goal";
+  if (isVarReviewEvent(value)) return "var";
+  return null;
+}
+
+function decisionLabel(kind: NonNullable<NormalizedMatch["latestDecision"]>["kind"]) {
+  if (kind === "goal") return "Gol";
+  if (kind === "goalCancelled") return "Gol iptal";
+  if (kind === "penalty") return "Penalti";
+  if (kind === "penaltyCancelled") return "Penalti iptal";
+  if (kind === "redCard") return "Kirmizi kart";
+  if (kind === "var") return "VAR karar";
+  return "Olay";
+}
+
+function parseProviderEventMinute(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return null;
+  const match = String(value).match(/(\d+)(?:\s*\+\s*(\d+))?/);
+  if (!match) return null;
+
+  const parsed = Number(match[1]) + Number(match[2] ?? 0);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(130, parsed)) : null;
+}
+
+function normalizeEventLookup(value: string | null | undefined) {
+  return String(value ?? "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/[ğĞ]/g, "g")
+    .replace(/[üÜ]/g, "u")
+    .replace(/[şŞ]/g, "s")
+    .replace(/[öÖ]/g, "o")
+    .replace(/[çÇ]/g, "c")
+    .replace(/[\u2010-\u2015]/g, "-")
+    .replace(/\s+/g, " ");
 }
 
 function isRedCardLabel(value: string | null | undefined) {

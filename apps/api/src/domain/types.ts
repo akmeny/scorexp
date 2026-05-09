@@ -47,6 +47,13 @@ export interface ProviderMatch {
   state?: {
     description?: string | null;
     clock?: number | string | null;
+    injuryTime?: number | string | null;
+    stoppageTime?: number | string | null;
+    addedTime?: number | string | null;
+    additionalTime?: number | string | null;
+    extraTime?: number | string | null;
+    clockExtra?: number | string | null;
+    clockLabel?: string | null;
     score?: {
       current?: string | null;
       penalties?: string | null;
@@ -225,7 +232,22 @@ export interface NormalizedMatch {
     description: string;
     group: StatusGroup;
     minute: number | null;
+    addedTime: number | null;
   };
+  review: {
+    active: boolean;
+    label: string | null;
+    kind: "var";
+    minute: number | null;
+    side: "home" | "away" | null;
+    decision: string | null;
+  } | null;
+  latestDecision: {
+    kind: "goal" | "goalCancelled" | "penalty" | "penaltyCancelled" | "redCard" | "var" | "event";
+    label: string;
+    minute: number | null;
+    side: "home" | "away" | null;
+  } | null;
   score: MatchScore;
   redCards: {
     home: number;

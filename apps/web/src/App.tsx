@@ -190,6 +190,9 @@ export default function App() {
         selectedDisplayMatch.status.group,
         selectedDisplayMatch.status.description,
         selectedDisplayMatch.status.minute ?? "",
+        selectedDisplayMatch.status.addedTime ?? "",
+        selectedDisplayMatch.review?.label ?? "",
+        selectedDisplayMatch.latestDecision?.label ?? "",
         selectedDisplayMatch.score.home ?? "",
         selectedDisplayMatch.score.away ?? "",
         selectedDisplayMatch.redCards.home,
@@ -216,6 +219,7 @@ export default function App() {
   }, [activeGoalPresentations]);
 
   const counts = data?.counts ?? { all: 0, live: 0, finished: 0, upcoming: 0, unknown: 0 };
+  useLiveMinuteTicker(counts.live > 0 || selectedDisplayMatch?.status.group === "live");
   const visibleLiveCount = counts.live + activeRecentlyFinishedLiveIds.size;
   const today = todayInTimezone(timezone);
   const minDate = shiftDate(today, -7);
@@ -1164,6 +1168,20 @@ function useDesktopLayout() {
   }, []);
 
   return desktop;
+}
+
+function useLiveMinuteTicker(active: boolean) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!active) return undefined;
+
+    const tick = () => setTick((value) => value + 1);
+    const timer = window.setInterval(tick, 30_000);
+    tick();
+
+    return () => window.clearInterval(timer);
+  }, [active]);
 }
 
 function clampDate(date: string, minDate: string, maxDate: string) {

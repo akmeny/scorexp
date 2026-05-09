@@ -108,7 +108,7 @@ interface InsightRow {
   segments?: InsightSegment[];
 }
 
-type PressureEventKind = "goal" | "penalty" | "corner" | "yellow" | "red" | "substitution" | "var" | "event";
+type PressureEventKind = "goal" | "goalCancelled" | "penalty" | "corner" | "yellow" | "red" | "substitution" | "var" | "event";
 type ComparisonMetricKind = "attack" | "danger" | "possession";
 type LineMetricKind = "corner" | "yellow" | "red" | "target" | "missed";
 
@@ -636,6 +636,7 @@ function SignalMetric({ icon, label, value }: { icon: ReactNode; label: string; 
 function PressureMeterCard({ match, data }: { match: NormalizedMatch; data: LiveAtmosphereData }) {
   const homeEvents = data.pressure.events.filter((event) => event.side === "home");
   const awayEvents = data.pressure.events.filter((event) => event.side === "away");
+  const graphPaths = pressureAreaPaths(data.pressure.series);
 
   return (
     <section className="atmospherePressureCard" aria-label="Momentum">
@@ -665,17 +666,18 @@ function PressureMeterCard({ match, data }: { match: NormalizedMatch; data: Live
       </div>
 
       <div className={`atmospherePressureGraph ${data.pressure.hasData ? "hasData" : "isEmpty"}`}>
-        <div className="atmospherePressureBars" aria-hidden="true">
-          {data.pressure.series.map((point) => (
-            <span className={point.future ? "future" : undefined} key={point.minute}>
-              <i style={{ height: `${point.home}%` }} />
-              <b style={{ height: `${point.away}%` }} />
-            </span>
-          ))}
-        </div>
+        <svg className="atmospherePressureSvg" viewBox="0 0 900 220" preserveAspectRatio="none" aria-hidden="true">
+          <rect className="pressureGraphHalf home" x="0" y="0" width="900" height="110" />
+          <rect className="pressureGraphHalf away" x="0" y="110" width="900" height="110" />
+          <line className="pressureGraphMidline" x1="0" y1="110" x2="900" y2="110" />
+          <line className="pressureGraphHalfline" x1="450" y1="8" x2="450" y2="212" />
+          <path className="pressureGraphArea home" d={graphPaths.homeArea} />
+          <path className="pressureGraphArea away" d={graphPaths.awayArea} />
+          <path className="pressureGraphStroke home" d={graphPaths.homeLine} />
+          <path className="pressureGraphStroke away" d={graphPaths.awayLine} />
+        </svg>
         <div className="atmospherePressureHalf home">Ev</div>
         <div className="atmospherePressureHalf away">Dep</div>
-        <div className="atmospherePressureMidline" />
       </div>
 
       <div className="atmospherePressureEventRail away" aria-hidden="true">
@@ -1350,6 +1352,64 @@ function addStatisticPairs(first: StatisticPair, second: StatisticPair): Statist
   };
 }
 
+function pressureAreaPaths(series: PressurePoint[]) {
+  const width = 900;
+  const midline = 110;
+  const amplitude = 96;
+  const homePoints = pressurePathPoints(series, "home", width, midline, amplitude);
+  const awayPoints = pressurePathPoints(series, "away", width, midline, amplitude);
+
+  return {
+    homeArea: areaPath(homePoints, width, midline),
+    awayArea: areaPath(awayPoints, width, midline),
+    homeLine: linePath(homePoints),
+    awayLine: linePath(awayPoints)
+  };
+}
+
+function pressurePathPoints(series: PressurePoint[], side: "home" | "away", width: number, midline: number, amplitude: number) {
+  const lastIndex = Math.max(1, series.length - 1);
+
+  return series.map((point, index) => {
+    const value = side === "home" ? point.home : point.away;
+    const distance = (clamp(value, 0, 100) / 100) * amplitude;
+
+    return {
+      x: (index / lastIndex) * width,
+      y: side === "home" ? midline - distance : midline + distance
+    };
+  });
+}
+
+function areaPath(points: { x: number; y: number }[], width: number, midline: number) {
+  if (points.length === 0) return `M 0 ${midline} L ${width} ${midline} Z`;
+  return `M 0 ${midline} ${smoothLinePath(points)} L ${width} ${midline} Z`;
+}
+
+function linePath(points: { x: number; y: number }[]) {
+  if (points.length === 0) return "";
+  return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} ${smoothLinePath(points).replace(/^L\s+[\d.-]+\s+[\d.-]+/, "")}`;
+}
+
+function smoothLinePath(points: { x: number; y: number }[]) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `L ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+
+  let path = `L ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const current = points[index];
+    const previous = points[index - 1];
+    const midX = (previous.x + current.x) / 2;
+    const midY = (previous.y + current.y) / 2;
+    path += ` Q ${previous.x.toFixed(1)} ${previous.y.toFixed(1)} ${midX.toFixed(1)} ${midY.toFixed(1)}`;
+  }
+
+  const last = points[points.length - 1];
+  path += ` T ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+  return path;
+}
+
 function buildPressureEvents(events: MatchDetailEvent[], match: NormalizedMatch): PressureEventMarker[] {
   return events
     .map((event, index) => {
@@ -1381,7 +1441,7 @@ function buildPressureSeries(
   const awaySeed = hashString(match.awayTeam.id || match.awayTeam.name) % 23;
   const homeShare = shareOfTotal(scores.home, scores.away);
   const awayShare = 1 - homeShare;
-  const currentMinute = match.status.group === "live" ? clamp(match.status.minute ?? 1, 1, 90) : match.status.group === "upcoming" ? 0 : 90;
+  const currentMinute = pressureCurrentMinute(match);
   const homeAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.home, 1)) * 4.6, 13, 46) : 12;
   const awayAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.away, 1)) * 4.6, 13, 46) : 12;
 
@@ -1406,6 +1466,19 @@ function buildPressureSeries(
   });
 }
 
+function pressureCurrentMinute(match: NormalizedMatch) {
+  if (match.status.group === "upcoming") return 0;
+  if (match.status.group !== "live") return 90;
+
+  const minute = match.status.minute ?? 1;
+  const description = match.status.description.toLowerCase();
+  if (description === "second half") {
+    return clamp(minute <= 45 ? 45 + Math.max(1, minute) : minute, 1, 90);
+  }
+
+  return clamp(minute, 1, 90);
+}
+
 function rhythmicPressure(minute: number, seed: number, pace: number) {
   const primary = Math.sin(minute * pace + seed * 0.37);
   const secondary = Math.sin(minute * (pace * 0.43) + seed * 0.73);
@@ -1424,6 +1497,7 @@ function eventPressureBoost(minute: number, events: PressureEventMarker[], side:
 
 function eventPressureWeight(kind: PressureEventKind) {
   if (kind === "goal") return 38;
+  if (kind === "goalCancelled") return 16;
   if (kind === "penalty") return 30;
   if (kind === "red") return 20;
   if (kind === "corner") return 16;
@@ -1451,6 +1525,12 @@ function goalsFromMatchAndEvents(match: NormalizedMatch, events: PressureEventMa
 
 function pressureEventKind(type: string): PressureEventKind {
   const normalized = normalizeStatisticLookup(type);
+  if (
+    (normalized.includes("cancel") || normalized.includes("disallow") || normalized.includes("no goal") || normalized.includes("iptal")) &&
+    (normalized.includes("goal") || normalized.includes("gol"))
+  ) {
+    return "goalCancelled";
+  }
   if (normalized.includes("red")) return "red";
   if (normalized.includes("yellow")) return "yellow";
   if (normalized.includes("corner") || normalized.includes("korner") || normalized.includes("kose")) return "corner";
@@ -1464,6 +1544,7 @@ function pressureEventKind(type: string): PressureEventKind {
 function renderPressureEventIcon(kind: PressureEventKind) {
   if (kind === "yellow" || kind === "red") return <span className={`pressureCardIcon ${kind}`} />;
   if (kind === "goal") return <span className="pressureBallIcon">⚽</span>;
+  if (kind === "goalCancelled") return <span className="pressureBallIcon cancelled">⚽</span>;
   if (kind === "corner") return <Flag size={8} />;
   if (kind === "substitution") return <RefreshCw size={8} />;
   if (kind === "var") return <Sparkles size={8} />;

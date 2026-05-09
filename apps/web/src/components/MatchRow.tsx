@@ -59,6 +59,8 @@ export function MatchRow({
   const momentum = isLive ? readLiveMetric(match, "momentum") : null;
   const liveIndicatorColor = isLive ? intensityColor(pressure ?? 100) : null;
   const momentumColor = momentum === null ? null : intensityColor(momentum);
+  const activeReview = isLive && match.review?.active ? match.review : null;
+  const latestDecision = isLive && !activeReview ? match.latestDecision : null;
   const homeGoalActive = isGoalActive && isGoalSide(activeGoalHighlight?.side ?? null, "home");
   const awayGoalActive = isGoalActive && isGoalSide(activeGoalHighlight?.side ?? null, "away");
   const rowClassName = [
@@ -91,6 +93,8 @@ export function MatchRow({
 
       <div className="matchTime">
         {statusLabel(match, statusText, liveIndicatorColor)}
+        {activeReview ? <span className="matchReviewBadge">VAR</span> : null}
+        {latestDecision ? <span className={`matchDecisionBadge ${latestDecision.kind}`}>{latestDecision.label}</span> : null}
       </div>
 
       <div className="teamsBlock">
@@ -167,7 +171,7 @@ function statusLabel(match: NormalizedMatch, label: string, liveIndicatorColor: 
       <span className="liveMinute">
         {pulseDot}
         <span>{label}</span>
-        <span className="minuteTick">'</span>
+        {label.includes("(") ? null : <span className="minuteTick">'</span>}
       </span>
     );
   }
