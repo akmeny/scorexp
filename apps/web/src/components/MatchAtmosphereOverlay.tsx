@@ -23,7 +23,7 @@ import {
   Zap
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, TouchEvent } from "react";
 import { ComparisonMomentumChart } from "./ComparisonMomentumChart";
 import type { ComparisonChartItem } from "./ComparisonMomentumChart";
 import { MatchChatRoom } from "./MatchChatRoom";
@@ -102,6 +102,17 @@ type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
 type AtmosphereLineupTeam = NonNullable<MatchDetail["lineups"]>["home"];
 type AtmosphereLineupPlayer = NonNullable<AtmosphereLineupTeam>["initialLineup"][number][number];
+
+const mobileAtmosphereTabs: { key: MobileAtmosphereTab; label: string; shortLabel: string }[] = [
+  { key: "data", label: "Veriler", shortLabel: "Veri" },
+  { key: "chat", label: "Sohbet", shortLabel: "Soh." },
+  { key: "stats", label: "İstatistik", shortLabel: "İst." },
+  { key: "h2h", label: "H2H", shortLabel: "H2H" },
+  { key: "form", label: "Form", shortLabel: "Form" },
+  { key: "standings", label: "Puan", shortLabel: "Puan" },
+  { key: "lineups", label: "Diziliş", shortLabel: "Diz." },
+  { key: "aixp", label: "AIXP", shortLabel: "AIXP" }
+];
 
 interface InsightSegment {
   key: "home" | "draw" | "away";
@@ -207,6 +218,7 @@ export function MatchAtmosphereOverlay({
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
+  const mobileSwipeRef = useRef<{ x: number; y: number; tab: MobileAtmosphereTab } | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const activeGoalHighlight = activeMatch.status.group === "live" ? goalHighlight : null;
   const rawHomeAccent = useTeamAccent(activeMatch.homeTeam);
@@ -244,6 +256,40 @@ export function MatchAtmosphereOverlay({
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const compactScoreline = formatCompactScoreline(activeMatch);
   const shouldShowLiveAtmosphere = activeMatch.status.group === "live" || activeMatch.status.group === "finished";
+  const selectAdjacentMobileTab = (direction: -1 | 1) => {
+    setMobileTab((current) => {
+      const currentIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === current);
+      if (currentIndex < 0) return current;
+
+      const nextIndex = Math.min(Math.max(currentIndex + direction, 0), mobileAtmosphereTabs.length - 1);
+      return mobileAtmosphereTabs[nextIndex]?.key ?? current;
+    });
+  };
+
+  const handleMobileSwipeStart = (event: TouchEvent<HTMLElement>) => {
+    if (typeof window === "undefined" || !window.matchMedia("(max-width: 760px)").matches) return;
+    if (isSwipeControlTarget(event.target)) return;
+
+    const touch = event.touches[0];
+    if (!touch) return;
+    mobileSwipeRef.current = { x: touch.clientX, y: touch.clientY, tab: mobileTab };
+  };
+
+  const handleMobileSwipeEnd = (event: TouchEvent<HTMLElement>) => {
+    const start = mobileSwipeRef.current;
+    mobileSwipeRef.current = null;
+    if (!start || start.tab !== mobileTab) return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const horizontalSwipe = Math.abs(deltaX) >= 54 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35;
+    if (!horizontalSwipe) return;
+
+    selectAdjacentMobileTab(deltaX < 0 ? 1 : -1);
+  };
 
   useEffect(() => {
     setActiveTab("overview");
@@ -448,7 +494,7 @@ export function MatchAtmosphereOverlay({
             </div>
           </aside>
 
-          <main className="atmosphereScroll" ref={scrollContainerRef}>
+          <main className="atmosphereScroll" ref={scrollContainerRef} onTouchStart={handleMobileSwipeStart} onTouchEnd={handleMobileSwipeEnd}>
             <div className={`atmosphereCompactHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} aria-hidden={!compactHeroVisible}>
               <div className="atmosphereCompactHeroInner withScore">
                 <div className="atmosphereCompactTeam home">
@@ -697,6 +743,10 @@ function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "a
   return side === target || side === "both";
 }
 
+function isSwipeControlTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest(".atmosphereMobileTabs, button, input, textarea, select, a"));
+}
+
 function MobileAtmosphereTabs({
   activeTab,
   onChange
@@ -704,29 +754,20 @@ function MobileAtmosphereTabs({
   activeTab: MobileAtmosphereTab;
   onChange: (tab: MobileAtmosphereTab) => void;
 }) {
-  const tabs: { key: MobileAtmosphereTab; label: string }[] = [
-    { key: "data", label: "Veriler" },
-    { key: "chat", label: "Sohbet" },
-    { key: "stats", label: "İstatistik" },
-    { key: "h2h", label: "H2H" },
-    { key: "form", label: "Form" },
-    { key: "standings", label: "Puan" },
-    { key: "lineups", label: "Diziliş" },
-    { key: "aixp", label: "AIXP" }
-  ];
-
   return (
     <div className="atmosphereMobileTabs atmosphereOverviewOnly" role="tablist" aria-label="Atmosfer mobil sekmeleri">
-      {tabs.map((tab) => (
+      {mobileAtmosphereTabs.map((tab) => (
         <button
           className={activeTab === tab.key ? "active" : ""}
           type="button"
           role="tab"
           aria-selected={activeTab === tab.key}
+          aria-label={tab.label}
+          title={tab.label}
           onClick={() => onChange(tab.key)}
           key={tab.key}
         >
-          {tab.label}
+          {tab.shortLabel}
         </button>
       ))}
     </div>
