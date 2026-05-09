@@ -231,7 +231,6 @@ export function MatchDetailPanel({
           <span>-</span>
           <strong>{formatScore(activeMatch.score.away, activeMatch.status.group === "upcoming")}</strong>
           <small>{formatStatus(activeMatch)}</small>
-          {activeGoalHighlight ? <em className="detailGoalBadge">GOL</em> : null}
         </div>
         <TeamSummary match={activeMatch} side="away" goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
       </section>
@@ -344,6 +343,8 @@ function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch |
     localTime: match.localTime,
     timestamp: match.timestamp,
     status: match.status,
+    review: match.review,
+    latestDecision: match.latestDecision,
     score: match.score,
     redCards: match.redCards,
     lastUpdatedAt: match.lastUpdatedAt

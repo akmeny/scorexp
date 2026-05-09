@@ -89,6 +89,7 @@ const eventLabels: Record<string, string> = {
 };
 
 type AtmosphereTab = "overview" | "chat";
+type MobileAtmosphereTab = "data" | "chat" | "aixp";
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 
@@ -191,6 +192,7 @@ export function MatchAtmosphereOverlay({
   chatAccessToken = null
 }: MatchAtmosphereOverlayProps) {
   const [activeTab, setActiveTab] = useState<AtmosphereTab>("overview");
+  const [mobileTab, setMobileTab] = useState<MobileAtmosphereTab>("data");
   const [compactHeroVisible, setCompactHeroVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLElement | null>(null);
@@ -235,6 +237,7 @@ export function MatchAtmosphereOverlay({
 
   useEffect(() => {
     setActiveTab("overview");
+    setMobileTab("data");
     setCompactHeroVisible(false);
   }, [match.id]);
 
@@ -334,6 +337,7 @@ export function MatchAtmosphereOverlay({
     activeGoalHighlight?.phase === "pending" ? "goalPending" : "",
     activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : "",
     activeTab === "chat" ? "chatTabActive" : "overviewTabActive",
+    `mobile${capitalizeMobileTab(mobileTab)}TabActive`,
     compactHeroVisible ? "compactHeroVisible chatHeroCompact" : ""
   ].filter(Boolean).join(" ");
 
@@ -436,7 +440,6 @@ export function MatchAtmosphereOverlay({
                 <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
                 <div className="atmosphereScoreline">{formatScoreline(activeMatch)}</div>
                 <strong>Maç Atmosferi</strong>
-                {activeGoalHighlight ? <em className="atmosphereGoalBadge">GOL</em> : null}
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
               <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
@@ -447,13 +450,24 @@ export function MatchAtmosphereOverlay({
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
             {shouldShowLiveAtmosphere ? (
-              <div className="atmosphereLiveStack atmosphereOverviewOnly">
-                <PressureMeterCard match={activeMatch} data={liveAtmosphere} />
-                <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
-              </div>
+              <>
+                <MobileAtmosphereTabs activeTab={mobileTab} onChange={setMobileTab} />
+                {mobileTab === "chat" ? (
+                  <section className="atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly" aria-label="Sohbet">
+                    <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
+                  </section>
+                ) : null}
+                {mobileTab === "aixp" ? (
+                  <section className="atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereOverviewOnly" aria-label="AIXP" />
+                ) : null}
+                <div className="atmosphereLiveStack atmosphereOverviewOnly atmosphereMobileDataOnly">
+                  <PressureMeterCard match={activeMatch} data={liveAtmosphere} />
+                  <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
+                </div>
+              </>
             ) : null}
 
-            <section className="atmosphereGrid atmosphereOverviewOnly">
+            <section className="atmosphereGrid atmosphereOverviewOnly atmosphereMobileDataOnly">
               <section className="atmospherePanel atmosphereAiPanel" id="atmosphere-ai">
                 <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
                 <strong>{aiSummary.title}</strong>
@@ -481,12 +495,12 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly" id="atmosphere-data">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-data">
               <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
               <StatisticCompare match={activeMatch} rows={statisticRows} />
             </section>
 
-            <section className="atmosphereTwinGrid atmosphereOverviewOnly" id="atmosphere-history">
+            <section className="atmosphereTwinGrid atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-history">
               <section className="atmospherePanel">
                 <PanelTitle icon={<Shield size={17} />} label="Mukayese ve Form" />
                 <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
@@ -513,7 +527,7 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly" id="atmosphere-players">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-players">
               <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
               <div className="atmospherePlayerGrid">
                 <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
@@ -521,12 +535,12 @@ export function MatchAtmosphereOverlay({
               </div>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly">
               <PanelTitle icon={<Zap size={17} />} label={activeMatch.status.group === "upcoming" ? "Maç Öncesi Akış" : "Maç Akışı"} />
               <EventTimeline events={detail?.events ?? []} match={activeMatch} />
             </section>
 
-            <section className="atmosphereSignalStrip atmosphereOverviewOnly" aria-label="Maç sinyalleri">
+            <section className="atmosphereSignalStrip atmosphereOverviewOnly atmosphereMobileDataOnly" aria-label="Maç sinyalleri">
               <SignalMetric icon={<CalendarClock size={16} />} label="Başlangıç" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
               <SignalMetric icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail) ?? "Veri yok"} />
               <SignalMetric icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail) ?? "Veri yok"} />
@@ -551,6 +565,8 @@ function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch |
     localTime: match.localTime,
     timestamp: match.timestamp,
     status: match.status,
+    review: match.review,
+    latestDecision: match.latestDecision,
     score: match.score,
     redCards: match.redCards,
     lastUpdatedAt: match.lastUpdatedAt
@@ -559,6 +575,41 @@ function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch |
 
 function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "away") {
   return side === target || side === "both";
+}
+
+function MobileAtmosphereTabs({
+  activeTab,
+  onChange
+}: {
+  activeTab: MobileAtmosphereTab;
+  onChange: (tab: MobileAtmosphereTab) => void;
+}) {
+  const tabs: { key: MobileAtmosphereTab; label: string }[] = [
+    { key: "data", label: "Veriler" },
+    { key: "chat", label: "Sohbet" },
+    { key: "aixp", label: "AIXP" }
+  ];
+
+  return (
+    <div className="atmosphereMobileTabs atmosphereOverviewOnly" role="tablist" aria-label="Atmosfer mobil sekmeleri">
+      {tabs.map((tab) => (
+        <button
+          className={activeTab === tab.key ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === tab.key}
+          onClick={() => onChange(tab.key)}
+          key={tab.key}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function capitalizeMobileTab(tab: MobileAtmosphereTab) {
+  return tab.charAt(0).toUpperCase() + tab.slice(1);
 }
 
 function AtmosphereTeam({
@@ -1138,7 +1189,17 @@ function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | n
     "Yaratilan net firsat",
     "Net firsat"
   ]);
-  const dangerousAttacks = addStatisticPairs(bigChancesCreated, shotsOnTarget);
+  const directDangerousAttacks = readStatisticPair(rows, [
+    "Dangerous attacks",
+    "Dangerous attack",
+    "Danger attacks",
+    "Dangerous Attacks",
+    "Tehlikeli attacks",
+    "Tehlikeli atak",
+    "Tehlikeli hücum",
+    "Tehlikeli hucum"
+  ]);
+  const dangerousAttacks = directDangerousAttacks.found ? directDangerousAttacks : addStatisticPairs(bigChancesCreated, shotsOnTarget);
   const shotsOffTarget = readStatisticPair(rows, ["Shots off target", "Shots wide", "Missed shots"]);
   const blockedShots = readStatisticPair(rows, ["Blocked shots", "Shots blocked"]);
   const missedBlockedShots = addStatisticPairs(shotsOffTarget, blockedShots);
@@ -1148,18 +1209,20 @@ function buildLiveAtmosphereData(match: NormalizedMatch, detail: MatchDetail | n
   const goalPair = goalsFromMatchAndEvents(match, events);
   const pressureScores = {
     home:
-      possession.home * 0.38 +
-      corners.home * 3.4 +
-      attacks.home * 0.42 +
-      dangerousAttacks.home * 0.72 +
-      totalShots.home * 2.35 +
+      possession.home * 0.42 +
+      corners.home * 4.2 +
+      attacks.home * 0.54 +
+      dangerousAttacks.home * 1.38 +
+      totalShots.home * 2.85 +
+      shotsOnTarget.home * 2.2 +
       goalPair.home * 5,
     away:
-      possession.away * 0.38 +
-      corners.away * 3.4 +
-      attacks.away * 0.42 +
-      dangerousAttacks.away * 0.72 +
-      totalShots.away * 2.35 +
+      possession.away * 0.42 +
+      corners.away * 4.2 +
+      attacks.away * 0.54 +
+      dangerousAttacks.away * 1.38 +
+      totalShots.away * 2.85 +
+      shotsOnTarget.away * 2.2 +
       goalPair.away * 5
   };
   const hasData =
@@ -1442,20 +1505,24 @@ function buildPressureSeries(
   const homeShare = shareOfTotal(scores.home, scores.away);
   const awayShare = 1 - homeShare;
   const currentMinute = pressureCurrentMinute(match);
-  const homeAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.home, 1)) * 4.6, 13, 46) : 12;
-  const awayAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.away, 1)) * 4.6, 13, 46) : 12;
+  const homeDominance = clamp((homeShare - 0.5) * 2, 0, 1);
+  const awayDominance = clamp((awayShare - 0.5) * 2, 0, 1);
+  const homeAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.home, 1)) * 5.4 + homeDominance * 18, 18, 66) : 14;
+  const awayAmplitude = hasData ? clamp(Math.sqrt(Math.max(scores.away, 1)) * 5.4 + awayDominance * 18, 18, 66) : 14;
 
   return Array.from({ length: 90 }, (_, index) => {
     const minute = index + 1;
     const future = minute > currentMinute;
     const futureFactor = future ? 0.34 : 1;
-    const idle = hasData ? 0 : 11;
+    const idle = hasData ? 0 : 10;
     const homeWave = rhythmicPressure(minute, homeSeed, 0.34) * homeAmplitude;
     const awayWave = rhythmicPressure(minute, awaySeed, 0.41) * awayAmplitude;
     const homeEventBoost = eventPressureBoost(minute, events, "home");
     const awayEventBoost = eventPressureBoost(minute, events, "away");
-    const home = (idle + (hasData ? 8 + homeShare * 30 + homeWave + homeEventBoost : homeWave)) * futureFactor;
-    const away = (idle + (hasData ? 8 + awayShare * 30 + awayWave + awayEventBoost : awayWave)) * futureFactor;
+    const homeBase = hasData ? 7 + homeShare * 46 + homeDominance * 12 : homeWave;
+    const awayBase = hasData ? 7 + awayShare * 46 + awayDominance * 12 : awayWave;
+    const home = (idle + (hasData ? homeBase + homeWave + homeEventBoost : homeWave)) * futureFactor;
+    const away = (idle + (hasData ? awayBase + awayWave + awayEventBoost : awayWave)) * futureFactor;
 
     return {
       minute,

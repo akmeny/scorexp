@@ -33,7 +33,8 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
 const HIGHLIGHTS_REFRESH_SECONDS = 60;
-const SCOREBOARD_LIVE_REFRESH_SECONDS = 30;
+const SCOREBOARD_LIVE_REFRESH_SECONDS = 10;
+const LIVE_DETAIL_CLIENT_REFRESH_SECONDS = 30;
 const LIVE_DETAIL_PROVIDER_REFRESH_SECONDS = 120;
 const LIVE_EVENTS_REFRESH_SECONDS = 60;
 const LIVE_STATISTICS_REFRESH_SECONDS = 300;
@@ -640,7 +641,7 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: reason === "live" ? SCOREBOARD_LIVE_REFRESH_SECONDS : providerRefreshSeconds,
+      clientRefreshSeconds: reason === "live" ? LIVE_DETAIL_CLIENT_REFRESH_SECONDS : providerRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }

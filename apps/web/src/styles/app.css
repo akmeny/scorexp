@@ -3872,6 +3872,11 @@ button:disabled {
   margin: 18px auto 0;
 }
 
+.atmosphereMobileTabs,
+.atmosphereMobileTabPanel {
+  display: none;
+}
+
 .atmospherePressureCard,
 .atmosphereComparePulseCard {
   min-width: 0;
@@ -5370,6 +5375,86 @@ button:disabled {
     width: calc(100% - 20px);
     gap: 10px;
     margin-top: 10px;
+  }
+
+  .atmosphereMobileTabs {
+    width: calc(100% - 20px);
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin: 10px auto 0;
+    padding: 4px;
+    border: 1px solid rgba(75, 95, 104, 0.72);
+    border-radius: 8px;
+    background: rgba(8, 13, 16, 0.74);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  .atmosphereMobileTabs button {
+    min-width: 0;
+    min-height: 38px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #9dafb6;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .atmosphereMobileTabs button.active {
+    border-color: color-mix(in srgb, var(--home-accent) 18%, color-mix(in srgb, var(--away-accent) 18%, rgba(255, 255, 255, 0.16)));
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 12%, transparent), color-mix(in srgb, var(--away-accent) 12%, transparent)),
+      rgba(255, 255, 255, 0.06);
+    color: #eef7fa;
+  }
+
+  .atmosphereMobileTabPanel {
+    width: calc(100% - 20px);
+    display: grid;
+    margin: 10px auto 0;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileAixpTabActive .atmosphereMobileDataOnly {
+    display: none !important;
+  }
+
+  .atmosphereMobileChatPanel {
+    min-height: 0;
+  }
+
+  .atmosphereMobileChatPanel .matchChatRoom.embedded {
+    height: min(640px, calc(var(--scorexp-visual-viewport-height, 100dvh) - 224px));
+    min-height: 430px;
+    border-radius: 8px;
+  }
+
+  .atmosphereMobileChatPanel .chatComposerWrap {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .atmosphereMobileAixpPanel {
+    min-height: 160px;
+    place-items: center;
+    gap: 10px;
+    border: 1px solid #26343a;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(138, 145, 255, 0.12), transparent 58%),
+      #10171a;
+    color: #aebfc7;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .atmosphereMobileAixpPanel svg {
+    color: #8a91ff;
   }
 
   .atmospherePressureCard {
@@ -11621,6 +11706,32 @@ body.scorexpLightTheme,
   color: var(--sx-accent);
 }
 
+.scorexpLightTheme .atmosphereMobileTabs {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 26px rgba(28, 45, 59, 0.1);
+}
+
+.scorexpLightTheme .atmosphereMobileTabs button {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .atmosphereMobileTabs button.active {
+  border-color: color-mix(in srgb, var(--home-accent) 16%, color-mix(in srgb, var(--away-accent) 16%, var(--sx-line)));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), color-mix(in srgb, var(--away-accent) 10%, transparent)),
+    #ffffff;
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .atmosphereMobileAixpPanel {
+  border-color: var(--sx-line);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08), transparent 58%),
+    #ffffff;
+  color: var(--sx-muted);
+}
+
 .scorexpLightTheme .atmosphereLeagueTitle,
 .scorexpLightTheme .atmosphereScoreStage p,
 .scorexpLightTheme .atmosphereTeam span,
@@ -13171,14 +13282,15 @@ body.scorexpLightTheme,
 .atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
   position: relative;
   overflow: hidden;
-  border-color: rgba(248, 113, 113, 0.58);
 }
 
-.detailScoreHero.goalConfirmed,
-.atmosphereHero.goalConfirmed,
+.atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
+  border-color: rgba(248, 113, 113, 0.44);
+}
+
 .atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
   background:
-    linear-gradient(90deg, rgba(127, 29, 29, 0.5), rgba(69, 10, 10, 0.42)),
+    linear-gradient(90deg, rgba(127, 29, 29, 0.42), rgba(69, 10, 10, 0.36)),
     var(--sx-surface);
 }
 
@@ -13189,8 +13301,9 @@ body.scorexpLightTheme,
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 24%),
-    linear-gradient(90deg, rgba(239, 68, 68, 0.26), rgba(185, 28, 28, 0.52));
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18), transparent 24%),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.48), rgba(185, 28, 28, 0.72));
+  opacity: 0.9;
   transform: scaleX(1);
   transform-origin: left center;
 }
@@ -13206,40 +13319,6 @@ body.scorexpLightTheme,
   z-index: 1;
 }
 
-.detailTeamSummary.goalTeam span,
-.atmosphereTeam.goalTeam strong,
-.detailScoreHero.goalScored .detailScoreCenter,
-.detailScoreHero.goalScored .detailScoreCenter strong,
-.atmosphereHero.goalScored .atmosphereScoreline {
-  color: #fff7f8;
-  text-shadow: 0 0 18px rgba(248, 113, 113, 0.32);
-}
-
-.detailGoalBadge,
-.atmosphereGoalBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  justify-self: center;
-  min-width: 48px;
-  height: 24px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff7f8;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 950;
-  letter-spacing: 0;
-  box-shadow: 0 12px 26px rgba(127, 29, 29, 0.24);
-  animation: scorexpGoalBadge 1200ms ease-out both;
-}
-
-.atmosphereGoalBadge {
-  margin-top: 4px;
-}
-
 .scorexpLightTheme .matchRow.goalScored.goalPending,
 .scorexpLightTheme .matchRow.goalScored.goalPending:hover,
 .scorexpLightTheme .matchRow.goalScored.goalPending.selected {
@@ -13249,8 +13328,6 @@ body.scorexpLightTheme,
 .scorexpLightTheme .matchRow.goalScored.goalConfirmed,
 .scorexpLightTheme .matchRow.goalScored.goalConfirmed:hover,
 .scorexpLightTheme .matchRow.goalScored.goalConfirmed.selected,
-.scorexpLightTheme .detailScoreHero.goalConfirmed,
-.scorexpLightTheme .atmosphereHero.goalConfirmed,
 .scorexpLightTheme .atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
   border-color: rgba(225, 29, 72, 0.42);
   background:
@@ -13260,18 +13337,11 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .matchRow.goalScored .teamLine.goalTeam,
 .scorexpLightTheme .matchRow.goalScored .teamLine.goalTeam .teamNameCluster > span:first-child,
-.scorexpLightTheme .matchRow.goalScored .scoreBlock,
-.scorexpLightTheme .detailTeamSummary.goalTeam span,
-.scorexpLightTheme .atmosphereTeam.goalTeam strong,
-.scorexpLightTheme .detailScoreHero.goalScored .detailScoreCenter,
-.scorexpLightTheme .detailScoreHero.goalScored .detailScoreCenter strong,
-.scorexpLightTheme .atmosphereHero.goalScored .atmosphereScoreline {
+.scorexpLightTheme .matchRow.goalScored .scoreBlock {
   color: #7f1d1d;
 }
 
-.scorexpLightTheme .matchRow.goalScored .goalTag,
-.scorexpLightTheme .detailGoalBadge,
-.scorexpLightTheme .atmosphereGoalBadge {
+.scorexpLightTheme .matchRow.goalScored .goalTag {
   border-color: rgba(225, 29, 72, 0.2);
   background: rgba(225, 29, 72, 0.1);
   color: #9f1239;
@@ -13339,9 +13409,7 @@ body.scorexpLightTheme,
   .matchRow.goalScored.goalPending::before,
   .detailScoreHero.goalPending .detailGoalSweep,
   .atmosphereHero.goalPending .atmosphereGoalSweep,
-  .matchRow.goalScored .goalTag,
-  .detailGoalBadge,
-  .atmosphereGoalBadge {
+  .matchRow.goalScored .goalTag {
     animation: none;
   }
 
@@ -13917,10 +13985,7 @@ body.scorexpLightTheme,
 
 @media (max-width: 980px) {
   .atmosphereChatDock {
-    width: calc(100% - 20px);
-    min-width: 0;
-    margin: 10px auto 0;
-    padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 72px));
+    display: none;
   }
 
   .atmosphereChatDock .matchChatRoom.embedded {

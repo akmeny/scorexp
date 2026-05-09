@@ -73,8 +73,8 @@ describe("scoreboard service loading strategy", () => {
 
     expect(snapshot.counts.live).toBe(1);
     expect(snapshot.counts.all).toBe(1);
-    expect(snapshot.refreshPolicy.providerRefreshSeconds).toBe(30);
-    expect(snapshot.refreshPolicy.clientRefreshSeconds).toBe(30);
+    expect(snapshot.refreshPolicy.providerRefreshSeconds).toBe(10);
+    expect(snapshot.refreshPolicy.clientRefreshSeconds).toBe(10);
     expect(detailRequests).toBe(0);
   });
 });
