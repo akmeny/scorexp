@@ -4953,6 +4953,396 @@ button:disabled {
   color: #8fa2aa;
 }
 
+.atmosphereFullStandings {
+  display: grid;
+  gap: 12px;
+}
+
+.atmosphereFullStandingGroup {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.atmosphereStandingGroupTitle {
+  color: #9ca6ff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.atmosphereFullStandingScroll {
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.atmosphereFullStandingTable {
+  min-width: 660px;
+  display: grid;
+  gap: 6px;
+}
+
+.atmosphereFullStandingHead,
+.atmosphereFullStandingRow {
+  display: grid;
+  grid-template-columns: 12px 30px minmax(190px, 1fr) repeat(7, 36px) 42px;
+  align-items: center;
+  gap: 7px;
+}
+
+.atmosphereFullStandingHead {
+  min-height: 28px;
+  padding: 0 8px;
+  color: #8fa2aa;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.atmosphereFullStandingHead span:not(:nth-child(3)) {
+  text-align: right;
+}
+
+.atmosphereFullStandingRow {
+  min-height: 42px;
+  padding: 0 8px;
+  border: 1px solid #26343a;
+  border-radius: 7px;
+  background: #10171a;
+  color: #a9bbc2;
+  font-size: 11px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.atmosphereFullStandingRow.highlighted {
+  border-color: rgba(138, 145, 255, 0.52);
+  background: linear-gradient(90deg, rgba(124, 131, 255, 0.14), #10171a 46%);
+}
+
+.atmosphereFullStandingRow > span:not(.fullStandingTeam):not(.standingPulse),
+.atmosphereFullStandingRow b {
+  text-align: right;
+}
+
+.fullStandingTeam {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.fullStandingTeam strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereFullStandingRow b {
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.standingPulse {
+  width: 9px;
+  height: 9px;
+  display: inline-flex;
+  justify-self: center;
+  border-radius: 999px;
+  background: #33424a;
+}
+
+.standingPulse.champions,
+.standingPulseLegend .champions i {
+  background: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.13), 0 0 18px rgba(56, 189, 248, 0.44);
+}
+
+.standingPulse.europa,
+.standingPulseLegend .europa i {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.13), 0 0 18px rgba(34, 197, 94, 0.4);
+}
+
+.standingPulse.conference,
+.standingPulseLegend .conference i {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14), 0 0 18px rgba(245, 158, 11, 0.4);
+}
+
+.standingPulse.relegation,
+.standingPulseLegend .relegation i {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.14), 0 0 18px rgba(239, 68, 68, 0.46);
+}
+
+.standingPulse:not(.neutral) {
+  animation: standingPulseGlow 1.7s ease-in-out infinite;
+}
+
+.standingPulseLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.standingPulseLegend span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid #26343a;
+  border-radius: 999px;
+  background: #10171a;
+  color: #aebfc6;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.standingPulseLegend i {
+  width: 8px;
+  height: 8px;
+  display: inline-flex;
+  border-radius: 999px;
+}
+
+.atmosphereLineupsView {
+  display: grid;
+  gap: 12px;
+}
+
+.atmosphereLineupCard {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.atmosphereLineupHeader {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.atmosphereLineupHeader div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.atmosphereLineupHeader strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 13px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereLineupHeader span {
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.atmospherePitchGraphic {
+  position: relative;
+  min-height: 330px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 131, 255, 0.24);
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(138, 145, 255, 0.14), transparent 28%),
+    linear-gradient(160deg, #0f3f2f, #0b2f26 48%, #0f3d31);
+  background-size: 36px 36px, 36px 36px, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.055);
+}
+
+.atmospherePitchGraphic::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(223, 244, 232, 0.42);
+}
+
+.atmospherePitchBox {
+  position: absolute;
+  left: 50%;
+  width: 46%;
+  height: 58px;
+  border: 1px solid rgba(223, 244, 232, 0.44);
+  transform: translateX(-50%);
+}
+
+.atmospherePitchBox.top {
+  top: -1px;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.atmospherePitchBox.bottom {
+  bottom: -1px;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+.atmospherePitchCircle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 74px;
+  height: 74px;
+  border: 1px solid rgba(223, 244, 232, 0.38);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.atmospherePitchRows {
+  position: relative;
+  z-index: 1;
+  min-height: 330px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  padding: 18px 10px;
+}
+
+.atmospherePitchRow {
+  display: grid;
+  grid-template-columns: repeat(var(--lineup-count), minmax(0, 1fr));
+  gap: 7px;
+  align-items: start;
+}
+
+.atmospherePitchPlayer {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  color: #eafaf1;
+  text-align: center;
+}
+
+.atmospherePitchPlayer i {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(237, 244, 246, 0.36);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.28), transparent 32%),
+    #111827;
+  color: #f8fafc;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.atmosphereLineupCard.home .atmospherePitchPlayer i {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.28), transparent 32%),
+    var(--sx-data-home);
+  color: #061118;
+}
+
+.atmosphereLineupCard.away .atmospherePitchPlayer i {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.28), transparent 32%),
+    var(--sx-data-away);
+  color: #160b04;
+}
+
+.atmospherePitchPlayer strong {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 76px;
+  color: #f4fbf7;
+  font-size: 9.5px;
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.atmospherePitchEmpty {
+  position: relative;
+  z-index: 1;
+  min-height: 330px;
+  display: grid;
+  place-items: center;
+  color: rgba(237, 244, 246, 0.78);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.atmosphereLineupBench {
+  display: grid;
+  gap: 7px;
+}
+
+.atmosphereLineupBench > span {
+  color: #9ca6ff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.atmosphereLineupBench > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.atmosphereLineupBench span span,
+.atmosphereLineupBench > div > span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid #26343a;
+  border-radius: 999px;
+  background: #10171a;
+  color: #cfe0e6;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.atmosphereLineupBench b {
+  color: #edf7fa;
+  font-weight: 950;
+}
+
+@keyframes standingPulseGlow {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
 .atmospherePlayerRow {
   min-width: 0;
   min-height: 58px;
@@ -5380,20 +5770,28 @@ button:disabled {
   .atmosphereMobileTabs {
     width: calc(100% - 20px);
     min-height: 46px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    align-items: center;
     gap: 4px;
     margin: 10px auto 0;
     padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
     border: 1px solid rgba(75, 95, 104, 0.72);
     border-radius: 8px;
     background: rgba(8, 13, 16, 0.74);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   }
 
+  .atmosphereMobileTabs::-webkit-scrollbar {
+    display: none;
+  }
+
   .atmosphereMobileTabs button {
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: 72px;
     min-height: 38px;
+    padding: 0 12px;
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
@@ -5417,7 +5815,15 @@ button:disabled {
   }
 
   .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileH2hTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileFormTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileStandingsTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileLineupsTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileAixpTabActive .atmosphereMobileDataOnly {
+    display: none !important;
+  }
+
+  .atmosphereDesktopOnly {
     display: none !important;
   }
 
@@ -5439,22 +5845,34 @@ button:disabled {
   }
 
   .atmosphereMobileAixpPanel {
-    min-height: 160px;
-    place-items: center;
+    min-height: 0;
+    align-content: start;
     gap: 10px;
-    border: 1px solid #26343a;
-    border-radius: 8px;
-    background:
-      radial-gradient(circle at 50% 0%, rgba(138, 145, 255, 0.12), transparent 58%),
-      #10171a;
-    color: #aebfc7;
-    font-size: 12px;
-    font-weight: 900;
-    text-align: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    text-align: left;
   }
 
   .atmosphereMobileAixpPanel svg {
     color: #8a91ff;
+  }
+
+  .atmosphereMobileContentPanel {
+    gap: 10px;
+    align-content: start;
+  }
+
+  .atmosphereMobileTabPanel .atmospherePanel {
+    width: 100%;
+    margin: 0;
+  }
+
+  .atmosphereMobileTabPanel .atmosphereAiPanel {
+    min-height: 0;
   }
 
   .atmospherePressureCard {
@@ -11881,11 +12299,8 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereMobileAixpPanel {
-  border-color: var(--sx-line);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08), transparent 58%),
-    #ffffff;
-  color: var(--sx-muted);
+  background: transparent;
+  color: var(--sx-text);
 }
 
 .scorexpLightTheme .atmosphereLeagueTitle,
@@ -11898,6 +12313,9 @@ body.scorexpLightTheme,
 .scorexpLightTheme .atmosphereFormChips em,
 .scorexpLightTheme .atmosphereMiniRow,
 .scorexpLightTheme .atmosphereStandingRow,
+.scorexpLightTheme .atmosphereFullStandingRow,
+.scorexpLightTheme .standingPulseLegend span,
+.scorexpLightTheme .atmosphereLineupBench > div > span,
 .scorexpLightTheme .atmospherePlayerRow span,
 .scorexpLightTheme .atmosphereTimelineCard p,
 .scorexpLightTheme .atmosphereTimelineCard em,
@@ -11915,7 +12333,20 @@ body.scorexpLightTheme,
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .atmosphereFullStandingRow,
+.scorexpLightTheme .standingPulseLegend span,
+.scorexpLightTheme .atmosphereLineupBench > div > span {
+  border-color: var(--sx-line);
+  background: #ffffff;
+}
+
+.scorexpLightTheme .atmosphereFullStandingRow.highlighted {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.1), #ffffff 48%);
+}
+
 .scorexpLightTheme .atmosphereMiniRow b,
+.scorexpLightTheme .atmosphereFullStandingRow b,
 .scorexpLightTheme .atmosphereInsightHeader strong,
 .scorexpLightTheme .atmosphereInsightLegend b,
 .scorexpLightTheme .atmosphereHeroPredictionLabels strong {
@@ -11975,6 +12406,9 @@ body.scorexpLightTheme,
 .scorexpLightTheme .atmospherePlayerTeam,
 .scorexpLightTheme .atmosphereMiniRow strong,
 .scorexpLightTheme .atmosphereStandingRow strong,
+.scorexpLightTheme .fullStandingTeam strong,
+.scorexpLightTheme .atmosphereLineupHeader strong,
+.scorexpLightTheme .atmosphereLineupBench b,
 .scorexpLightTheme .atmospherePlayerRow strong,
 .scorexpLightTheme .atmosphereTimelineCard strong {
   color: var(--sx-text);
@@ -13571,6 +14005,7 @@ body.scorexpLightTheme,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .standingPulse:not(.neutral),
   .matchRow.goalScored.goalPending::before,
   .detailScoreHero.goalPending .detailGoalSweep,
   .atmosphereHero.goalPending .atmosphereGoalSweep,

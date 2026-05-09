@@ -73,6 +73,13 @@ const statisticPriority = [
   "Red cards"
 ];
 
+const standingPulseLabels: { kind: StandingPulseKind; label: string }[] = [
+  { kind: "champions", label: "Şampiyonlar Ligi" },
+  { kind: "europa", label: "UEFA Avrupa" },
+  { kind: "conference", label: "UEFA Konferans" },
+  { kind: "relegation", label: "Düşme hattı" }
+];
+
 const eventLabels: Record<string, string> = {
   Goal: "Gol",
   "Own Goal": "Kendi kalesine",
@@ -89,9 +96,12 @@ const eventLabels: Record<string, string> = {
 };
 
 type AtmosphereTab = "overview" | "chat";
-type MobileAtmosphereTab = "data" | "chat" | "aixp";
+type MobileAtmosphereTab = "data" | "chat" | "h2h" | "form" | "standings" | "lineups" | "aixp";
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
+type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
+type AtmosphereLineupTeam = NonNullable<MatchDetail["lineups"]>["home"];
+type AtmosphereLineupPlayer = NonNullable<AtmosphereLineupTeam>["initialLineup"][number][number];
 
 interface InsightSegment {
   key: "home" | "draw" | "away";
@@ -469,17 +479,99 @@ export function MatchAtmosphereOverlay({
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
+            <MobileAtmosphereTabs activeTab={mobileTab} onChange={setMobileTab} />
+            {mobileTab === "chat" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly" aria-label="Sohbet">
+                <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
+              </section>
+            ) : null}
+            {mobileTab === "h2h" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="H2H">
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<Shield size={17} />} label="Mukayese Momentumu" />
+                  <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
+                  <RecentHeadToHead matches={h2hMatches} focusTeamId={activeMatch.homeTeam.id} />
+                </section>
+              </section>
+            ) : null}
+            {mobileTab === "form" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Form">
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<Activity size={17} />} label="Son 5 Maç Gol Formu" />
+                  <FormGoalsGraph
+                    homeTeam={activeMatch.homeTeam}
+                    awayTeam={activeMatch.awayTeam}
+                    homeMatches={detail?.form?.home ?? []}
+                    awayMatches={detail?.form?.away ?? []}
+                  />
+                </section>
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<Gauge size={17} />} label="Normal Form Durumu" />
+                  <div className="atmosphereFormGrid">
+                    <FormColumn team={activeMatch.homeTeam} matches={detail?.form?.home ?? []} />
+                    <FormColumn team={activeMatch.awayTeam} matches={detail?.form?.away ?? []} />
+                  </div>
+                </section>
+              </section>
+            ) : null}
+            {mobileTab === "standings" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Puan">
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
+                  <FullStandingTable
+                    standings={detail?.standings ?? null}
+                    homeTeamId={activeMatch.homeTeam.id}
+                    awayTeamId={activeMatch.awayTeam.id}
+                  />
+                </section>
+              </section>
+            ) : null}
+            {mobileTab === "lineups" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Diziliş">
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<UsersRound size={17} />} label="Saha Dizilişi" />
+                  <AtmosphereLineupsView match={activeMatch} lineups={detail?.lineups ?? null} />
+                </section>
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
+                  <div className="atmospherePlayerGrid">
+                    <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
+                    <PlayerColumn team={activeMatch.awayTeam} players={detail?.topPlayers.away ?? []} />
+                  </div>
+                </section>
+              </section>
+            ) : null}
+            {mobileTab === "aixp" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="AIXP">
+                <section className="atmospherePanel atmosphereAiPanel">
+                  <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
+                  <strong>{aiSummary.title}</strong>
+                  <p>{aiSummary.summary}</p>
+                  {predictionRows.length > 0 ? (
+                    <div className="atmosphereProbabilityBars">
+                      {predictionRows.map((item) => (
+                        <div className={item.key} key={item.label}>
+                          <span>{item.label}</span>
+                          <strong>{item.value}</strong>
+                          <i style={{ width: item.value }} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<Sparkles size={17} />} label="Karar Sinyalleri" />
+                  <div className="atmosphereInsightList">
+                    {insightRows.map((item) => (
+                      <InsightCard item={item} key={item.label} />
+                    ))}
+                  </div>
+                </section>
+              </section>
+            ) : null}
             {shouldShowLiveAtmosphere ? (
               <>
-                <MobileAtmosphereTabs activeTab={mobileTab} onChange={setMobileTab} />
-                {mobileTab === "chat" ? (
-                  <section className="atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly" aria-label="Sohbet">
-                    <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
-                  </section>
-                ) : null}
-                {mobileTab === "aixp" ? (
-                  <section className="atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereOverviewOnly" aria-label="AIXP" />
-                ) : null}
                 <div className="atmosphereLiveStack atmosphereOverviewOnly atmosphereMobileDataOnly">
                   <PressureMeterCard match={activeMatch} data={liveAtmosphere} />
                   <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
@@ -487,7 +579,7 @@ export function MatchAtmosphereOverlay({
               </>
             ) : null}
 
-            <section className="atmosphereGrid atmosphereOverviewOnly atmosphereMobileDataOnly">
+            <section className="atmosphereGrid atmosphereOverviewOnly atmosphereDesktopOnly">
               <section className="atmospherePanel atmosphereAiPanel" id="atmosphere-ai">
                 <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
                 <strong>{aiSummary.title}</strong>
@@ -520,7 +612,7 @@ export function MatchAtmosphereOverlay({
               <StatisticCompare match={activeMatch} rows={statisticRows} />
             </section>
 
-            <section className="atmosphereTwinGrid atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-history">
+            <section className="atmosphereTwinGrid atmosphereOverviewOnly atmosphereDesktopOnly" id="atmosphere-history">
               <section className="atmospherePanel">
                 <PanelTitle icon={<Shield size={17} />} label="Mukayese ve Form" />
                 <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
@@ -547,7 +639,7 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-players">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereDesktopOnly" id="atmosphere-players">
               <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
               <div className="atmospherePlayerGrid">
                 <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
@@ -607,6 +699,10 @@ function MobileAtmosphereTabs({
   const tabs: { key: MobileAtmosphereTab; label: string }[] = [
     { key: "data", label: "Veriler" },
     { key: "chat", label: "Sohbet" },
+    { key: "h2h", label: "H2H" },
+    { key: "form", label: "Form" },
+    { key: "standings", label: "Puan" },
+    { key: "lineups", label: "Diziliş" },
     { key: "aixp", label: "AIXP" }
   ];
 
@@ -1123,6 +1219,160 @@ function StandingSnapshot({
         </div>
       ))}
     </div>
+  );
+}
+
+function FullStandingTable({
+  standings,
+  homeTeamId,
+  awayTeamId
+}: {
+  standings: MatchDetail["standings"];
+  homeTeamId: string;
+  awayTeamId: string;
+}) {
+  const groups = standings?.groups.filter((group) => group.rows.length > 0) ?? [];
+  if (groups.length === 0) return <EmptyAtmosphereState label="Puan verisi bekleniyor" />;
+
+  return (
+    <div className="atmosphereFullStandings">
+      {groups.map((group) => (
+        <section className="atmosphereFullStandingGroup" key={group.name}>
+          {groups.length > 1 ? <strong className="atmosphereStandingGroupTitle">{group.name}</strong> : null}
+          <div className="atmosphereFullStandingScroll">
+            <div className="atmosphereFullStandingTable">
+              <div className="atmosphereFullStandingHead">
+                <span />
+                <span>#</span>
+                <span>Takım</span>
+                <span>O</span>
+                <span>G</span>
+                <span>B</span>
+                <span>M</span>
+                <span>AG</span>
+                <span>YG</span>
+                <span>AV</span>
+                <span>P</span>
+              </div>
+              {group.rows
+                .slice()
+                .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
+                .map((row) => {
+                  const pulse = standingPulseForPosition(row.position, group.rows.length);
+                  const highlighted = row.team.id === homeTeamId || row.team.id === awayTeamId;
+
+                  return (
+                    <div className={`atmosphereFullStandingRow ${pulse ?? "neutral"} ${highlighted ? "highlighted" : ""}`} key={`${group.name}:${row.team.id}`}>
+                      <span className={`standingPulse ${pulse ?? "neutral"}`} aria-hidden="true" />
+                      <span>{row.position ?? "-"}</span>
+                      <span className="fullStandingTeam">
+                        <TeamLogo src={row.team.logo} label={row.team.name} size="sm" />
+                        <strong title={row.team.name}>{row.team.name}</strong>
+                      </span>
+                      <span>{row.total.games}</span>
+                      <span>{row.total.wins}</span>
+                      <span>{row.total.draws}</span>
+                      <span>{row.total.loses}</span>
+                      <span>{row.total.scoredGoals}</span>
+                      <span>{row.total.receivedGoals}</span>
+                      <span>{formatGoalDifference(row)}</span>
+                      <b>{row.points ?? "-"}</b>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </section>
+      ))}
+      <div className="standingPulseLegend" aria-label="Puan tablosu renk açıklamaları">
+        {standingPulseLabels.map((item) => (
+          <span className={item.kind} key={item.kind}>
+            <i aria-hidden="true" />
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AtmosphereLineupsView({ match, lineups }: { match: NormalizedMatch; lineups: MatchDetail["lineups"] }) {
+  const hasLineup = Boolean(lineups?.home || lineups?.away);
+  if (!hasLineup) return <EmptyAtmosphereState label="Diziliş verisi bekleniyor" />;
+
+  return (
+    <div className="atmosphereLineupsView">
+      <LineupPitchCard fallbackTeam={match.homeTeam} lineup={lineups?.home ?? null} side="home" />
+      <LineupPitchCard fallbackTeam={match.awayTeam} lineup={lineups?.away ?? null} side="away" />
+    </div>
+  );
+}
+
+function LineupPitchCard({
+  fallbackTeam,
+  lineup,
+  side
+}: {
+  fallbackTeam: Team;
+  lineup: AtmosphereLineupTeam;
+  side: "home" | "away";
+}) {
+  const team = lineup?.team ?? fallbackTeam;
+  const rows = lineup?.initialLineup.filter((row) => row.length > 0) ?? [];
+  const substitutes = lineup?.substitutes ?? [];
+
+  return (
+    <section className={`atmosphereLineupCard ${side}`}>
+      <div className="atmosphereLineupHeader">
+        <TeamLogo src={team.logo} label={team.name} size="sm" />
+        <div>
+          <strong title={team.name}>{team.name}</strong>
+          <span>{lineup?.formation ?? "Diziliş bekleniyor"}</span>
+        </div>
+      </div>
+
+      <div className="atmospherePitchGraphic">
+        <span className="atmospherePitchBox top" aria-hidden="true" />
+        <span className="atmospherePitchBox bottom" aria-hidden="true" />
+        <span className="atmospherePitchCircle" aria-hidden="true" />
+        {rows.length > 0 ? (
+          <div className="atmospherePitchRows">
+            {rows.map((row, rowIndex) => (
+              <div className="atmospherePitchRow" style={{ "--lineup-count": row.length } as CSSProperties} key={`${team.id}:line:${rowIndex}`}>
+                {row.map((player, playerIndex) => (
+                  <PitchPlayer player={player} key={`${player.id ?? player.name}:${rowIndex}:${playerIndex}`} />
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="atmospherePitchEmpty">Saha dizilişi bekleniyor</div>
+        )}
+      </div>
+
+      {substitutes.length > 0 ? (
+        <div className="atmosphereLineupBench">
+          <span>Yedekler</span>
+          <div>
+            {substitutes.slice(0, 8).map((player, index) => (
+              <span title={player.position ?? player.name} key={`${player.id ?? player.name}:bench:${index}`}>
+                {player.number !== null ? <b>{player.number}</b> : null}
+                {player.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function PitchPlayer({ player }: { player: AtmosphereLineupPlayer }) {
+  return (
+    <span className="atmospherePitchPlayer" title={player.position ?? player.name}>
+      <i>{player.number ?? ""}</i>
+      <strong>{player.name}</strong>
+    </span>
   );
 }
 
@@ -1845,6 +2095,19 @@ function buildStandingWindow(standings: MatchDetail["standings"], homeTeamId: st
     .filter((index) => index >= 0 && index < orderedRows.length)
     .sort((a, b) => a - b)
     .map((index) => orderedRows[index]);
+}
+
+function standingPulseForPosition(position: number | null, rowCount: number): StandingPulseKind | null {
+  if (!position || rowCount < 4) return null;
+
+  const relegationCount = rowCount >= 18 ? 3 : rowCount >= 12 ? 2 : 1;
+  const championsCount = rowCount >= 18 ? 4 : rowCount >= 12 ? 3 : 2;
+  if (position > rowCount - relegationCount) return "relegation";
+  if (position <= championsCount) return "champions";
+  if (position === championsCount + 1) return "europa";
+  if (position === championsCount + 2) return "conference";
+
+  return null;
 }
 
 function formatGoalDifference(row: MatchDetailStandingRow) {
