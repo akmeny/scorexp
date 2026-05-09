@@ -96,7 +96,7 @@ const eventLabels: Record<string, string> = {
 };
 
 type AtmosphereTab = "overview" | "chat";
-type MobileAtmosphereTab = "data" | "chat" | "h2h" | "form" | "standings" | "lineups" | "aixp";
+type MobileAtmosphereTab = "data" | "chat" | "stats" | "h2h" | "form" | "standings" | "lineups" | "aixp";
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
@@ -485,6 +485,14 @@ export function MatchAtmosphereOverlay({
                 <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
               </section>
             ) : null}
+            {mobileTab === "stats" ? (
+              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="İstatistik">
+                <section className="atmospherePanel">
+                  <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
+                  <StatisticCompare match={activeMatch} rows={statisticRows} />
+                </section>
+              </section>
+            ) : null}
             {mobileTab === "h2h" ? (
               <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="H2H">
                 <section className="atmospherePanel">
@@ -607,7 +615,7 @@ export function MatchAtmosphereOverlay({
               </section>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly" id="atmosphere-data">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereDesktopOnly" id="atmosphere-data">
               <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
               <StatisticCompare match={activeMatch} rows={statisticRows} />
             </section>
@@ -699,6 +707,7 @@ function MobileAtmosphereTabs({
   const tabs: { key: MobileAtmosphereTab; label: string }[] = [
     { key: "data", label: "Veriler" },
     { key: "chat", label: "Sohbet" },
+    { key: "stats", label: "İstatistik" },
     { key: "h2h", label: "H2H" },
     { key: "form", label: "Form" },
     { key: "standings", label: "Puan" },

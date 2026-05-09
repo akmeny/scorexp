@@ -5769,35 +5769,31 @@ button:disabled {
 
   .atmosphereMobileTabs {
     width: calc(100% - 20px);
-    min-height: 46px;
-    display: flex;
-    align-items: center;
+    min-height: 84px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
     margin: 10px auto 0;
     padding: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
     border: 1px solid rgba(75, 95, 104, 0.72);
     border-radius: 8px;
     background: rgba(8, 13, 16, 0.74);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   }
 
-  .atmosphereMobileTabs::-webkit-scrollbar {
-    display: none;
-  }
-
   .atmosphereMobileTabs button {
-    flex: 0 0 auto;
-    min-width: 72px;
-    min-height: 38px;
-    padding: 0 12px;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 4px;
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
     color: #9dafb6;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 950;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .atmosphereMobileTabs button.active {
@@ -5815,6 +5811,7 @@ button:disabled {
   }
 
   .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileDataOnly,
+  .matchAtmosphereShell.mobileStatsTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileH2hTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileFormTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileStandingsTabActive .atmosphereMobileDataOnly,
@@ -11529,7 +11526,7 @@ body,
   }
 
   body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHero {
-    min-height: 132px;
+    min-height: 176px;
     border-bottom: 0;
   }
 
@@ -11539,7 +11536,8 @@ body,
   }
 
   body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHeroPrediction {
-    display: none;
+    display: grid;
+    margin-bottom: 0;
   }
 
   body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs {
@@ -13058,6 +13056,11 @@ body.scorexpLightTheme,
 }
 
 @media (max-width: 380px) {
+  .atmosphereMobileTabs button {
+    font-size: 9px;
+    padding-inline: 2px;
+  }
+
   .atmosphereHero {
     grid-template-columns: minmax(0, 1fr) minmax(78px, 96px) minmax(0, 1fr);
     margin: 8px;

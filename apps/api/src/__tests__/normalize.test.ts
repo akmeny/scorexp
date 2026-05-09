@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyStatus, normalizeMatch, parseScore } from "../domain/normalize.js";
+import { classifyStatus, normalizeMatch, normalizeMatchDetail, parseScore } from "../domain/normalize.js";
 
 describe("football normalization", () => {
   it("classifies provider statuses into stable groups", () => {
@@ -31,5 +31,47 @@ describe("football normalization", () => {
     expect(match.status.group).toBe("live");
     expect(match.score.home).toBe(1);
     expect(match.localTime).toBe("23:45");
+  });
+
+  it("normalizes lineup payloads and ignores unknown-only placeholders", () => {
+    const detail = normalizeMatchDetail(
+      {
+        id: 1173801253,
+        date: "2026-05-09T14:00:00.000Z",
+        country: { code: "GB", name: "England", logo: null },
+        homeTeam: { id: 44185, name: "Brighton", logo: null },
+        awayTeam: { id: 33973, name: "Wolves", logo: null },
+        league: { id: 1, name: "Premier League", season: 2026 },
+        state: { description: "Second half", clock: 56, score: { current: "2 - 0", penalties: null } }
+      },
+      "Europe/Istanbul",
+      "2026-05-09T15:00:00.000Z",
+      "2026-05-09T15:02:00.000Z",
+      {
+        reason: "live",
+        providerRefreshSeconds: 120,
+        clientRefreshSeconds: 30,
+        nextProviderRefreshAt: "2026-05-09T15:02:00.000Z"
+      },
+      {
+        lineups: {
+          homeTeam: {
+            formation: "4-2-3-1",
+            initialLineup: [[{ id: 1, name: "Bart Verbruggen", number: 1, position: "Goalkeeper" }]],
+            substitutes: [{ id: 2, name: "Jason Steele", number: 23, position: "Goalkeeper" }]
+          },
+          awayTeam: {
+            formation: "Unknown",
+            initialLineup: [],
+            substitutes: []
+          }
+        }
+      }
+    );
+
+    expect(detail.lineups?.home?.formation).toBe("4-2-3-1");
+    expect(detail.lineups?.home?.initialLineup[0]?.[0]?.name).toBe("Bart Verbruggen");
+    expect(detail.lineups?.home?.substitutes[0]?.name).toBe("Jason Steele");
+    expect(detail.lineups?.away).toBeNull();
   });
 });

@@ -736,11 +736,12 @@ function normalizeLineupTeam(raw: ProviderLineupsResponse["homeTeam"], fallbackT
     ? raw.substitutes.map(normalizeLineupPlayer).filter((player) => player.name)
     : [];
 
-  if (initialLineup.length === 0 && substitutes.length === 0 && !cleanString(raw.formation)) return null;
+  const formation = normalizeLineupFormation(raw.formation);
+  if (initialLineup.length === 0 && substitutes.length === 0 && !formation) return null;
 
   return {
     team: normalizeTeam(raw, fallbackTeam.name),
-    formation: cleanString(raw.formation),
+    formation,
     initialLineup,
     substitutes
   };
@@ -753,6 +754,12 @@ function normalizeLineupPlayer(player: ProviderLineupPlayer) {
     number: normalizeNumber(player.number),
     position: cleanString(player.position)
   };
+}
+
+function normalizeLineupFormation(value: string | number | null | undefined) {
+  const formation = cleanString(value);
+  if (!formation) return null;
+  return /^(unknown|n\/a|na|none|null|-|—)$/i.test(formation) ? null : formation;
 }
 
 function normalizeStandingRecord(record: ProviderStandingRecord | null | undefined) {

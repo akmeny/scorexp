@@ -685,7 +685,7 @@ function emptyFeedDisabledKey(kind: "events" | "statistics", matchId: string) {
 }
 
 function lineupsKey(matchId: string) {
-  return `football:lineups:v1:${matchId}`;
+  return `football:lineups:v2:${matchId}`;
 }
 
 function lineupAttemptKey(matchId: string, bucket: "30m" | "15m") {
@@ -733,10 +733,16 @@ function hasLineupData(lineups: ProviderLineupsResponse | null | undefined) {
 function hasLineupTeamData(team: ProviderLineupsResponse["homeTeam"]) {
   return Boolean(
     team &&
-      (team.formation ||
+      (hasMeaningfulLineupFormation(team.formation) ||
         (Array.isArray(team.initialLineup) && team.initialLineup.some((row) => Array.isArray(row) && row.length > 0)) ||
         (Array.isArray(team.substitutes) && team.substitutes.length > 0))
   );
+}
+
+function hasMeaningfulLineupFormation(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return false;
+  const formation = String(value).trim();
+  return Boolean(formation && !/^(unknown|n\/a|na|none|null|-|—)$/i.test(formation));
 }
 
 function teamId(value: number | string | null | undefined) {
