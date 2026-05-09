@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AiPredictionModal } from "./components/AiPredictionModal";
+import { FirstLaunchOnboarding } from "./components/FirstLaunchOnboarding";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { LeagueCard } from "./components/LeagueCard";
 import { MatchHighlightsFeed } from "./components/MatchHighlightsFeed";
@@ -916,6 +917,7 @@ export default function App() {
       ) : null}
 
       <InstallPrompt />
+      <FirstLaunchOnboarding />
 
       {showScrollTop ? (
         <button className="scrollTopButton" type="button" onClick={scrollToTop} aria-label="En üste git">

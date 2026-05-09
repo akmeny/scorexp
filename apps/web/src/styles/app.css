@@ -6186,9 +6186,901 @@ button:disabled {
   white-space: nowrap;
 }
 
+.firstLaunchOnboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--tour-accent, #38bdf8) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--tour-accent-2, #fb923c) 16%, transparent), transparent 34%),
+    rgba(5, 8, 10, 0.76);
+  color: #edf7fa;
+  backdrop-filter: blur(18px);
+}
+
+.onboardingBackdropFx {
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(115deg, transparent 0 20%, rgba(255, 255, 255, 0.055) 21% 22%, transparent 23% 48%, rgba(255, 255, 255, 0.035) 49% 50%, transparent 51%),
+    radial-gradient(circle at 50% 50%, rgba(138, 145, 255, 0.12), transparent 46%);
+  opacity: 0.84;
+  animation: onboardingBackdropDrift 8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.onboardingPanel {
+  --tour-accent: #38bdf8;
+  --tour-accent-2: #fb923c;
+  position: relative;
+  width: min(920px, calc(100vw - 32px));
+  min-height: min(620px, calc(100dvh - 36px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.88fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 22px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tour-accent) 22%, color-mix(in srgb, var(--tour-accent-2) 18%, rgba(255, 255, 255, 0.14)));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--tour-accent) 18%, transparent), transparent 38%),
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--tour-accent-2) 16%, transparent), transparent 38%),
+    linear-gradient(135deg, rgba(16, 23, 26, 0.98), rgba(8, 13, 15, 0.98));
+  box-shadow:
+    0 34px 92px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: onboardingPanelIn 220ms ease-out;
+}
+
+.onboardingPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--tour-accent), transparent 28%, rgba(255, 255, 255, 0.36) 50%, transparent 72%, var(--tour-accent-2));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.onboardingClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(180, 202, 211, 0.18);
+  border-radius: 9px;
+  background: rgba(8, 13, 15, 0.62);
+  color: #dbe8ec;
+}
+
+.onboardingClose:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.onboardingProgress {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  padding-right: 42px;
+}
+
+.onboardingProgress button {
+  height: 5px;
+  min-width: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(180, 202, 211, 0.18);
+}
+
+.onboardingProgress button.complete {
+  background: color-mix(in srgb, var(--tour-accent) 70%, rgba(255, 255, 255, 0.2));
+}
+
+.onboardingProgress button.active {
+  background: linear-gradient(90deg, var(--tour-accent), var(--tour-accent-2));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tour-accent) 34%, transparent);
+}
+
+.onboardingCopy {
+  min-width: 0;
+  align-self: center;
+  display: grid;
+  gap: 14px;
+  padding: clamp(8px, 2vw, 22px) 0 clamp(8px, 2vw, 22px) clamp(2px, 1vw, 12px);
+}
+
+.onboardingEyebrow {
+  width: max-content;
+  max-width: 100%;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--tour-accent) 32%, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tour-accent) 13%, rgba(255, 255, 255, 0.045));
+  color: color-mix(in srgb, var(--tour-accent) 38%, #edf7fa);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.onboardingCopy h2 {
+  max-width: 540px;
+  margin: 0;
+  color: #f7fcfd;
+  font-size: clamp(30px, 5vw, 54px);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.onboardingCopy p {
+  max-width: 560px;
+  margin: 0;
+  color: #b9c9cf;
+  font-size: clamp(14px, 1.5vw, 17px);
+  font-weight: 620;
+  line-height: 1.62;
+}
+
+.onboardingPointGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.onboardingPointGrid span {
+  min-width: 0;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(180, 202, 211, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #e5f0f3;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.onboardingPointGrid svg {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--tour-accent) 64%, #e5f0f3);
+}
+
+.onboardingVisual {
+  position: relative;
+  min-width: 0;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid rgba(180, 202, 211, 0.13);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--tour-accent) 20%, transparent), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+}
+
+.onboardingVisual::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border: 1px solid color-mix(in srgb, var(--tour-accent) 28%, transparent);
+  border-radius: 50%;
+  animation: onboardingRing 4.4s linear infinite;
+}
+
+.onboardingVisual::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%);
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.onboardingDevice,
+.onboardingAiCore,
+.onboardingPressureCard,
+.onboardingChatPhone,
+.onboardingPersonalGrid {
+  position: relative;
+  z-index: 1;
+}
+
+.onboardingDevice {
+  width: min(280px, 82%);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(8, 13, 15, 0.72);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.34);
+  animation: onboardingFloat 3.6s ease-in-out infinite;
+}
+
+.onboardingDeviceTop,
+.onboardingMatchPreview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.onboardingDeviceTop span {
+  width: 48px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.onboardingDeviceTop em {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #ff5360;
+  color: #ffffff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.onboardingMatchPreview {
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid rgba(180, 202, 211, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #dce8ec;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.onboardingMatchPreview strong {
+  color: #f8fcfd;
+  font-size: 18px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.onboardingMatchPreview span:last-child {
+  text-align: right;
+}
+
+.onboardingMatchPreview.hot {
+  border-color: color-mix(in srgb, var(--tour-accent) 32%, rgba(255, 255, 255, 0.12));
+  box-shadow: inset 3px 0 0 var(--tour-accent);
+}
+
+.onboardingPulseRail {
+  height: 42px;
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.onboardingPulseRail i {
+  flex: 1;
+  min-width: 3px;
+  height: 34%;
+  border-radius: 999px 999px 2px 2px;
+  background: linear-gradient(180deg, var(--tour-accent), var(--tour-accent-2));
+  animation: onboardingBars 1.2s ease-in-out infinite alternate;
+}
+
+.onboardingAiCore {
+  width: 176px;
+  height: 176px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--tour-accent) 38%, rgba(255, 255, 255, 0.14));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--tour-accent) 18%, rgba(255, 255, 255, 0.08)), rgba(8, 13, 15, 0.88) 64%),
+    rgba(8, 13, 15, 0.72);
+  color: #f4fbfd;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--tour-accent) 18%, transparent);
+}
+
+.onboardingAiCore span,
+.onboardingAiCore i {
+  position: absolute;
+  inset: 16px;
+  border: 1px solid color-mix(in srgb, var(--tour-accent-2) 42%, transparent);
+  border-radius: 50%;
+  animation: onboardingOrbit 5s linear infinite;
+}
+
+.onboardingAiCore i {
+  inset: 34px;
+  border-color: color-mix(in srgb, var(--tour-accent) 42%, transparent);
+  animation-direction: reverse;
+  animation-duration: 3.4s;
+}
+
+.onboardingAiBars {
+  position: absolute;
+  z-index: 2;
+  right: 22px;
+  bottom: 24px;
+  width: min(210px, 62%);
+  display: grid;
+  gap: 7px;
+}
+
+.onboardingAiBars b {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tour-accent), color-mix(in srgb, var(--tour-accent-2) 70%, var(--tour-accent)));
+  color: #061014;
+  font-size: 11px;
+  font-weight: 950;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--tour-accent) 20%, transparent);
+}
+
+.onboardingPressureCard {
+  width: min(310px, 86%);
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(8, 13, 15, 0.72);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.34);
+}
+
+.onboardingPressureTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #9fb1b8;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.onboardingPressureTitle strong {
+  color: #f4fbfd;
+  font-weight: 950;
+}
+
+.onboardingPressureBars {
+  height: 112px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--tour-accent) 11%, transparent) 0 50%, color-mix(in srgb, var(--tour-accent-2) 11%, transparent) 50% 100%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.onboardingPressureBars i {
+  flex: 1;
+  min-width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--tour-accent) 0 50%, var(--tour-accent-2) 50% 100%);
+  animation: onboardingBars 1s ease-in-out infinite alternate;
+}
+
+.onboardingEventDots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.onboardingEventDots span {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4fbfd;
+  font-size: 15px;
+}
+
+.onboardingEventDots .corner {
+  color: #facc15;
+}
+
+.onboardingEventDots .card::before {
+  content: "";
+  width: 12px;
+  height: 17px;
+  border-radius: 3px;
+  background: #ef4444;
+  transform: rotate(8deg);
+}
+
+.onboardingChatPhone {
+  width: min(286px, 84%);
+  min-height: 330px;
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  padding: 18px 14px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 38%),
+    rgba(8, 13, 15, 0.76);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
+}
+
+.onboardingChatBubble {
+  max-width: 82%;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eaf5f8;
+  font-size: 12px;
+  font-weight: 780;
+  animation: onboardingMessageIn 2.8s ease-in-out infinite;
+}
+
+.onboardingChatBubble.two {
+  justify-self: end;
+  background: color-mix(in srgb, var(--tour-accent) 18%, rgba(255, 255, 255, 0.08));
+  animation-delay: 180ms;
+}
+
+.onboardingChatBubble.three {
+  animation-delay: 360ms;
+}
+
+.onboardingComposer {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0 5px 0 13px;
+  border: 1px solid rgba(180, 202, 211, 0.18);
+  border-radius: 999px;
+  background: rgba(4, 9, 12, 0.82);
+  color: #8fa2aa;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onboardingComposer svg {
+  width: 30px;
+  height: 30px;
+  padding: 8px;
+  border-radius: 50%;
+  background: var(--tour-accent);
+  color: #061014;
+}
+
+.onboardingPersonalGrid {
+  width: min(320px, 86%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.onboardingPersonalGrid span {
+  min-height: 116px;
+  display: grid;
+  place-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 15px;
+  background: rgba(8, 13, 15, 0.72);
+  color: #f4fbfd;
+  font-size: 11px;
+  font-weight: 950;
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  animation: onboardingFloat 3.4s ease-in-out infinite;
+}
+
+.onboardingPersonalGrid span:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.onboardingPersonalGrid span:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+.onboardingPersonalGrid svg {
+  color: color-mix(in srgb, var(--tour-accent) 56%, #ffffff);
+}
+
+.onboardingActions {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.onboardingActions > span {
+  color: #8fa2aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.onboardingActions div {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboardingGhostButton,
+.onboardingBackButton,
+.onboardingPrimaryButton {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.onboardingGhostButton,
+.onboardingBackButton {
+  border: 1px solid rgba(180, 202, 211, 0.16);
+  background: rgba(255, 255, 255, 0.045);
+  color: #d6e3e7;
+}
+
+.onboardingGhostButton:hover,
+.onboardingBackButton:not(:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.onboardingPrimaryButton {
+  border: 1px solid color-mix(in srgb, var(--tour-accent) 42%, rgba(255, 255, 255, 0.16));
+  background: linear-gradient(90deg, var(--tour-accent), color-mix(in srgb, var(--tour-accent-2) 72%, var(--tour-accent)));
+  color: #061014;
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--tour-accent) 24%, transparent);
+}
+
+.onboardingPrimaryButton:hover {
+  filter: brightness(1.06);
+}
+
+.scorexpLightTheme .firstLaunchOnboarding {
+  background:
+    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--tour-accent, #2563eb) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--tour-accent-2, #c2410c) 12%, transparent), transparent 34%),
+    rgba(226, 235, 241, 0.78);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .onboardingPanel {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--tour-accent) 13%, transparent), transparent 38%),
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--tour-accent-2) 12%, transparent), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 246, 249, 0.98));
+  box-shadow:
+    0 30px 80px rgba(28, 45, 59, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.scorexpLightTheme .onboardingCopy h2,
+.scorexpLightTheme .onboardingPressureTitle strong,
+.scorexpLightTheme .onboardingMatchPreview strong,
+.scorexpLightTheme .onboardingPersonalGrid span {
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .onboardingCopy p,
+.scorexpLightTheme .onboardingActions > span,
+.scorexpLightTheme .onboardingComposer,
+.scorexpLightTheme .onboardingPressureTitle {
+  color: var(--sx-muted);
+}
+
+.scorexpLightTheme .onboardingPointGrid span,
+.scorexpLightTheme .onboardingVisual,
+.scorexpLightTheme .onboardingDevice,
+.scorexpLightTheme .onboardingPressureCard,
+.scorexpLightTheme .onboardingChatPhone,
+.scorexpLightTheme .onboardingPersonalGrid span {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.scorexpLightTheme .onboardingMatchPreview,
+.scorexpLightTheme .onboardingPulseRail,
+.scorexpLightTheme .onboardingPressureBars,
+.scorexpLightTheme .onboardingChatBubble,
+.scorexpLightTheme .onboardingGhostButton,
+.scorexpLightTheme .onboardingBackButton {
+  border-color: var(--sx-line);
+  background: rgba(238, 244, 247, 0.78);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .onboardingClose {
+  border-color: var(--sx-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--sx-text);
+}
+
+.scorexpLightTheme .onboardingComposer {
+  background: #ffffff;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes onboardingPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes onboardingBackdropDrift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) rotate(-1deg);
+  }
+
+  to {
+    transform: translate3d(1.5%, 1%, 0) rotate(1deg);
+  }
+}
+
+@keyframes onboardingRing {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes onboardingFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes onboardingBars {
+  from {
+    transform: scaleY(0.72);
+    opacity: 0.72;
+  }
+
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes onboardingOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes onboardingMessageIn {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 760px) {
+  .firstLaunchOnboarding {
+    padding: 10px;
+    align-items: end;
+  }
+
+  .onboardingPanel {
+    width: min(100%, 520px);
+    min-height: min(720px, calc(100dvh - 20px));
+    max-height: calc(100dvh - 20px);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(220px, 0.86fr) auto;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 16px;
+    overflow-y: auto;
+  }
+
+  .onboardingProgress {
+    padding-right: 38px;
+  }
+
+  .onboardingCopy {
+    align-self: start;
+    gap: 10px;
+    padding: 4px 0 0;
+  }
+
+  .onboardingCopy h2 {
+    font-size: clamp(27px, 8vw, 38px);
+    line-height: 1.02;
+  }
+
+  .onboardingCopy p {
+    font-size: 13px;
+    line-height: 1.52;
+  }
+
+  .onboardingPointGrid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .onboardingPointGrid span {
+    min-height: 34px;
+  }
+
+  .onboardingVisual {
+    min-height: 230px;
+    border-radius: 14px;
+  }
+
+  .onboardingAiCore {
+    width: 136px;
+    height: 136px;
+  }
+
+  .onboardingAiBars {
+    right: 14px;
+    bottom: 14px;
+    width: 58%;
+  }
+
+  .onboardingPressureCard {
+    width: min(300px, 92%);
+    padding: 12px;
+  }
+
+  .onboardingPressureBars {
+    height: 82px;
+  }
+
+  .onboardingChatPhone {
+    min-height: 236px;
+    border-radius: 22px;
+  }
+
+  .onboardingPersonalGrid {
+    grid-template-columns: 1fr;
+    width: min(300px, 92%);
+  }
+
+  .onboardingPersonalGrid span {
+    min-height: 64px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    justify-content: start;
+    text-align: left;
+  }
+
+  .onboardingActions {
+    align-items: stretch;
+    display: grid;
+    gap: 10px;
+  }
+
+  .onboardingActions div {
+    display: grid;
+    grid-template-columns: 0.8fr 0.9fr 1.2fr;
+    gap: 7px;
+  }
+
+  .onboardingGhostButton,
+  .onboardingBackButton,
+  .onboardingPrimaryButton {
+    min-height: 42px;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .onboardingPanel {
+    padding: 14px;
+  }
+
+  .onboardingEyebrow {
+    min-height: 30px;
+    font-size: 11px;
+  }
+
+  .onboardingCopy h2 {
+    font-size: 25px;
+  }
+
+  .onboardingActions div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .onboardingGhostButton {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboardingBackdropFx,
+  .onboardingPanel,
+  .onboardingVisual::before,
+  .onboardingDevice,
+  .onboardingPulseRail i,
+  .onboardingAiCore span,
+  .onboardingAiCore i,
+  .onboardingPressureBars i,
+  .onboardingChatBubble,
+  .onboardingPersonalGrid span {
+    animation: none !important;
   }
 }
 
