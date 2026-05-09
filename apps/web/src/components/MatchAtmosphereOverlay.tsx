@@ -98,6 +98,7 @@ const eventLabels: Record<string, string> = {
 type AtmosphereTab = "overview" | "chat";
 type MobileAtmosphereTab = "data" | "chat" | "stats" | "h2h" | "standings" | "lineups" | "aixp";
 type MobileSwipeDirection = "forward" | "backward";
+type AixpSparkle = { id: string; x: string; y: string; size: string; delay: string; rotate: string };
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
@@ -114,18 +115,9 @@ const mobileAtmosphereTabs: { key: MobileAtmosphereTab; label: string }[] = [
   { key: "aixp", label: "AIXP" }
 ];
 
-const aixpSparklePoints = [
-  { x: "50%", y: "0%", delay: "0ms" },
-  { x: "73%", y: "8%", delay: "90ms" },
-  { x: "93%", y: "31%", delay: "180ms" },
-  { x: "89%", y: "67%", delay: "270ms" },
-  { x: "68%", y: "93%", delay: "360ms" },
-  { x: "50%", y: "100%", delay: "450ms" },
-  { x: "30%", y: "92%", delay: "540ms" },
-  { x: "10%", y: "68%", delay: "630ms" },
-  { x: "7%", y: "32%", delay: "720ms" },
-  { x: "28%", y: "8%", delay: "810ms" }
-];
+const AIXP_SPARKLE_COUNT = 10;
+const AIXP_SPARKLE_INTERVAL_MS = 5_000;
+const MOBILE_TAB_SETTLE_MS = 560;
 
 interface InsightSegment {
   key: "home" | "draw" | "away";
@@ -228,11 +220,18 @@ export function MatchAtmosphereOverlay({
   const [activeTab, setActiveTab] = useState<AtmosphereTab>("overview");
   const [mobileTab, setMobileTab] = useState<MobileAtmosphereTab>("data");
   const [mobileSwipeDirection, setMobileSwipeDirection] = useState<MobileSwipeDirection | null>(null);
+  const [mobileSwipeOffset, setMobileSwipeOffset] = useState(0);
+  const [mobileSwipeWidth, setMobileSwipeWidth] = useState(0);
+  const [mobileSwipeDragging, setMobileSwipeDragging] = useState(false);
+  const [mobileSwipeSettling, setMobileSwipeSettling] = useState(false);
+  const [mobileRenderAllPanels, setMobileRenderAllPanels] = useState(false);
+  const [aixpSparkles, setAixpSparkles] = useState<AixpSparkle[]>(() => createAixpSparkles());
   const [compactHeroVisible, setCompactHeroVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const mobileSwipeViewportRef = useRef<HTMLDivElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
-  const mobileSwipeRef = useRef<{ x: number; y: number; tab: MobileAtmosphereTab } | null>(null);
+  const mobileSwipeRef = useRef<{ x: number; y: number; tab: MobileAtmosphereTab; horizontalLocked: boolean } | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
   const activeGoalHighlight = activeMatch.status.group === "live" ? goalHighlight : null;
   const rawHomeAccent = useTeamAccent(activeMatch.homeTeam);
@@ -270,24 +269,46 @@ export function MatchAtmosphereOverlay({
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const compactScoreline = formatCompactScoreline(activeMatch);
   const shouldShowLiveAtmosphere = activeMatch.status.group === "live" || activeMatch.status.group === "finished";
-  const mobilePanelMotionClass = mobileSwipeDirection === "forward" ? " mobileSwipeForward" : mobileSwipeDirection === "backward" ? " mobileSwipeBackward" : "";
-  const mobileContentPanelClassName = `atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
-  const mobileChatPanelClassName = `atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
-  const mobileAixpPanelClassName = `atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereMobileContentPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
-  const handleMobileTabChange = (nextTab: MobileAtmosphereTab) => {
-    setMobileSwipeDirection(null);
+  const leagueRoundLabel = activeMatch.round ? formatLeagueTitleRound(activeMatch.round) : null;
+  const activeMobileTabIndex = Math.max(0, mobileAtmosphereTabs.findIndex((tab) => tab.key === mobileTab));
+  const mobileSwipeTrackStyle = {
+    transform: `translate3d(${mobileSwipeOffset - activeMobileTabIndex * mobileSwipeWidth}px, 0, 0)`
+  } as CSSProperties;
+  const mobileSwipeTrackClassName = [
+    "atmosphereMobileSwipeTrack",
+    mobileSwipeDragging ? "dragging" : "",
+    mobileSwipeSettling ? "settling" : "",
+    mobileSwipeDirection ? `swipe${capitalizeSwipeDirection(mobileSwipeDirection)}` : ""
+  ].filter(Boolean).join(" ");
+  const mobileContentPanelClassName = "atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly";
+  const mobileChatPanelClassName = "atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly";
+  const mobileAixpPanelClassName = "atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereMobileContentPanel atmosphereOverviewOnly";
+  const goToMobileTab = (nextTab: MobileAtmosphereTab, direction?: MobileSwipeDirection) => {
+    if (nextTab === mobileTab) {
+      setMobileSwipeOffset(0);
+      return;
+    }
+
+    const currentIndex = activeMobileTabIndex;
+    const nextIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === nextTab);
+    const inferredDirection = direction ?? (nextIndex > currentIndex ? "forward" : "backward");
+
+    setMobileRenderAllPanels(Math.abs(nextIndex - currentIndex) > 1);
+    setMobileSwipeDragging(false);
+    setMobileSwipeSettling(true);
+    setMobileSwipeDirection(inferredDirection);
+    setMobileSwipeOffset(0);
     setMobileTab(nextTab);
   };
+  const handleMobileTabChange = (nextTab: MobileAtmosphereTab) => {
+    goToMobileTab(nextTab);
+  };
   const selectAdjacentMobileTab = (direction: -1 | 1) => {
-    const currentIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === mobileTab);
-    if (currentIndex < 0) return;
-
-    const nextIndex = Math.min(Math.max(currentIndex + direction, 0), mobileAtmosphereTabs.length - 1);
+    const nextIndex = Math.min(Math.max(activeMobileTabIndex + direction, 0), mobileAtmosphereTabs.length - 1);
     const nextTab = mobileAtmosphereTabs[nextIndex]?.key;
     if (!nextTab || nextTab === mobileTab) return;
 
-    setMobileSwipeDirection(direction > 0 ? "forward" : "backward");
-    setMobileTab(nextTab);
+    goToMobileTab(nextTab, direction > 0 ? "forward" : "backward");
   };
 
   const handleMobileSwipeStart = (event: TouchEvent<HTMLElement>) => {
@@ -296,38 +317,149 @@ export function MatchAtmosphereOverlay({
 
     const touch = event.touches[0];
     if (!touch) return;
-    mobileSwipeRef.current = { x: touch.clientX, y: touch.clientY, tab: mobileTab };
+    setMobileSwipeSettling(false);
+    setMobileSwipeDirection(null);
+    setMobileSwipeOffset(0);
+    mobileSwipeRef.current = { x: touch.clientX, y: touch.clientY, tab: mobileTab, horizontalLocked: false };
+  };
+
+  const handleMobileSwipeMove = (event: TouchEvent<HTMLElement>) => {
+    const start = mobileSwipeRef.current;
+    if (!start || start.tab !== mobileTab) return;
+    if (typeof window === "undefined" || !window.matchMedia("(max-width: 760px)").matches) return;
+
+    const touch = event.touches[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (!start.horizontalLocked) {
+      if (absX < 8) return;
+
+      if (absY > absX * 1.12) {
+        mobileSwipeRef.current = null;
+        setMobileSwipeDragging(false);
+        setMobileSwipeOffset(0);
+        return;
+      }
+
+      start.horizontalLocked = true;
+      setMobileSwipeDragging(true);
+    }
+
+    event.preventDefault();
+
+    const atFirstTab = activeMobileTabIndex === 0;
+    const atLastTab = activeMobileTabIndex === mobileAtmosphereTabs.length - 1;
+    const boundedDelta = (atFirstTab && deltaX > 0) || (atLastTab && deltaX < 0) ? deltaX * 0.28 : deltaX;
+    const maxOffset = Math.max(120, mobileSwipeWidth * 0.92);
+    setMobileSwipeOffset(Math.max(-maxOffset, Math.min(maxOffset, boundedDelta)));
   };
 
   const handleMobileSwipeEnd = (event: TouchEvent<HTMLElement>) => {
     const start = mobileSwipeRef.current;
     mobileSwipeRef.current = null;
-    if (!start || start.tab !== mobileTab) return;
+    if (!start || start.tab !== mobileTab) {
+      setMobileSwipeDragging(false);
+      setMobileSwipeOffset(0);
+      return;
+    }
 
     const touch = event.changedTouches[0];
-    if (!touch) return;
+    if (!touch) {
+      setMobileSwipeDragging(false);
+      setMobileSwipeOffset(0);
+      return;
+    }
 
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
-    const horizontalSwipe = Math.abs(deltaX) >= 54 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35;
-    if (!horizontalSwipe) return;
+    const threshold = Math.min(76, Math.max(42, mobileSwipeWidth * 0.16));
+    const horizontalSwipe = Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY) * 1.12;
 
-    selectAdjacentMobileTab(deltaX < 0 ? 1 : -1);
+    setMobileSwipeDragging(false);
+    setMobileSwipeSettling(true);
+    setMobileSwipeOffset(0);
+
+    if (horizontalSwipe) {
+      selectAdjacentMobileTab(deltaX < 0 ? 1 : -1);
+      return;
+    }
+
+    setMobileSwipeDirection(null);
+  };
+
+  const handleMobileSwipeCancel = () => {
+    mobileSwipeRef.current = null;
+    setMobileSwipeDragging(false);
+    setMobileSwipeSettling(true);
+    setMobileSwipeOffset(0);
+    setMobileSwipeDirection(null);
   };
 
   useEffect(() => {
     setActiveTab("overview");
     setMobileTab("data");
     setMobileSwipeDirection(null);
+    setMobileSwipeDragging(false);
+    setMobileSwipeSettling(false);
+    setMobileSwipeOffset(0);
+    setMobileRenderAllPanels(false);
     setCompactHeroVisible(false);
   }, [match.id]);
 
   useEffect(() => {
-    if (!mobileSwipeDirection) return;
+    if (!mobileSwipeDirection && !mobileSwipeSettling && !mobileRenderAllPanels) return;
 
-    const timer = window.setTimeout(() => setMobileSwipeDirection(null), 280);
+    const timer = window.setTimeout(() => {
+      setMobileSwipeDirection(null);
+      setMobileSwipeSettling(false);
+      setMobileRenderAllPanels(false);
+    }, MOBILE_TAB_SETTLE_MS + 80);
     return () => window.clearTimeout(timer);
-  }, [mobileSwipeDirection, mobileTab]);
+  }, [mobileRenderAllPanels, mobileSwipeDirection, mobileSwipeSettling, mobileTab]);
+
+  useEffect(() => {
+    const viewport = mobileSwipeViewportRef.current;
+    if (!viewport) return;
+
+    const updateWidth = () => setMobileSwipeWidth(viewport.clientWidth);
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      window.addEventListener("orientationchange", updateWidth);
+      return () => {
+        window.removeEventListener("resize", updateWidth);
+        window.removeEventListener("orientationchange", updateWidth);
+      };
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(viewport);
+    window.addEventListener("orientationchange", updateWidth);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("orientationchange", updateWidth);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionQuery.matches) return;
+
+    const interval = window.setInterval(() => {
+      setAixpSparkles(createAixpSparkles());
+    }, AIXP_SPARKLE_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -438,6 +570,142 @@ export function MatchAtmosphereOverlay({
     });
   };
 
+  const shouldRenderMobilePanel = (tabKey: MobileAtmosphereTab) => {
+    if (!mobileSwipeDragging && !mobileSwipeSettling && !mobileRenderAllPanels) return tabKey === mobileTab;
+    if (mobileRenderAllPanels) return true;
+
+    const tabIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === tabKey);
+    return tabIndex >= 0 && Math.abs(tabIndex - activeMobileTabIndex) <= 1;
+  };
+
+  const renderMobileTabPanel = (tabKey: MobileAtmosphereTab) => {
+    switch (tabKey) {
+      case "data":
+        return (
+          <section className={`${mobileContentPanelClassName} atmosphereMobileDataPanel`} aria-label="Özet">
+            {shouldShowLiveAtmosphere ? (
+              <div className="atmosphereLiveStack">
+                <PressureMeterCard match={activeMatch} data={liveAtmosphere} />
+                <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
+              </div>
+            ) : null}
+            <section className="atmospherePanel">
+              <PanelTitle icon={<Zap size={17} />} label={activeMatch.status.group === "upcoming" ? "Maç Öncesi Akış" : "Maç Akışı"} />
+              <EventTimeline events={detail?.events ?? []} match={activeMatch} />
+            </section>
+            <section className="atmosphereSignalStrip" aria-label="Maç sinyalleri">
+              <SignalMetric icon={<CalendarClock size={16} />} label="Başlangıç" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
+              <SignalMetric icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail) ?? "Veri yok"} />
+              <SignalMetric icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail) ?? "Veri yok"} />
+              <SignalMetric icon={<Trophy size={16} />} label="Lig" value={activeMatch.league.name} />
+            </section>
+          </section>
+        );
+      case "chat":
+        return (
+          <section className={mobileChatPanelClassName} aria-label="Sohbet">
+            <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
+          </section>
+        );
+      case "stats":
+        return (
+          <section className={mobileContentPanelClassName} aria-label="İstatistik">
+            <section className="atmospherePanel">
+              <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
+              <StatisticCompare match={activeMatch} rows={statisticRows} />
+            </section>
+          </section>
+        );
+      case "h2h":
+        return (
+          <section className={mobileContentPanelClassName} aria-label="H2H">
+            <section className="atmospherePanel">
+              <PanelTitle icon={<Shield size={17} />} label="Mukayese Momentumu" />
+              <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
+              <RecentHeadToHead matches={h2hMatches} focusTeamId={activeMatch.homeTeam.id} />
+            </section>
+            <section className="atmospherePanel">
+              <PanelTitle icon={<Activity size={17} />} label="Son 5 Maç Gol Formu" />
+              <FormGoalsGraph
+                homeTeam={activeMatch.homeTeam}
+                awayTeam={activeMatch.awayTeam}
+                homeMatches={detail?.form?.home ?? []}
+                awayMatches={detail?.form?.away ?? []}
+              />
+            </section>
+            <section className="atmospherePanel">
+              <PanelTitle icon={<Gauge size={17} />} label="Normal Form Durumu" />
+              <div className="atmosphereFormGrid">
+                <FormColumn team={activeMatch.homeTeam} matches={detail?.form?.home ?? []} />
+                <FormColumn team={activeMatch.awayTeam} matches={detail?.form?.away ?? []} />
+              </div>
+            </section>
+          </section>
+        );
+      case "standings":
+        return (
+          <section className={mobileContentPanelClassName} aria-label="Puan">
+            <section className="atmospherePanel">
+              <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
+              <FullStandingTable
+                standings={detail?.standings ?? null}
+                homeTeamId={activeMatch.homeTeam.id}
+                awayTeamId={activeMatch.awayTeam.id}
+              />
+            </section>
+          </section>
+        );
+      case "lineups":
+        return (
+          <section className={mobileContentPanelClassName} aria-label="Diziliş">
+            <section className="atmospherePanel">
+              <PanelTitle icon={<UsersRound size={17} />} label="Saha Dizilişi" />
+              <AtmosphereLineupsView match={activeMatch} lineups={detail?.lineups ?? null} />
+            </section>
+            <section className="atmospherePanel">
+              <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
+              <div className="atmospherePlayerGrid">
+                <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
+                <PlayerColumn team={activeMatch.awayTeam} players={detail?.topPlayers.away ?? []} />
+              </div>
+            </section>
+          </section>
+        );
+      case "aixp":
+        return (
+          <section className={mobileAixpPanelClassName} aria-label="AIXP">
+            <section className="atmospherePanel atmosphereAiPanel">
+              <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
+              <strong>{aiSummary.title}</strong>
+              <p>{aiSummary.summary}</p>
+              {predictionRows.length > 0 ? (
+                <div className="atmosphereProbabilityBars">
+                  {predictionRows.map((item) => (
+                    <div className={item.key} key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                      <i style={{ width: item.value }} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section className="atmospherePanel">
+              <PanelTitle icon={<Sparkles size={17} />} label="Karar Sinyalleri" />
+              <div className="atmosphereInsightList">
+                {insightRows.map((item) => (
+                  <InsightCard item={item} key={item.label} />
+                ))}
+              </div>
+            </section>
+          </section>
+        );
+      default:
+        return null;
+    }
+  };
+
   const shellClassName = [
     "matchAtmosphereShell",
     activeMatch.status.group,
@@ -458,10 +726,11 @@ export function MatchAtmosphereOverlay({
             <span>{backLabel}</span>
           </button>
 
-          <div className="atmosphereLeagueTitle">
-            <span>{localizeCountryName(activeMatch.country.name)}</span>
+          <div className="atmosphereLeagueTitle" title={[activeMatch.league.name, leagueRoundLabel].filter(Boolean).join(": ")}>
+            <AtmosphereLeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />
             <strong title={activeMatch.league.name}>{activeMatch.league.name}</strong>
-            {activeMatch.round ? <em>{formatRound(activeMatch.round)}</em> : null}
+            {leagueRoundLabel ? <span className="atmosphereLeagueColon">:</span> : null}
+            {leagueRoundLabel ? <em title={leagueRoundLabel}>{leagueRoundLabel}</em> : null}
           </div>
 
           <div className="atmosphereTopActions">
@@ -526,7 +795,14 @@ export function MatchAtmosphereOverlay({
             </div>
           </aside>
 
-          <main className="atmosphereScroll" ref={scrollContainerRef} onTouchStart={handleMobileSwipeStart} onTouchEnd={handleMobileSwipeEnd}>
+          <main
+            className="atmosphereScroll"
+            ref={scrollContainerRef}
+            onTouchStart={handleMobileSwipeStart}
+            onTouchMove={handleMobileSwipeMove}
+            onTouchEnd={handleMobileSwipeEnd}
+            onTouchCancel={handleMobileSwipeCancel}
+          >
             <div className={`atmosphereCompactHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} aria-hidden={!compactHeroVisible}>
               <div className="atmosphereCompactHeroInner withScore">
                 <div className="atmosphereCompactTeam home">
@@ -557,104 +833,19 @@ export function MatchAtmosphereOverlay({
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
-            <MobileAtmosphereTabs activeTab={mobileTab} onChange={handleMobileTabChange} />
-            {mobileTab === "chat" ? (
-              <section className={mobileChatPanelClassName} aria-label="Sohbet">
-                <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
-              </section>
-            ) : null}
-            {mobileTab === "stats" ? (
-              <section className={mobileContentPanelClassName} aria-label="İstatistik">
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
-                  <StatisticCompare match={activeMatch} rows={statisticRows} />
-                </section>
-              </section>
-            ) : null}
-            {mobileTab === "h2h" ? (
-              <section className={mobileContentPanelClassName} aria-label="H2H">
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<Shield size={17} />} label="Mukayese Momentumu" />
-                  <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
-                  <RecentHeadToHead matches={h2hMatches} focusTeamId={activeMatch.homeTeam.id} />
-                </section>
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<Activity size={17} />} label="Son 5 Maç Gol Formu" />
-                  <FormGoalsGraph
-                    homeTeam={activeMatch.homeTeam}
-                    awayTeam={activeMatch.awayTeam}
-                    homeMatches={detail?.form?.home ?? []}
-                    awayMatches={detail?.form?.away ?? []}
-                  />
-                </section>
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<Gauge size={17} />} label="Normal Form Durumu" />
-                  <div className="atmosphereFormGrid">
-                    <FormColumn team={activeMatch.homeTeam} matches={detail?.form?.home ?? []} />
-                    <FormColumn team={activeMatch.awayTeam} matches={detail?.form?.away ?? []} />
+            <MobileAtmosphereTabs activeTab={mobileTab} onChange={handleMobileTabChange} sparkles={aixpSparkles} />
+            <div className="atmosphereMobileSwipeViewport atmosphereOverviewOnly" ref={mobileSwipeViewportRef}>
+              <div className={mobileSwipeTrackClassName} style={mobileSwipeTrackStyle}>
+                {mobileAtmosphereTabs.map((tab) => (
+                  <div className="atmosphereMobileTabPanelSlot" aria-hidden={tab.key !== mobileTab} key={tab.key}>
+                    {shouldRenderMobilePanel(tab.key) ? renderMobileTabPanel(tab.key) : null}
                   </div>
-                </section>
-              </section>
-            ) : null}
-            {mobileTab === "standings" ? (
-              <section className={mobileContentPanelClassName} aria-label="Puan">
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
-                  <FullStandingTable
-                    standings={detail?.standings ?? null}
-                    homeTeamId={activeMatch.homeTeam.id}
-                    awayTeamId={activeMatch.awayTeam.id}
-                  />
-                </section>
-              </section>
-            ) : null}
-            {mobileTab === "lineups" ? (
-              <section className={mobileContentPanelClassName} aria-label="Diziliş">
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<UsersRound size={17} />} label="Saha Dizilişi" />
-                  <AtmosphereLineupsView match={activeMatch} lineups={detail?.lineups ?? null} />
-                </section>
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<UsersRound size={17} />} label="Oyuncu Profilleri" />
-                  <div className="atmospherePlayerGrid">
-                    <PlayerColumn team={activeMatch.homeTeam} players={detail?.topPlayers.home ?? []} />
-                    <PlayerColumn team={activeMatch.awayTeam} players={detail?.topPlayers.away ?? []} />
-                  </div>
-                </section>
-              </section>
-            ) : null}
-            {mobileTab === "aixp" ? (
-              <section className={mobileAixpPanelClassName} aria-label="AIXP">
-                <section className="atmospherePanel atmosphereAiPanel">
-                  <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
-                  <strong>{aiSummary.title}</strong>
-                  <p>{aiSummary.summary}</p>
-                  {predictionRows.length > 0 ? (
-                    <div className="atmosphereProbabilityBars">
-                      {predictionRows.map((item) => (
-                        <div className={item.key} key={item.label}>
-                          <span>{item.label}</span>
-                          <strong>{item.value}</strong>
-                          <i style={{ width: item.value }} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </section>
-
-                <section className="atmospherePanel">
-                  <PanelTitle icon={<Sparkles size={17} />} label="Karar Sinyalleri" />
-                  <div className="atmosphereInsightList">
-                    {insightRows.map((item) => (
-                      <InsightCard item={item} key={item.label} />
-                    ))}
-                  </div>
-                </section>
-              </section>
-            ) : null}
+                ))}
+              </div>
+            </div>
             {shouldShowLiveAtmosphere ? (
               <>
-                <div className="atmosphereLiveStack atmosphereOverviewOnly atmosphereMobileDataOnly">
+                <div className="atmosphereLiveStack atmosphereOverviewOnly atmosphereDesktopOnly">
                   <PressureMeterCard match={activeMatch} data={liveAtmosphere} />
                   <ComparativePulseCard match={activeMatch} data={liveAtmosphere} />
                 </div>
@@ -729,12 +920,12 @@ export function MatchAtmosphereOverlay({
               </div>
             </section>
 
-            <section className="atmospherePanel atmosphereOverviewOnly atmosphereMobileDataOnly">
+            <section className="atmospherePanel atmosphereOverviewOnly atmosphereDesktopOnly">
               <PanelTitle icon={<Zap size={17} />} label={activeMatch.status.group === "upcoming" ? "Maç Öncesi Akış" : "Maç Akışı"} />
               <EventTimeline events={detail?.events ?? []} match={activeMatch} />
             </section>
 
-            <section className="atmosphereSignalStrip atmosphereOverviewOnly atmosphereMobileDataOnly" aria-label="Maç sinyalleri">
+            <section className="atmosphereSignalStrip atmosphereOverviewOnly atmosphereDesktopOnly" aria-label="Maç sinyalleri">
               <SignalMetric icon={<CalendarClock size={16} />} label="Başlangıç" value={`${formatDate(activeMatch.date)} • ${activeMatch.localTime}`} />
               <SignalMetric icon={<MapPin size={16} />} label="Stat" value={formatVenue(detail) ?? "Veri yok"} />
               <SignalMetric icon={<CloudSun size={16} />} label="Hava" value={formatForecast(detail) ?? "Veri yok"} />
@@ -771,16 +962,60 @@ function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "a
   return side === target || side === "both";
 }
 
+function AtmosphereLeagueLogo({ src, label }: { src: string | null; label: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = label.trim().charAt(0).toUpperCase() || "?";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) {
+    return (
+      <span className="atmosphereLeagueLogo fallback" aria-hidden="true">
+        {initial}
+      </span>
+    );
+  }
+
+  return <img className="atmosphereLeagueLogo" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
+}
+
 function isSwipeControlTarget(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest(".atmosphereMobileTabs, button, input, textarea, select, a"));
 }
 
+function createAixpSparkles(): AixpSparkle[] {
+  const batch = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+  return Array.from({ length: AIXP_SPARKLE_COUNT }, (_, index) => {
+    const floatAroundText = index % 4 === 0;
+    const x = floatAroundText ? randomBetween(-6, 106) : randomBetween(18, 82);
+    const y = floatAroundText ? randomBetween(-18, 118) : randomBetween(6, 96);
+
+    return {
+      id: `${batch}-${index}`,
+      x: `${x.toFixed(1)}%`,
+      y: `${y.toFixed(1)}%`,
+      size: `${randomBetween(3.2, 6.2).toFixed(1)}px`,
+      delay: `${Math.round(randomBetween(0, 180))}ms`,
+      rotate: `${Math.round(randomBetween(-35, 35))}deg`
+    };
+  });
+}
+
+function randomBetween(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
 function MobileAtmosphereTabs({
   activeTab,
-  onChange
+  onChange,
+  sparkles
 }: {
   activeTab: MobileAtmosphereTab;
   onChange: (tab: MobileAtmosphereTab) => void;
+  sparkles: AixpSparkle[];
 }) {
   return (
     <div className="atmosphereMobileTabs atmosphereOverviewOnly" role="tablist" aria-label="Atmosfer mobil sekmeleri">
@@ -801,14 +1036,16 @@ function MobileAtmosphereTabs({
             <span className="atmosphereMobileTabLabel">{tab.label}</span>
             {tab.key === "aixp" ? (
               <span className="aixpTabSparkles" aria-hidden="true">
-                {aixpSparklePoints.map((spark, index) => (
+                {sparkles.map((spark) => (
                   <i
-                    key={`${spark.x}-${spark.y}-${index}`}
+                    key={spark.id}
                     style={
                       {
                         "--spark-x": spark.x,
                         "--spark-y": spark.y,
-                        "--spark-delay": spark.delay
+                        "--spark-size": spark.size,
+                        "--spark-delay": spark.delay,
+                        "--spark-rotate": spark.rotate
                       } as CSSProperties
                     }
                   />
@@ -824,6 +1061,10 @@ function MobileAtmosphereTabs({
 
 function capitalizeMobileTab(tab: MobileAtmosphereTab) {
   return tab.charAt(0).toUpperCase() + tab.slice(1);
+}
+
+function capitalizeSwipeDirection(direction: MobileSwipeDirection) {
+  return direction.charAt(0).toUpperCase() + direction.slice(1);
 }
 
 function AtmosphereTeam({
@@ -2270,6 +2511,30 @@ function formatRound(value: string) {
   if (regular) return `Normal Sezon ${regular[1]}. Hafta`;
 
   const labels: Record<string, string> = {
+    "Semi-finals": "Yarı final",
+    "Quarter-finals": "Çeyrek final",
+    "Round of 16": "Son 16",
+    "Group Stage": "Grup aşaması",
+    "Preliminary Round": "Ön eleme turu",
+    "Qualification Round": "Eleme turu",
+    Final: "Final"
+  };
+
+  return labels[value] ?? value;
+}
+
+function formatLeagueTitleRound(value: string) {
+  const roundWithWeek = value.match(/^(.+?)\s*-\s*(\d+)$/);
+  if (roundWithWeek) return `${translateRoundStage(roundWithWeek[1])}, ${roundWithWeek[2]}. Hafta`;
+
+  return formatRound(value);
+}
+
+function translateRoundStage(value: string) {
+  const labels: Record<string, string> = {
+    "Regular Season": "Normal Sezon",
+    "Relegation Group": "Düşme Grubu",
+    "Championship Round": "Şampiyonluk Turu",
     "Semi-finals": "Yarı final",
     "Quarter-finals": "Çeyrek final",
     "Round of 16": "Son 16",

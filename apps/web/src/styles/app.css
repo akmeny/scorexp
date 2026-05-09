@@ -29,6 +29,11 @@ body {
   min-height: var(--scorexp-viewport-height);
   background: #0c1113;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+html {
+  overscroll-behavior-y: none;
 }
 
 html,
@@ -1040,54 +1045,30 @@ button:disabled {
   }
 }
 
-@keyframes atmosphereMobileSwipeForward {
-  from {
-    opacity: 0.74;
-    transform: translateX(26px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes atmosphereMobileSwipeBackward {
-  from {
-    opacity: 0.74;
-    transform: translateX(-26px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @keyframes aixpTabSparkle {
   0% {
     opacity: 0;
-    transform: scale(0.35) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.26) rotate(var(--spark-rotate, 0deg));
   }
 
-  6% {
+  18% {
     opacity: 0.95;
-    transform: scale(1) rotate(38deg);
+    transform: translate(-50%, -50%) scale(1) rotate(var(--spark-rotate, 0deg));
   }
 
-  22% {
+  54% {
     opacity: 1;
-    transform: scale(1.22) rotate(74deg);
+    transform: translate(-50%, -50%) scale(1.28) rotate(var(--spark-rotate, 0deg));
   }
 
-  40% {
-    opacity: 0;
-    transform: scale(0.45) rotate(128deg);
+  82% {
+    opacity: 0.38;
+    transform: translate(-50%, -50%) scale(0.92) rotate(var(--spark-rotate, 0deg));
   }
 
   100% {
     opacity: 0;
-    transform: scale(0.35) rotate(128deg);
+    transform: translate(-50%, -50%) scale(0.42) rotate(var(--spark-rotate, 0deg));
   }
 }
 
@@ -3279,7 +3260,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: #8fa2aa;
   font-size: 12px;
   font-weight: 700;
@@ -3294,6 +3275,25 @@ button:disabled {
   white-space: nowrap;
 }
 
+.atmosphereLeagueLogo {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  object-fit: contain;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.atmosphereLeagueLogo.fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f1518;
+  background: #dfe7ea;
+  font-size: 12px;
+  font-weight: 950;
+}
+
 .atmosphereLeagueTitle strong {
   max-width: min(320px, 42vw);
   color: #f2f9fb;
@@ -3302,8 +3302,13 @@ button:disabled {
   font-weight: 900;
 }
 
+.atmosphereLeagueColon {
+  flex: 0 0 auto;
+  color: #6f8189;
+}
+
 .atmosphereLeagueTitle em {
-  max-width: 220px;
+  max-width: min(280px, 34vw);
   color: #dfe4ff;
   font-style: normal;
 }
@@ -3924,6 +3929,7 @@ button:disabled {
 }
 
 .atmosphereMobileTabs,
+.atmosphereMobileSwipeViewport,
 .atmosphereMobileTabPanel {
   display: none;
 }
@@ -5668,7 +5674,7 @@ button:disabled {
     max-height: none;
     flex-basis: auto;
     overflow: visible;
-    overscroll-behavior-y: auto;
+    overscroll-behavior-y: none;
     border: 0;
     border-radius: 0;
   }
@@ -5689,7 +5695,7 @@ button:disabled {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
-    overscroll-behavior-y: auto;
+    overscroll-behavior-y: none;
   }
 
   .matchAtmosphereShell {
@@ -5712,18 +5718,33 @@ button:disabled {
     padding: 0;
   }
 
-  .atmosphereBackButton span,
-  .atmosphereLeagueTitle span,
-  .atmosphereLeagueTitle em {
+  .atmosphereBackButton span {
     display: none;
   }
 
   .atmosphereLeagueTitle {
     justify-content: flex-start;
+    gap: 5px;
+  }
+
+  .atmosphereLeagueLogo {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
   }
 
   .atmosphereLeagueTitle strong {
-    max-width: 100%;
+    max-width: min(36vw, 150px);
+    font-size: 12px;
+  }
+
+  .atmosphereLeagueTitle em {
+    max-width: min(33vw, 138px);
+    font-size: 11px;
+  }
+
+  .atmosphereLeagueColon {
+    font-size: 11px;
   }
 
   .atmosphereBody {
@@ -5841,7 +5862,7 @@ button:disabled {
     border-radius: 5px;
     background: transparent;
     color: #9dafb6;
-    font-size: clamp(6.7px, 2.05vw, 9.4px);
+    font-size: clamp(7.4px, 2.26vw, 10.6px);
     font-weight: 950;
     line-height: 1;
     letter-spacing: 0;
@@ -5861,8 +5882,8 @@ button:disabled {
 
   .aixpTabSparkles {
     position: absolute;
-    inset: -9px -7px;
-    z-index: 1;
+    inset: 3px 5px;
+    z-index: 3;
     pointer-events: none;
   }
 
@@ -5870,15 +5891,15 @@ button:disabled {
     position: absolute;
     left: var(--spark-x);
     top: var(--spark-y);
-    width: 4px;
-    height: 4px;
-    margin: -2px 0 0 -2px;
+    width: var(--spark-size, 4px);
+    height: var(--spark-size, 4px);
+    margin: 0;
     background: #fff2a8;
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 71%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
     opacity: 0;
-    transform: scale(0.35) rotate(0deg);
-    animation: aixpTabSparkle 5s linear infinite;
+    transform: translate(-50%, -50%) scale(0.35) rotate(var(--spark-rotate, 0deg));
+    animation: aixpTabSparkle 2s cubic-bezier(0.16, 0.86, 0.28, 1) both;
     animation-delay: var(--spark-delay);
   }
 
@@ -5891,26 +5912,50 @@ button:disabled {
   }
 
   .atmosphereMobileTabPanel {
-    width: calc(100% - 20px);
+    width: 100%;
     display: grid;
+    margin: 0;
+  }
+
+  .atmosphereMobileSwipeViewport {
+    width: calc(100% - 20px);
+    display: block;
+    overflow: hidden;
     margin: 10px auto 0;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
   }
 
-  .atmosphereMobileTabPanel.mobileSwipeForward {
-    animation: atmosphereMobileSwipeForward 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  .atmosphereMobileSwipeTrack {
+    display: flex;
+    align-items: flex-start;
+    will-change: transform;
+    transition: transform 560ms cubic-bezier(0.18, 0.84, 0.22, 1);
   }
 
-  .atmosphereMobileTabPanel.mobileSwipeBackward {
-    animation: atmosphereMobileSwipeBackward 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  .atmosphereMobileSwipeTrack.dragging {
+    transition: none;
   }
 
-  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileStatsTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileH2hTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileStandingsTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileLineupsTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileAixpTabActive .atmosphereMobileDataOnly {
-    display: none !important;
+  .atmosphereMobileTabPanelSlot {
+    flex: 0 0 100%;
+    min-width: 0;
+    padding: 0 1px;
+  }
+
+  .atmosphereMobileDataPanel {
+    gap: 10px;
+  }
+
+  .atmosphereMobileDataPanel .atmosphereLiveStack,
+  .atmosphereMobileDataPanel .atmosphereSignalStrip {
+    width: 100%;
+    margin: 0;
+  }
+
+  .atmosphereMobileDataPanel .atmospherePanel {
+    width: 100%;
+    margin: 0;
   }
 
   .atmosphereDesktopOnly {
@@ -10415,7 +10460,7 @@ button:disabled {
     min-height: 100% !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    overscroll-behavior-y: auto !important;
+    overscroll-behavior-y: none !important;
     touch-action: pan-y !important;
   }
 
@@ -10444,7 +10489,7 @@ button:disabled {
     max-height: none !important;
     flex-basis: auto !important;
     overflow: visible !important;
-    overscroll-behavior-y: auto !important;
+    overscroll-behavior-y: none !important;
     touch-action: pan-y !important;
     -webkit-overflow-scrolling: touch;
     padding-bottom: max(104px, calc(env(safe-area-inset-bottom) + 76px));
@@ -10470,7 +10515,7 @@ button:disabled {
     min-height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    overscroll-behavior-y: auto !important;
+    overscroll-behavior-y: none !important;
     touch-action: pan-y !important;
   }
 
@@ -12394,6 +12439,15 @@ body.scorexpLightTheme,
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .atmosphereLeagueLogo {
+  background: #eef4f7;
+}
+
+.scorexpLightTheme .atmosphereLeagueLogo.fallback {
+  color: var(--sx-text);
+  background: #e6edf2;
+}
+
 .scorexpLightTheme .atmosphereLeagueTitle,
 .scorexpLightTheme .atmosphereScoreStage p,
 .scorexpLightTheme .atmosphereTeam span,
@@ -13150,7 +13204,7 @@ body.scorexpLightTheme,
 
 @media (max-width: 380px) {
   .atmosphereMobileTabs button {
-    font-size: clamp(6.5px, 1.95vw, 7.4px);
+    font-size: clamp(7px, 2.12vw, 8.2px);
     padding-inline: 1px;
   }
 
@@ -13760,6 +13814,7 @@ body.scorexpLightTheme,
   .scrollTopButton,
   .installDownloadButton,
   .installCloseButton,
+  .atmosphereMobileSwipeTrack,
   .momentumFill {
     transition: none;
   }
@@ -13769,8 +13824,6 @@ body.scorexpLightTheme,
   .matchRow.goalPending::after,
   .scoreBlock.scoreFlash,
   .minuteTick,
-  .atmosphereMobileTabPanel.mobileSwipeForward,
-  .atmosphereMobileTabPanel.mobileSwipeBackward,
   .aixpTabSparkles i,
   .mobileSearchPanel,
   .mobileSportsMenu,

@@ -92,24 +92,13 @@ function installMobileInteractionGuards() {
       const deltaY = touchY - touchStartY;
       if (Math.abs(deltaY) < 2) return;
 
-      if (isMatchRouteScroll(event.target)) return;
       if (canScrollableTargetMove(event.target, deltaY)) return;
+      if (canDocumentScrollMove(deltaY)) return;
 
-      const pullingDownAtTop = window.scrollY <= 0 && deltaY > 0;
-      if (pullingDownAtTop) event.preventDefault();
+      event.preventDefault();
     },
     { passive: false }
   );
-}
-
-function isMatchRouteScroll(target: EventTarget | null) {
-  if (document.documentElement.classList.contains("scorexpRoutePage") || document.body.classList.contains("scorexpRoutePage")) {
-    return true;
-  }
-
-  if (!(target instanceof Element)) return false;
-
-  return Boolean(target.closest(".routeMatchPage, .matchDetailPane, .matchAtmosphereOverlay, .matchAtmosphereShell, .atmosphereScroll"));
 }
 
 function canScrollableTargetMove(target: EventTarget | null, deltaY: number) {
@@ -128,6 +117,20 @@ function canScrollableTargetMove(target: EventTarget | null, deltaY: number) {
     if (scrollingTowardTop && element.scrollTop > 0) return true;
     if (!scrollingTowardTop && element.scrollTop < maxScrollTop - 1) return true;
   }
+
+  return false;
+}
+
+function canDocumentScrollMove(deltaY: number) {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const maxScrollTop = scrollHeight - viewportHeight;
+  if (maxScrollTop <= 1) return false;
+
+  const scrollingTowardTop = deltaY > 0;
+  if (scrollingTowardTop && scrollTop > 0) return true;
+  if (!scrollingTowardTop && scrollTop < maxScrollTop - 1) return true;
 
   return false;
 }
