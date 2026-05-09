@@ -49,6 +49,7 @@ export function MatchRow({
   const activeGoalHighlight = isLive ? goalHighlight : null;
   const isGoalPending = activeGoalHighlight?.phase === "pending";
   const isGoalConfirmed = activeGoalHighlight?.phase === "confirmed";
+  const isGoalActive = Boolean(activeGoalHighlight);
   const homeRedCards = match.redCards?.home ?? 0;
   const awayRedCards = match.redCards?.away ?? 0;
   const statusText = formatMatchStatusLabel(match);
@@ -58,12 +59,13 @@ export function MatchRow({
   const momentum = isLive ? readLiveMetric(match, "momentum") : null;
   const liveIndicatorColor = isLive ? intensityColor(pressure ?? 100) : null;
   const momentumColor = momentum === null ? null : intensityColor(momentum);
-  const homeGoalActive = isGoalConfirmed && isGoalSide(activeGoalHighlight?.side ?? null, "home");
-  const awayGoalActive = isGoalConfirmed && isGoalSide(activeGoalHighlight?.side ?? null, "away");
+  const homeGoalActive = isGoalActive && isGoalSide(activeGoalHighlight?.side ?? null, "home");
+  const awayGoalActive = isGoalActive && isGoalSide(activeGoalHighlight?.side ?? null, "away");
   const rowClassName = [
     "matchRow",
     match.status.group,
     selected ? "selected" : "",
+    isGoalActive ? "goalScored" : "",
     isGoalPending ? "goalPending" : "",
     isGoalConfirmed ? "goalConfirmed" : ""
   ]

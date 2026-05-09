@@ -35,12 +35,12 @@ import {
   unregisterPushSubscription,
   type SerializedPushSubscription
 } from "./lib/api";
-import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, MatchScore, NormalizedMatch, ScoreboardView } from "./types";
+import type { GoalHighlightSide, LeagueGroup, MatchGoalHighlight, NormalizedMatch, ScoreboardView } from "./types";
 import "./styles/app.css";
 
 const timezone = "Europe/Istanbul";
-const GOAL_PENDING_MS = 16_000;
-const GOAL_CONFIRMED_MS = 20_000;
+const GOAL_SWEEP_MS = 2_000;
+const GOAL_HOLD_MS = 15_000;
 const LIVE_FINISHED_GRACE_MS = 60_000;
 const SCORE_CATCH_UP_GRACE_MS = 45_000;
 const FAVORITE_NOTIFICATION_CATCH_UP_GRACE_MS = 90_000;
@@ -55,11 +55,8 @@ let notificationAudioElement: HTMLAudioElement | null = null;
 let favoriteNotificationPermissionPromptedInMemory = false;
 let pushDeviceIdInMemory: string | null = null;
 
-type GoalDisplayScore = Pick<MatchScore, "home" | "away">;
 type GoalPresentation = {
   side: GoalHighlightSide;
-  previousScore: GoalDisplayScore;
-  nextScore: GoalDisplayScore;
   revealAt: number;
   expiresAt: number;
 };
@@ -176,9 +173,7 @@ export default function App() {
     ) as Record<string, ActiveGoalPresentation>;
   }, [goalPresentations]);
 
-  const displayedAllMatches = useMemo(() => {
-    return allMatches.map((match) => applyGoalPresentation(match, activeGoalPresentations[match.id] ?? null));
-  }, [activeGoalPresentations, allMatches]);
+  const displayedAllMatches = allMatches;
 
   const displayedMatchById = useMemo(() => {
     return new Map(displayedAllMatches.map((match) => [match.id, match]));
@@ -326,7 +321,6 @@ export default function App() {
     const previousScores = previousScoresRef.current;
     const nextScores = new Map<string, string>();
     const nextPresentations: GoalPresentationRecord = {};
-    const stalePresentationIds = new Set<string>();
     const refreshMs = Math.max(10, data?.refreshPolicy.clientRefreshSeconds ?? 30) * 1000;
     const staleScoreSync =
       previousScoresProcessedAtRef.current > 0 &&
@@ -338,27 +332,11 @@ export default function App() {
       const scoreKey = scoreSnapshot(match);
       const previous = previousScores.get(match.id);
       const side = previous ? scoreIncreaseSide(previous, scoreKey) : null;
-
-      const existingPresentation = goalPresentations[match.id];
-      if (existingPresentation && scoreKey !== scoreSnapshotFromScore(existingPresentation.nextScore)) {
-        const changedPastExpectedGoal = Boolean(scoreIncreaseSide(scoreSnapshotFromScore(existingPresentation.nextScore), scoreKey));
-        if (!changedPastExpectedGoal) {
-          stalePresentationIds.add(match.id);
-        }
-      }
-
       if (shouldAnimateGoals && side && match.status.group === "live") {
-        const previousScore =
-          existingPresentation && existingPresentation.expiresAt > now
-            ? presentationDisplayScore(existingPresentation, now)
-            : scoreFromSnapshot(previous, match.score);
-
         nextPresentations[match.id] = {
           side,
-          previousScore,
-          nextScore: scoreDisplayFromMatch(match),
-          revealAt: now + GOAL_PENDING_MS,
-          expiresAt: now + GOAL_PENDING_MS + GOAL_CONFIRMED_MS
+          revealAt: now + GOAL_SWEEP_MS,
+          expiresAt: now + GOAL_SWEEP_MS + GOAL_HOLD_MS
         };
       }
       nextScores.set(match.id, scoreKey);
@@ -368,16 +346,15 @@ export default function App() {
     previousScoresProcessedAtRef.current = now;
     syncScoresAsBaselineRef.current = false;
 
-    if (Object.keys(nextPresentations).length > 0 || stalePresentationIds.size > 0) {
+    if (Object.keys(nextPresentations).length > 0) {
       setGoalPresentations((current) => {
         const next = { ...current };
-        for (const id of stalePresentationIds) delete next[id];
         return { ...next, ...nextPresentations };
       });
     } else if (!shouldAnimateGoals) {
       setGoalPresentations((current) => (Object.keys(current).length > 0 ? {} : current));
     }
-  }, [allMatches, data?.refreshPolicy.clientRefreshSeconds, goalPresentations]);
+  }, [allMatches, data?.refreshPolicy.clientRefreshSeconds]);
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -882,6 +859,7 @@ export default function App() {
             onOpenAtmosphere={openAtmosphere}
             colorMode={colorMode}
             onToggleColorMode={toggleColorMode}
+            goalHighlight={selectedDisplayMatch ? activeGoalHighlights[selectedDisplayMatch.id] ?? null : null}
             chatSlot={!desktopLayout ? <MatchChatRoom match={selectedDisplayMatch} variant="embedded" profile={auth.profile} accessToken={auth.session?.access_token} /> : undefined}
           />
         ) : null}
@@ -902,6 +880,7 @@ export default function App() {
           onReload={detailState.reload}
           colorMode={colorMode}
           onToggleColorMode={toggleColorMode}
+          goalHighlight={activeGoalHighlights[selectedDisplayMatch.id] ?? null}
           chatProfile={auth.profile}
           chatAccessToken={auth.session?.access_token}
         />
@@ -1132,55 +1111,12 @@ function leagueNameMatches(league: string, candidate: string) {
   return league === candidate || league.includes(candidate);
 }
 
-function applyGoalPresentation(match: NormalizedMatch, presentation: ActiveGoalPresentation | null) {
-  if (!presentation || match.status.group !== "live") return match;
-
-  const displayScore = presentation.phase === "pending" ? presentation.previousScore : presentation.nextScore;
-  return {
-    ...match,
-    score: {
-      ...match.score,
-      home: displayScore.home,
-      away: displayScore.away,
-      raw: formatScoreRaw(displayScore)
-    }
-  };
-}
-
-function presentationDisplayScore(presentation: GoalPresentation, now: number): GoalDisplayScore {
-  return now < presentation.revealAt ? presentation.previousScore : presentation.nextScore;
-}
-
-function scoreDisplayFromMatch(match: NormalizedMatch): GoalDisplayScore {
-  return {
-    home: match.score.home,
-    away: match.score.away
-  };
-}
-
-function scoreFromSnapshot(snapshot: string | undefined, fallback: MatchScore): GoalDisplayScore {
-  if (!snapshot) {
-    return {
-      home: fallback.home,
-      away: fallback.away
-    };
-  }
-
-  const [home, away] = snapshot.split(":").map(toNullableScoreNumber);
-  return { home, away };
-}
-
 function scoreSnapshot(match: NormalizedMatch) {
   return scoreSnapshotFromScore(match.score);
 }
 
-function scoreSnapshotFromScore(score: GoalDisplayScore) {
+function scoreSnapshotFromScore(score: Pick<NormalizedMatch["score"], "home" | "away">) {
   return `${score.home ?? ""}:${score.away ?? ""}`;
-}
-
-function formatScoreRaw(score: GoalDisplayScore) {
-  if (score.home === null || score.away === null) return null;
-  return `${score.home}-${score.away}`;
 }
 
 function scoreIncreaseSide(previous: string, current: string): GoalHighlightSide | null {
@@ -1210,12 +1146,6 @@ function scoreDecreaseSide(previous: string, current: string): GoalHighlightSide
 function toScoreNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function toNullableScoreNumber(value: string | undefined) {
-  if (value === undefined || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function useDesktopLayout() {

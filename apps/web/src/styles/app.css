@@ -12947,6 +12947,232 @@ body.scorexpLightTheme,
   }
 }
 
+.matchRow.goalScored {
+  overflow: hidden;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.matchRow.goalScored.goalPending,
+.matchRow.goalScored.goalPending:hover,
+.matchRow.goalScored.goalPending.selected {
+  background: var(--sx-surface);
+}
+
+.matchRow.goalScored.goalConfirmed,
+.matchRow.goalScored.goalConfirmed:hover,
+.matchRow.goalScored.goalConfirmed.selected {
+  border-color: rgba(248, 113, 113, 0.72);
+  background:
+    linear-gradient(90deg, rgba(127, 29, 29, 0.74), rgba(69, 10, 10, 0.64)),
+    var(--sx-surface);
+  box-shadow:
+    inset 0 0 0 1px rgba(248, 113, 113, 0.12),
+    0 10px 28px rgba(127, 29, 29, 0.2);
+}
+
+.matchRow.goalScored::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.36), rgba(185, 28, 28, 0.58));
+  opacity: 1;
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.matchRow.goalScored.goalPending::before {
+  animation: scorexpGoalSweep 2s cubic-bezier(0.19, 0.76, 0.26, 1) forwards;
+}
+
+.matchRow.goalScored.goalConfirmed::before {
+  animation: none;
+}
+
+.matchRow.goalScored.goalPending::after {
+  content: none;
+}
+
+.matchRow.goalScored .teamLine.goalTeam,
+.matchRow.goalScored .teamLine.goalTeam .teamNameCluster > span:first-child,
+.matchRow.goalScored .scoreBlock {
+  color: #fff7f8;
+}
+
+.matchRow.goalScored .goalTag {
+  display: inline-flex;
+  align-items: center;
+  align-self: baseline;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff7f8;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1.1;
+  animation: scorexpGoalBadge 1100ms ease-out both;
+}
+
+.detailScoreHero.goalScored,
+.atmosphereHero.goalScored,
+.atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(248, 113, 113, 0.58);
+}
+
+.detailScoreHero.goalConfirmed,
+.atmosphereHero.goalConfirmed,
+.atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
+  background:
+    linear-gradient(90deg, rgba(127, 29, 29, 0.5), rgba(69, 10, 10, 0.42)),
+    var(--sx-surface);
+}
+
+.detailGoalSweep,
+.atmosphereGoalSweep {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 24%),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.26), rgba(185, 28, 28, 0.52));
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.detailScoreHero.goalPending .detailGoalSweep,
+.atmosphereHero.goalPending .atmosphereGoalSweep {
+  animation: scorexpGoalSweep 2s cubic-bezier(0.19, 0.76, 0.26, 1) forwards;
+}
+
+.detailScoreHero.goalScored > :not(.detailGoalSweep),
+.atmosphereHero.goalScored > :not(.atmosphereGoalSweep) {
+  position: relative;
+  z-index: 1;
+}
+
+.detailTeamSummary.goalTeam span,
+.atmosphereTeam.goalTeam strong,
+.detailScoreHero.goalScored .detailScoreCenter,
+.detailScoreHero.goalScored .detailScoreCenter strong,
+.atmosphereHero.goalScored .atmosphereScoreline {
+  color: #fff7f8;
+  text-shadow: 0 0 18px rgba(248, 113, 113, 0.32);
+}
+
+.detailGoalBadge,
+.atmosphereGoalBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  min-width: 48px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff7f8;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0;
+  box-shadow: 0 12px 26px rgba(127, 29, 29, 0.24);
+  animation: scorexpGoalBadge 1200ms ease-out both;
+}
+
+.atmosphereGoalBadge {
+  margin-top: 4px;
+}
+
+.scorexpLightTheme .matchRow.goalScored.goalPending,
+.scorexpLightTheme .matchRow.goalScored.goalPending:hover,
+.scorexpLightTheme .matchRow.goalScored.goalPending.selected {
+  background: #ffffff;
+}
+
+.scorexpLightTheme .matchRow.goalScored.goalConfirmed,
+.scorexpLightTheme .matchRow.goalScored.goalConfirmed:hover,
+.scorexpLightTheme .matchRow.goalScored.goalConfirmed.selected,
+.scorexpLightTheme .detailScoreHero.goalConfirmed,
+.scorexpLightTheme .atmosphereHero.goalConfirmed,
+.scorexpLightTheme .atmosphereCompactHero.goalScored .atmosphereCompactHeroInner {
+  border-color: rgba(225, 29, 72, 0.42);
+  background:
+    linear-gradient(90deg, rgba(254, 226, 226, 0.98), rgba(255, 241, 242, 0.96)),
+    #ffffff;
+}
+
+.scorexpLightTheme .matchRow.goalScored .teamLine.goalTeam,
+.scorexpLightTheme .matchRow.goalScored .teamLine.goalTeam .teamNameCluster > span:first-child,
+.scorexpLightTheme .matchRow.goalScored .scoreBlock,
+.scorexpLightTheme .detailTeamSummary.goalTeam span,
+.scorexpLightTheme .atmosphereTeam.goalTeam strong,
+.scorexpLightTheme .detailScoreHero.goalScored .detailScoreCenter,
+.scorexpLightTheme .detailScoreHero.goalScored .detailScoreCenter strong,
+.scorexpLightTheme .atmosphereHero.goalScored .atmosphereScoreline {
+  color: #7f1d1d;
+}
+
+.scorexpLightTheme .matchRow.goalScored .goalTag,
+.scorexpLightTheme .detailGoalBadge,
+.scorexpLightTheme .atmosphereGoalBadge {
+  border-color: rgba(225, 29, 72, 0.2);
+  background: rgba(225, 29, 72, 0.1);
+  color: #9f1239;
+}
+
+@keyframes scorexpGoalSweep {
+  0% {
+    transform: scaleX(0);
+    opacity: 0.74;
+  }
+
+  64% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scorexpGoalBadge {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchRow.goalScored.goalPending::before,
+  .detailScoreHero.goalPending .detailGoalSweep,
+  .atmosphereHero.goalPending .atmosphereGoalSweep,
+  .matchRow.goalScored .goalTag,
+  .detailGoalBadge,
+  .atmosphereGoalBadge {
+    animation: none;
+  }
+
+  .matchRow.goalScored.goalPending::before,
+  .detailScoreHero.goalPending .detailGoalSweep,
+  .atmosphereHero.goalPending .atmosphereGoalSweep {
+    transform: scaleX(1);
+  }
+}
+
 @keyframes livePulse {
   0%,
   100% {

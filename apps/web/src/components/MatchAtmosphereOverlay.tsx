@@ -38,6 +38,7 @@ import type {
   MatchDetailStatistic,
   MatchDetailStandingRow,
   MatchDetailTopPlayer,
+  MatchGoalHighlight,
   NormalizedMatch,
   Team,
   UserProfile
@@ -54,6 +55,7 @@ interface MatchAtmosphereOverlayProps {
   colorMode?: "dark" | "light";
   onToggleColorMode?: () => void;
   backLabel?: string;
+  goalHighlight?: MatchGoalHighlight | null;
   chatProfile?: UserProfile | null;
   chatAccessToken?: string | null;
 }
@@ -184,6 +186,7 @@ export function MatchAtmosphereOverlay({
   colorMode = "dark",
   onToggleColorMode,
   backLabel = "Maç listesi",
+  goalHighlight = null,
   chatProfile = null,
   chatAccessToken = null
 }: MatchAtmosphereOverlayProps) {
@@ -193,6 +196,7 @@ export function MatchAtmosphereOverlay({
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
+  const activeGoalHighlight = activeMatch.status.group === "live" ? goalHighlight : null;
   const rawHomeAccent = useTeamAccent(activeMatch.homeTeam);
   const rawAwayAccent = useTeamAccent(activeMatch.awayTeam);
   const homeAccent = useMemo(() => normalizeLightAccent(rawHomeAccent, colorMode), [colorMode, rawHomeAccent]);
@@ -326,9 +330,12 @@ export function MatchAtmosphereOverlay({
   const shellClassName = [
     "matchAtmosphereShell",
     activeMatch.status.group,
+    activeGoalHighlight ? "goalScored" : "",
+    activeGoalHighlight?.phase === "pending" ? "goalPending" : "",
+    activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : "",
     activeTab === "chat" ? "chatTabActive" : "overviewTabActive",
     compactHeroVisible ? "compactHeroVisible chatHeroCompact" : ""
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 
   return (
     <div className="matchAtmosphereOverlay" role="dialog" aria-modal="true" aria-label="Maç atmosferi" ref={overlayRef}>
@@ -408,7 +415,7 @@ export function MatchAtmosphereOverlay({
           </aside>
 
           <main className="atmosphereScroll" ref={scrollContainerRef}>
-            <div className="atmosphereCompactHero" aria-hidden={!compactHeroVisible}>
+            <div className={`atmosphereCompactHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} aria-hidden={!compactHeroVisible}>
               <div className="atmosphereCompactHeroInner withScore">
                 <div className="atmosphereCompactTeam home">
                   <TeamLogo src={activeMatch.homeTeam.logo} label={activeMatch.homeTeam.name} size="lg" />
@@ -422,15 +429,17 @@ export function MatchAtmosphereOverlay({
               </div>
             </div>
 
-            <section className="atmosphereHero" id="atmosphere-overview" ref={heroRef}>
-              <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} accent={homeAccent} />
+            <section className={`atmosphereHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} id="atmosphere-overview" ref={heroRef}>
+              {activeGoalHighlight ? <span className="atmosphereGoalSweep" aria-hidden="true" /> : null}
+              <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} accent={homeAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "home")} />
               <div className="atmosphereScoreStage">
                 <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
                 <div className="atmosphereScoreline">{formatScoreline(activeMatch)}</div>
                 <strong>Maç Atmosferi</strong>
+                {activeGoalHighlight ? <em className="atmosphereGoalBadge">GOL</em> : null}
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
-              <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} />
+              <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
               <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
             </section>
 
@@ -548,23 +557,29 @@ function syncLiveSnapshot(match: NormalizedMatch, detailMatch: NormalizedMatch |
   };
 }
 
+function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "away") {
+  return side === target || side === "both";
+}
+
 function AtmosphereTeam({
   team,
   side,
   standing,
   form,
-  accent
+  accent,
+  goalActive = false
 }: {
   team: Team;
   side: "home" | "away";
   standing: MatchDetailStandingRow | null;
   form: NormalizedMatch[];
   accent: string;
+  goalActive?: boolean;
 }) {
   const teamStyle = { "--team-accent": accent } as CSSProperties;
 
   return (
-    <div className={`atmosphereTeam ${side}`} style={teamStyle}>
+    <div className={`atmosphereTeam ${side} ${goalActive ? "goalTeam" : ""}`} style={teamStyle}>
       <TeamLogo src={team.logo} label={team.name} size="lg" />
       <strong title={team.name}>{team.name}</strong>
       <span>{standing?.position ? `${standing.position}. sıra` : `${formScore(form, team.id)} form puanı`}</span>

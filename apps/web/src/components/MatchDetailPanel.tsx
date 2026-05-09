@@ -30,6 +30,7 @@ import type {
   MatchDetailPrediction,
   MatchDetailStatistic,
   MatchDetailStandingRow,
+  MatchGoalHighlight,
   NormalizedMatch,
   Team
 } from "../types";
@@ -45,6 +46,7 @@ interface MatchDetailPanelProps {
   onOpenAtmosphere: () => void;
   colorMode?: "dark" | "light";
   onToggleColorMode?: () => void;
+  goalHighlight?: MatchGoalHighlight | null;
   chatSlot?: ReactNode;
 }
 
@@ -117,12 +119,22 @@ export function MatchDetailPanel({
   onOpenAtmosphere,
   colorMode = "dark",
   onToggleColorMode,
+  goalHighlight = null,
   chatSlot
 }: MatchDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>("details");
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
   const [aiStep, setAiStep] = useState(0);
   const activeMatch = useMemo(() => syncLiveSnapshot(match, detail?.match), [detail?.match, match]);
+  const activeGoalHighlight = activeMatch.status.group === "live" ? goalHighlight : null;
+  const goalHeroClassName = [
+    "detailScoreHero",
+    activeGoalHighlight ? "goalScored" : "",
+    activeGoalHighlight?.phase === "pending" ? "goalPending" : "",
+    activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
   const prediction = detail?.predictions.latestLive ?? detail?.predictions.latestPrematch ?? null;
   const statisticRows = useMemo(() => buildStatisticRows(activeMatch, detail), [activeMatch, detail]);
   const hasChatTab = Boolean(chatSlot);
@@ -211,15 +223,17 @@ export function MatchDetailPanel({
         </div>
       </header>
 
-      <section className="detailScoreHero">
-        <TeamSummary match={activeMatch} side="home" />
+      <section className={goalHeroClassName}>
+        {activeGoalHighlight ? <span className="detailGoalSweep" aria-hidden="true" /> : null}
+        <TeamSummary match={activeMatch} side="home" goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "home")} />
         <div className="detailScoreCenter">
           <strong>{formatScore(activeMatch.score.home, activeMatch.status.group === "upcoming")}</strong>
           <span>-</span>
           <strong>{formatScore(activeMatch.score.away, activeMatch.status.group === "upcoming")}</strong>
           <small>{formatStatus(activeMatch)}</small>
+          {activeGoalHighlight ? <em className="detailGoalBadge">GOL</em> : null}
         </div>
-        <TeamSummary match={activeMatch} side="away" />
+        <TeamSummary match={activeMatch} side="away" goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
       </section>
 
       <div className="detailAtmosphereAction">
@@ -355,15 +369,19 @@ function LeagueLogo({ src, label }: { src: string | null; label: string }) {
   return <img className="detailLeagueLogo" src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }
 
-function TeamSummary({ match, side }: { match: NormalizedMatch; side: "home" | "away" }) {
+function TeamSummary({ match, side, goalActive = false }: { match: NormalizedMatch; side: "home" | "away"; goalActive?: boolean }) {
   const team = side === "home" ? match.homeTeam : match.awayTeam;
 
   return (
-    <div className="detailTeamSummary">
+    <div className={`detailTeamSummary ${goalActive ? "goalTeam" : ""}`}>
       <TeamLogo src={team.logo} label={team.name} size="lg" />
       <span>{team.name}</span>
     </div>
   );
+}
+
+function isGoalSide(side: MatchGoalHighlight["side"] | null, target: "home" | "away") {
+  return side === target || side === "both";
 }
 
 function DetailFact({ icon, label, value }: { icon: ReactNode; label: string; value: string | null }) {
