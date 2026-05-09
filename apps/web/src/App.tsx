@@ -198,8 +198,7 @@ export default function App() {
         selectedDisplayMatch.score.home ?? "",
         selectedDisplayMatch.score.away ?? "",
         selectedDisplayMatch.redCards.home,
-        selectedDisplayMatch.redCards.away,
-        selectedDisplayMatch.lastUpdatedAt
+        selectedDisplayMatch.redCards.away
       ].join(":")
     : null;
   const detailState = useMatchDetail(selectedDisplayMatch?.providerId ?? null, timezone, selectedDetailRefreshKey);

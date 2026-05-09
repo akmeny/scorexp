@@ -30,8 +30,12 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
 const HIGHLIGHTS_REFRESH_SECONDS = 60;
-const LIVE_REFRESH_MAX_SECONDS = 30;
+const LIVE_PROVIDER_REFRESH_MIN_SECONDS = 60;
+const LIVE_CARD_ENRICHMENT_ENABLED = false;
 const STALE_CLIENT_RETRY_SECONDS = 10;
+const PROVIDER_FAILURE_BACKOFF_SECONDS = 60;
+const PROVIDER_QUOTA_BACKOFF_SECONDS = 3_600;
+const STALE_CLIENT_BACKOFF_MAX_SECONDS = 300;
 
 interface ScoreboardQuery {
   date: string;
@@ -56,6 +60,8 @@ export class ScoreboardService {
   private readonly inFlight = new Map<string, Promise<SnapshotCacheEntry>>();
   private readonly detailInFlight = new Map<string, Promise<MatchDetailCacheEntry>>();
   private readonly cardEnrichmentInFlight = new Map<string, Promise<void>>();
+  private readonly providerBackoffUntil = new Map<string, number>();
+  private readonly detailBackoffUntil = new Map<string, number>();
 
   constructor(
     private readonly appEnv: AppEnv,
@@ -67,6 +73,7 @@ export class ScoreboardService {
   async getScoreboard(query: ScoreboardQuery): Promise<ScoreboardSnapshot> {
     const key = snapshotKey(query.date, query.timezone);
     const completedDate = await this.store.getCompletedDate(key);
+    const providerBackoffSeconds = this.remainingBackoffSeconds(this.providerBackoffUntil, key);
 
     if (completedDate) {
       const durableSnapshot = await this.store.getSnapshot(key);
@@ -88,8 +95,10 @@ export class ScoreboardService {
 
     const staleFallback = cached ?? durable;
     if (staleFallback) {
-      this.queueRefresh(key, query.date, query.timezone);
-      return filterSnapshot(markSnapshotRefreshing(staleFallback.snapshot), query.view);
+      if (!providerBackoffSeconds) {
+        this.queueRefresh(key, query.date, query.timezone);
+      }
+      return filterSnapshot(markSnapshotRefreshing(staleFallback.snapshot, providerBackoffSeconds ?? STALE_CLIENT_RETRY_SECONDS), query.view);
     }
 
     const fresh = await this.refresh(key, query.date, query.timezone);
@@ -99,8 +108,9 @@ export class ScoreboardService {
   async getMatchDetail(query: MatchDetailQuery): Promise<MatchDetail> {
     const key = matchDetailKey(query.matchId, query.timezone);
     const cached = await this.cache.get<MatchDetailCacheEntry>(key);
+    const detailBackoffSeconds = this.remainingBackoffSeconds(this.detailBackoffUntil, key);
 
-    if (!query.force && cached && new Date(cached.expiresAt).getTime() > Date.now()) {
+    if (cached && (detailBackoffSeconds || new Date(cached.expiresAt).getTime() > Date.now())) {
       return cached.detail;
     }
 
@@ -163,10 +173,22 @@ export class ScoreboardService {
   private async refresh(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {
     const existing = this.inFlight.get(key);
     if (existing) return existing;
+    if (this.remainingBackoffSeconds(this.providerBackoffUntil, key)) {
+      throw new Error(`Provider refresh is in backoff for ${key}`);
+    }
 
-    const promise = this.fetchAndBuild(key, date, timezone).finally(() => {
-      this.inFlight.delete(key);
-    });
+    const promise = this.fetchAndBuild(key, date, timezone)
+      .then((entry) => {
+        this.providerBackoffUntil.delete(key);
+        return entry;
+      })
+      .catch((error) => {
+        this.registerBackoff(this.providerBackoffUntil, key, error);
+        throw error;
+      })
+      .finally(() => {
+        this.inFlight.delete(key);
+      });
 
     this.inFlight.set(key, promise);
     return promise;
@@ -175,16 +197,29 @@ export class ScoreboardService {
   private async refreshMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
     const existing = this.detailInFlight.get(key);
     if (existing) return existing;
+    if (this.remainingBackoffSeconds(this.detailBackoffUntil, key)) {
+      throw new Error(`Provider detail refresh is in backoff for ${key}`);
+    }
 
-    const promise = this.fetchAndBuildMatchDetail(key, matchId, timezone).finally(() => {
-      this.detailInFlight.delete(key);
-    });
+    const promise = this.fetchAndBuildMatchDetail(key, matchId, timezone)
+      .then((entry) => {
+        this.detailBackoffUntil.delete(key);
+        return entry;
+      })
+      .catch((error) => {
+        this.registerBackoff(this.detailBackoffUntil, key, error);
+        throw error;
+      })
+      .finally(() => {
+        this.detailInFlight.delete(key);
+      });
 
     this.detailInFlight.set(key, promise);
     return promise;
   }
 
   private queueRefresh(key: string, date: string, timezone: string): void {
+    if (this.remainingBackoffSeconds(this.providerBackoffUntil, key)) return;
     void this.refresh(key, date, timezone).catch(() => undefined);
   }
 
@@ -221,6 +256,7 @@ export class ScoreboardService {
   }
 
   private queueLiveCardEnrichment(key: string, timezone: string, baseEntry: SnapshotCacheEntry): void {
+    if (!LIVE_CARD_ENRICHMENT_ENABLED) return;
     if (!baseEntry.snapshot.leagues.some((league) => league.counts.live > 0)) return;
     if (this.cardEnrichmentInFlight.has(key)) return;
 
@@ -417,7 +453,7 @@ export class ScoreboardService {
     const hasLiveMatch = matches.some((match) => match.status.group === "live");
     const isPast = isBeforeLocalDate(date, timezone, now);
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
-    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, LIVE_REFRESH_MAX_SECONDS);
+    const liveRefreshSeconds = Math.max(this.appEnv.liveRefreshSeconds, LIVE_PROVIDER_REFRESH_MIN_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
         ? liveRefreshSeconds
@@ -435,7 +471,7 @@ export class ScoreboardService {
 
   private pickDetailRefreshPolicy(statusGroup: NormalizedMatch["status"]["group"], now: Date): RefreshPolicy {
     const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
-    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, LIVE_REFRESH_MAX_SECONDS);
+    const liveRefreshSeconds = Math.max(this.appEnv.liveRefreshSeconds, LIVE_PROVIDER_REFRESH_MIN_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
         ? liveRefreshSeconds
@@ -449,6 +485,23 @@ export class ScoreboardService {
       clientRefreshSeconds: providerRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
+  }
+
+  private remainingBackoffSeconds(backoffs: Map<string, number>, key: string) {
+    const until = backoffs.get(key);
+    if (!until) return null;
+    const remainingMs = until - Date.now();
+    if (remainingMs <= 0) {
+      backoffs.delete(key);
+      return null;
+    }
+
+    return Math.ceil(remainingMs / 1000);
+  }
+
+  private registerBackoff(backoffs: Map<string, number>, key: string, error: unknown) {
+    const seconds = isProviderQuotaError(error) ? PROVIDER_QUOTA_BACKOFF_SECONDS : PROVIDER_FAILURE_BACKOFF_SECONDS;
+    backoffs.set(key, Date.now() + seconds * 1000);
   }
 }
 
@@ -525,16 +578,29 @@ function lockSnapshot(snapshot: ScoreboardSnapshot, appEnv: AppEnv): ScoreboardS
   };
 }
 
-function markSnapshotRefreshing(snapshot: ScoreboardSnapshot): ScoreboardSnapshot {
-  const retryAt = addSeconds(new Date(), STALE_CLIENT_RETRY_SECONDS).toISOString();
+function markSnapshotRefreshing(snapshot: ScoreboardSnapshot, retrySeconds = STALE_CLIENT_RETRY_SECONDS): ScoreboardSnapshot {
+  const clientRetrySeconds = Math.max(10, Math.min(retrySeconds, STALE_CLIENT_BACKOFF_MAX_SECONDS));
+  const retryAt = addSeconds(new Date(), clientRetrySeconds).toISOString();
 
   return {
     ...snapshot,
     expiresAt: retryAt,
     refreshPolicy: {
       ...snapshot.refreshPolicy,
-      clientRefreshSeconds: Math.min(snapshot.refreshPolicy.clientRefreshSeconds, STALE_CLIENT_RETRY_SECONDS),
+      clientRefreshSeconds: Math.min(snapshot.refreshPolicy.clientRefreshSeconds, clientRetrySeconds),
       nextProviderRefreshAt: retryAt
     }
   };
+}
+
+function isProviderQuotaError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLocaleLowerCase("en-US") : String(error).toLocaleLowerCase("en-US");
+  return (
+    message.includes("429") ||
+    message.includes("quota") ||
+    message.includes("rate limit") ||
+    message.includes("too many requests") ||
+    message.includes("requests remaining") ||
+    message.includes("limit of requests")
+  );
 }

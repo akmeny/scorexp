@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AppEnv } from "../config/env.js";
 import type { ProviderMatch, ScoreboardSnapshot, SnapshotCacheEntry } from "../domain/types.js";
-import type { HighlightlyClient, HighlightlyFetchResult, HighlightlyMatchDetailResult } from "../provider/highlightly.js";
+import type { HighlightlyClient, HighlightlyFetchResult } from "../provider/highlightly.js";
 import { ScoreboardService } from "../services/scoreboard.js";
 import type { HotCache } from "../storage/cache.js";
 import type { DurableStore } from "../storage/jsonStore.js";
@@ -44,17 +44,24 @@ describe("scoreboard service loading strategy", () => {
     });
   });
 
-  it("does not wait for live card enrichment before returning the match list", async () => {
+  it("does not spend detail requests enriching live match cards by default", async () => {
     const cache = new MemoryCache();
     const store = new MemoryStore();
-    const deferredDetail = deferred<HighlightlyMatchDetailResult>();
+    let detailRequests = 0;
     const highlightly = {
       getMatchesByDate: async () => ({
         matches: [providerMatch({ id: 10, state: "First half" })],
         requestCount: 1,
         rateLimit: { limit: null, remaining: null }
       }),
-      getMatchById: () => deferredDetail.promise
+      getMatchById: async () => {
+        detailRequests += 1;
+        return {
+          match: null,
+          requestCount: 1,
+          rateLimit: { limit: null, remaining: null }
+        };
+      }
     } as unknown as HighlightlyClient;
     const service = new ScoreboardService(appEnv, highlightly, cache, store);
 
@@ -66,12 +73,7 @@ describe("scoreboard service loading strategy", () => {
 
     expect(snapshot.counts.live).toBe(1);
     expect(snapshot.counts.all).toBe(1);
-
-    deferredDetail.resolve({
-      match: null,
-      requestCount: 1,
-      rateLimit: { limit: null, remaining: null }
-    });
+    expect(detailRequests).toBe(0);
   });
 });
 
