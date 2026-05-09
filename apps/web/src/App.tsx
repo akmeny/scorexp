@@ -413,6 +413,15 @@ export default function App() {
       return;
     }
 
+    if (!desktopLayout && route.kind === "detail") {
+      const nextRoute: MatchRoute = { kind: "atmosphere", slug: matchRouteSlug(routeMatch) };
+      setSelectedMatch(routeMatch);
+      setAtmosphereOpen(true);
+      setRoute(nextRoute);
+      writeRouteToHistory(nextRoute, "replace");
+      return;
+    }
+
     setSelectedMatch(routeMatch);
     setAtmosphereOpen(route.kind === "atmosphere");
   }, [desktopLayout, displayedAllMatches, route]);
@@ -637,9 +646,9 @@ export default function App() {
   };
 
   const openMatchDetail = (match: NormalizedMatch) => {
-    const nextRoute: MatchRoute = { kind: "detail", slug: matchRouteSlug(match) };
+    const nextRoute: MatchRoute = desktopLayout ? { kind: "detail", slug: matchRouteSlug(match) } : { kind: "atmosphere", slug: matchRouteSlug(match) };
     setSelectedMatch(match);
-    setAtmosphereOpen(false);
+    setAtmosphereOpen(!desktopLayout);
     setRoute(nextRoute);
     writeRouteToHistory(nextRoute, "push");
     scrollToDocumentTop();
@@ -666,7 +675,8 @@ export default function App() {
 
   const closeAtmosphere = () => {
     const activeMatch = selectedDisplayMatch ?? selectedMatch;
-    const nextRoute: MatchRoute = activeMatch ? { kind: "detail", slug: matchRouteSlug(activeMatch) } : { kind: "list" };
+    const nextRoute: MatchRoute = desktopLayout && activeMatch ? { kind: "detail", slug: matchRouteSlug(activeMatch) } : { kind: "list" };
+    if (!desktopLayout) setSelectedMatch(null);
     setAtmosphereOpen(false);
     setRoute(nextRoute);
     writeRouteToHistory(nextRoute, "replace");
@@ -697,7 +707,7 @@ export default function App() {
     });
   };
 
-  const shouldRenderDetailPanel = Boolean(selectedDisplayMatch && (route.kind !== "list" || desktopLayout));
+  const shouldRenderDetailPanel = Boolean(selectedDisplayMatch && (desktopLayout || route.kind === "detail"));
   const shouldRenderDesktopChat = Boolean(selectedDisplayMatch && desktopLayout && shouldRenderDetailPanel && route.kind !== "atmosphere");
   const rootClassName = [
     "appRoot",
@@ -880,7 +890,7 @@ export default function App() {
           refreshing={detailState.refreshing}
           error={detailState.error}
           onRequestClose={closeAtmosphere}
-          backLabel="Maç detayı"
+          backLabel={desktopLayout ? "Maç detayı" : "Maç listesi"}
           onReload={detailState.reload}
           colorMode={colorMode}
           onToggleColorMode={toggleColorMode}
