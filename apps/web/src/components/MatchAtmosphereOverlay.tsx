@@ -96,22 +96,35 @@ const eventLabels: Record<string, string> = {
 };
 
 type AtmosphereTab = "overview" | "chat";
-type MobileAtmosphereTab = "data" | "chat" | "stats" | "h2h" | "form" | "standings" | "lineups" | "aixp";
+type MobileAtmosphereTab = "data" | "chat" | "stats" | "h2h" | "standings" | "lineups" | "aixp";
+type MobileSwipeDirection = "forward" | "backward";
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
 type AtmosphereLineupTeam = NonNullable<MatchDetail["lineups"]>["home"];
 type AtmosphereLineupPlayer = NonNullable<AtmosphereLineupTeam>["initialLineup"][number][number];
 
-const mobileAtmosphereTabs: { key: MobileAtmosphereTab; label: string; shortLabel: string }[] = [
-  { key: "data", label: "Veriler", shortLabel: "Veri" },
-  { key: "chat", label: "Sohbet", shortLabel: "Soh." },
-  { key: "stats", label: "İstatistik", shortLabel: "İst." },
-  { key: "h2h", label: "H2H", shortLabel: "H2H" },
-  { key: "form", label: "Form", shortLabel: "Form" },
-  { key: "standings", label: "Puan", shortLabel: "Puan" },
-  { key: "lineups", label: "Diziliş", shortLabel: "Diz." },
-  { key: "aixp", label: "AIXP", shortLabel: "AIXP" }
+const mobileAtmosphereTabs: { key: MobileAtmosphereTab; label: string }[] = [
+  { key: "data", label: "Özet" },
+  { key: "chat", label: "Sohbet" },
+  { key: "stats", label: "İstatistik" },
+  { key: "h2h", label: "H2H" },
+  { key: "standings", label: "Puan" },
+  { key: "lineups", label: "Diziliş" },
+  { key: "aixp", label: "AIXP" }
+];
+
+const aixpSparklePoints = [
+  { x: "50%", y: "0%", delay: "0ms" },
+  { x: "73%", y: "8%", delay: "90ms" },
+  { x: "93%", y: "31%", delay: "180ms" },
+  { x: "89%", y: "67%", delay: "270ms" },
+  { x: "68%", y: "93%", delay: "360ms" },
+  { x: "50%", y: "100%", delay: "450ms" },
+  { x: "30%", y: "92%", delay: "540ms" },
+  { x: "10%", y: "68%", delay: "630ms" },
+  { x: "7%", y: "32%", delay: "720ms" },
+  { x: "28%", y: "8%", delay: "810ms" }
 ];
 
 interface InsightSegment {
@@ -214,6 +227,7 @@ export function MatchAtmosphereOverlay({
 }: MatchAtmosphereOverlayProps) {
   const [activeTab, setActiveTab] = useState<AtmosphereTab>("overview");
   const [mobileTab, setMobileTab] = useState<MobileAtmosphereTab>("data");
+  const [mobileSwipeDirection, setMobileSwipeDirection] = useState<MobileSwipeDirection | null>(null);
   const [compactHeroVisible, setCompactHeroVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLElement | null>(null);
@@ -256,14 +270,24 @@ export function MatchAtmosphereOverlay({
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const compactScoreline = formatCompactScoreline(activeMatch);
   const shouldShowLiveAtmosphere = activeMatch.status.group === "live" || activeMatch.status.group === "finished";
+  const mobilePanelMotionClass = mobileSwipeDirection === "forward" ? " mobileSwipeForward" : mobileSwipeDirection === "backward" ? " mobileSwipeBackward" : "";
+  const mobileContentPanelClassName = `atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
+  const mobileChatPanelClassName = `atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
+  const mobileAixpPanelClassName = `atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereMobileContentPanel atmosphereOverviewOnly${mobilePanelMotionClass}`;
+  const handleMobileTabChange = (nextTab: MobileAtmosphereTab) => {
+    setMobileSwipeDirection(null);
+    setMobileTab(nextTab);
+  };
   const selectAdjacentMobileTab = (direction: -1 | 1) => {
-    setMobileTab((current) => {
-      const currentIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === current);
-      if (currentIndex < 0) return current;
+    const currentIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === mobileTab);
+    if (currentIndex < 0) return;
 
-      const nextIndex = Math.min(Math.max(currentIndex + direction, 0), mobileAtmosphereTabs.length - 1);
-      return mobileAtmosphereTabs[nextIndex]?.key ?? current;
-    });
+    const nextIndex = Math.min(Math.max(currentIndex + direction, 0), mobileAtmosphereTabs.length - 1);
+    const nextTab = mobileAtmosphereTabs[nextIndex]?.key;
+    if (!nextTab || nextTab === mobileTab) return;
+
+    setMobileSwipeDirection(direction > 0 ? "forward" : "backward");
+    setMobileTab(nextTab);
   };
 
   const handleMobileSwipeStart = (event: TouchEvent<HTMLElement>) => {
@@ -294,8 +318,16 @@ export function MatchAtmosphereOverlay({
   useEffect(() => {
     setActiveTab("overview");
     setMobileTab("data");
+    setMobileSwipeDirection(null);
     setCompactHeroVisible(false);
   }, [match.id]);
+
+  useEffect(() => {
+    if (!mobileSwipeDirection) return;
+
+    const timer = window.setTimeout(() => setMobileSwipeDirection(null), 280);
+    return () => window.clearTimeout(timer);
+  }, [mobileSwipeDirection, mobileTab]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -525,14 +557,14 @@ export function MatchAtmosphereOverlay({
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
-            <MobileAtmosphereTabs activeTab={mobileTab} onChange={setMobileTab} />
+            <MobileAtmosphereTabs activeTab={mobileTab} onChange={handleMobileTabChange} />
             {mobileTab === "chat" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileChatPanel atmosphereOverviewOnly" aria-label="Sohbet">
+              <section className={mobileChatPanelClassName} aria-label="Sohbet">
                 <MatchChatRoom match={activeMatch} variant="embedded" profile={chatProfile} accessToken={chatAccessToken} />
               </section>
             ) : null}
             {mobileTab === "stats" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="İstatistik">
+              <section className={mobileContentPanelClassName} aria-label="İstatistik">
                 <section className="atmospherePanel">
                   <PanelTitle icon={<BarChart3 size={17} />} label={activeMatch.status.group === "upcoming" ? "Ön Maç Veri Dengesi" : "Maç İstatistikleri"} />
                   <StatisticCompare match={activeMatch} rows={statisticRows} />
@@ -540,16 +572,12 @@ export function MatchAtmosphereOverlay({
               </section>
             ) : null}
             {mobileTab === "h2h" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="H2H">
+              <section className={mobileContentPanelClassName} aria-label="H2H">
                 <section className="atmospherePanel">
                   <PanelTitle icon={<Shield size={17} />} label="Mukayese Momentumu" />
                   <ComparisonMomentumChart items={h2hChartItems} className="atmosphereComparisonChart" />
                   <RecentHeadToHead matches={h2hMatches} focusTeamId={activeMatch.homeTeam.id} />
                 </section>
-              </section>
-            ) : null}
-            {mobileTab === "form" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Form">
                 <section className="atmospherePanel">
                   <PanelTitle icon={<Activity size={17} />} label="Son 5 Maç Gol Formu" />
                   <FormGoalsGraph
@@ -569,7 +597,7 @@ export function MatchAtmosphereOverlay({
               </section>
             ) : null}
             {mobileTab === "standings" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Puan">
+              <section className={mobileContentPanelClassName} aria-label="Puan">
                 <section className="atmospherePanel">
                   <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
                   <FullStandingTable
@@ -581,7 +609,7 @@ export function MatchAtmosphereOverlay({
               </section>
             ) : null}
             {mobileTab === "lineups" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="Diziliş">
+              <section className={mobileContentPanelClassName} aria-label="Diziliş">
                 <section className="atmospherePanel">
                   <PanelTitle icon={<UsersRound size={17} />} label="Saha Dizilişi" />
                   <AtmosphereLineupsView match={activeMatch} lineups={detail?.lineups ?? null} />
@@ -596,7 +624,7 @@ export function MatchAtmosphereOverlay({
               </section>
             ) : null}
             {mobileTab === "aixp" ? (
-              <section className="atmosphereMobileTabPanel atmosphereMobileAixpPanel atmosphereMobileContentPanel atmosphereOverviewOnly" aria-label="AIXP">
+              <section className={mobileAixpPanelClassName} aria-label="AIXP">
                 <section className="atmospherePanel atmosphereAiPanel">
                   <PanelTitle icon={<BrainCircuit size={17} />} label="aiXp Analizi" />
                   <strong>{aiSummary.title}</strong>
@@ -756,20 +784,40 @@ function MobileAtmosphereTabs({
 }) {
   return (
     <div className="atmosphereMobileTabs atmosphereOverviewOnly" role="tablist" aria-label="Atmosfer mobil sekmeleri">
-      {mobileAtmosphereTabs.map((tab) => (
-        <button
-          className={activeTab === tab.key ? "active" : ""}
-          type="button"
-          role="tab"
-          aria-selected={activeTab === tab.key}
-          aria-label={tab.label}
-          title={tab.label}
-          onClick={() => onChange(tab.key)}
-          key={tab.key}
-        >
-          {tab.shortLabel}
-        </button>
-      ))}
+      {mobileAtmosphereTabs.map((tab) => {
+        const className = [activeTab === tab.key ? "active" : "", tab.key === "aixp" ? "aixpSparkTab" : ""].filter(Boolean).join(" ");
+
+        return (
+          <button
+            className={className}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            aria-label={tab.label}
+            title={tab.label}
+            onClick={() => onChange(tab.key)}
+            key={tab.key}
+          >
+            <span className="atmosphereMobileTabLabel">{tab.label}</span>
+            {tab.key === "aixp" ? (
+              <span className="aixpTabSparkles" aria-hidden="true">
+                {aixpSparklePoints.map((spark, index) => (
+                  <i
+                    key={`${spark.x}-${spark.y}-${index}`}
+                    style={
+                      {
+                        "--spark-x": spark.x,
+                        "--spark-y": spark.y,
+                        "--spark-delay": spark.delay
+                      } as CSSProperties
+                    }
+                  />
+                ))}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

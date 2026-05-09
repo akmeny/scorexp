@@ -1040,6 +1040,57 @@ button:disabled {
   }
 }
 
+@keyframes atmosphereMobileSwipeForward {
+  from {
+    opacity: 0.74;
+    transform: translateX(26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes atmosphereMobileSwipeBackward {
+  from {
+    opacity: 0.74;
+    transform: translateX(-26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes aixpTabSparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(0deg);
+  }
+
+  6% {
+    opacity: 0.95;
+    transform: scale(1) rotate(38deg);
+  }
+
+  22% {
+    opacity: 1;
+    transform: scale(1.22) rotate(74deg);
+  }
+
+  40% {
+    opacity: 0;
+    transform: scale(0.45) rotate(128deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.35) rotate(128deg);
+  }
+}
+
 .teamsBlock {
   min-width: 0;
   display: flex;
@@ -5771,7 +5822,7 @@ button:disabled {
     width: calc(100% - 20px);
     min-height: 40px;
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 2px;
     margin: 10px auto 0;
     padding: 3px;
@@ -5782,18 +5833,53 @@ button:disabled {
   }
 
   .atmosphereMobileTabs button {
+    position: relative;
     min-width: 0;
     min-height: 32px;
-    padding: 0 2px;
+    padding: 0 1px;
     border: 1px solid transparent;
     border-radius: 5px;
     background: transparent;
     color: #9dafb6;
-    font-size: 9px;
+    font-size: clamp(6.7px, 2.05vw, 9.4px);
     font-weight: 950;
+    line-height: 1;
+    letter-spacing: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .atmosphereMobileTabs button.aixpSparkTab {
+    overflow: visible;
+    isolation: isolate;
+  }
+
+  .atmosphereMobileTabLabel {
+    position: relative;
+    z-index: 2;
+  }
+
+  .aixpTabSparkles {
+    position: absolute;
+    inset: -9px -7px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .aixpTabSparkles i {
+    position: absolute;
+    left: var(--spark-x);
+    top: var(--spark-y);
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    background: #fff2a8;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 71%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    opacity: 0;
+    transform: scale(0.35) rotate(0deg);
+    animation: aixpTabSparkle 5s linear infinite;
+    animation-delay: var(--spark-delay);
   }
 
   .atmosphereMobileTabs button.active {
@@ -5810,10 +5896,17 @@ button:disabled {
     margin: 10px auto 0;
   }
 
+  .atmosphereMobileTabPanel.mobileSwipeForward {
+    animation: atmosphereMobileSwipeForward 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .atmosphereMobileTabPanel.mobileSwipeBackward {
+    animation: atmosphereMobileSwipeBackward 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
   .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileStatsTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileH2hTabActive .atmosphereMobileDataOnly,
-  .matchAtmosphereShell.mobileFormTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileStandingsTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileLineupsTabActive .atmosphereMobileDataOnly,
   .matchAtmosphereShell.mobileAixpTabActive .atmosphereMobileDataOnly {
@@ -13057,7 +13150,7 @@ body.scorexpLightTheme,
 
 @media (max-width: 380px) {
   .atmosphereMobileTabs button {
-    font-size: 8.5px;
+    font-size: clamp(6.5px, 1.95vw, 7.4px);
     padding-inline: 1px;
   }
 
@@ -13676,6 +13769,9 @@ body.scorexpLightTheme,
   .matchRow.goalPending::after,
   .scoreBlock.scoreFlash,
   .minuteTick,
+  .atmosphereMobileTabPanel.mobileSwipeForward,
+  .atmosphereMobileTabPanel.mobileSwipeBackward,
+  .aixpTabSparkles i,
   .mobileSearchPanel,
   .mobileSportsMenu,
   .mobileProfileMenu,
