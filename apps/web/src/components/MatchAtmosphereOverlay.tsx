@@ -410,9 +410,15 @@ export function MatchAtmosphereOverlay({
           <main className="atmosphereScroll" ref={scrollContainerRef}>
             <div className="atmosphereCompactHero" aria-hidden={!compactHeroVisible}>
               <div className="atmosphereCompactHeroInner withScore">
-                <TeamLogo src={activeMatch.homeTeam.logo} label={activeMatch.homeTeam.name} size="lg" />
+                <div className="atmosphereCompactTeam home">
+                  <TeamLogo src={activeMatch.homeTeam.logo} label={activeMatch.homeTeam.name} size="lg" />
+                  <span>{activeMatch.homeTeam.name}</span>
+                </div>
                 <strong className={`atmosphereCompactScoreline ${activeMatch.status.group}`}>{compactScoreline}</strong>
-                <TeamLogo src={activeMatch.awayTeam.logo} label={activeMatch.awayTeam.name} size="lg" />
+                <div className="atmosphereCompactTeam away">
+                  <TeamLogo src={activeMatch.awayTeam.logo} label={activeMatch.awayTeam.name} size="lg" />
+                  <span>{activeMatch.awayTeam.name}</span>
+                </div>
               </div>
             </div>
 

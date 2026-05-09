@@ -3180,8 +3180,36 @@ button:disabled {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--home-accent) 24%, color-mix(in srgb, var(--away-accent) 18%, rgba(219, 234, 239, 0.34))) transparent;
   scroll-behavior: smooth;
   padding: 0 0 26px;
+}
+
+.atmosphereScroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.atmosphereScroll::-webkit-scrollbar-track {
+  background:
+    linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.035) 16%, rgba(255, 255, 255, 0.035) 84%, transparent);
+}
+
+.atmosphereScroll::-webkit-scrollbar-thumb {
+  border: 1px solid rgba(8, 12, 14, 0.72);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--home-accent) 42%, #d8eef6), color-mix(in srgb, var(--away-accent) 34%, #b8c8cf));
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--home-accent) 20%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.atmosphereScroll::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--home-accent) 54%, #edf7fa), color-mix(in srgb, var(--away-accent) 44%, #d8eef6));
 }
 
 .atmosphereHero {
@@ -3426,16 +3454,16 @@ button:disabled {
 
 .atmosphereCompactHero {
   position: fixed;
-  top: 0;
+  top: max(8px, env(safe-area-inset-top));
   right: 0;
   left: 0;
   z-index: 120;
-  height: clamp(58px, 10dvh, 96px);
+  height: clamp(58px, 8.4dvh, 78px);
   display: block;
   opacity: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
-  transform: translateY(-100%);
+  transform: translateY(calc(-100% - 14px));
   transition:
     opacity 160ms ease,
     transform 160ms ease;
@@ -3451,19 +3479,24 @@ button:disabled {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(74px, auto) minmax(0, 1fr);
   align-items: center;
   justify-items: center;
-  gap: clamp(12px, 3vw, 34px);
-  padding: max(8px, env(safe-area-inset-top)) clamp(18px, 4vw, 54px) 8px;
+  gap: clamp(8px, 1.6vw, 18px);
+  padding: 8px clamp(12px, 2.2vw, 22px);
   overflow: hidden;
-  border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--home-accent) 20%, color-mix(in srgb, var(--away-accent) 20%, rgba(255, 255, 255, 0.18)));
-  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--home-accent) 21%, color-mix(in srgb, var(--away-accent) 21%, rgba(255, 255, 255, 0.16)));
+  border-radius: 18px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 28%, rgba(10, 17, 20, 0.96)), rgba(10, 17, 20, 0.97) 41%, rgba(10, 17, 20, 0.97) 59%, color-mix(in srgb, var(--away-accent) 28%, rgba(10, 17, 20, 0.96))),
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--home-accent) 38%, transparent), transparent 34%),
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--away-accent) 38%, transparent), transparent 34%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 24%, rgba(10, 17, 20, 0.96)), rgba(10, 17, 20, 0.97) 39%, rgba(10, 17, 20, 0.97) 61%, color-mix(in srgb, var(--away-accent) 24%, rgba(10, 17, 20, 0.96))),
     rgba(10, 17, 20, 0.96);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 0 30px color-mix(in srgb, var(--home-accent) 8%, transparent),
+    0 0 30px color-mix(in srgb, var(--away-accent) 8%, transparent);
   backdrop-filter: blur(18px);
   pointer-events: auto;
 }
@@ -3471,27 +3504,69 @@ button:disabled {
 .atmosphereCompactHeroInner::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--home-accent), rgba(255, 255, 255, 0.42), var(--away-accent));
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    linear-gradient(135deg, var(--home-accent), transparent 27%, rgba(255, 255, 255, 0.45) 50%, transparent 73%, var(--away-accent));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .atmosphereCompactHeroInner::after {
   content: "";
   position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  right: 16px;
+  bottom: 7px;
+  left: 16px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 54%, transparent), rgba(255, 255, 255, 0.42), color-mix(in srgb, var(--away-accent) 54%, transparent));
+  opacity: 0.72;
+}
+
+.atmosphereCompactTeam {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+}
+
+.atmosphereCompactTeam.away {
+  flex-direction: row-reverse;
+  justify-self: end;
+}
+
+.atmosphereCompactTeam span {
+  min-width: 0;
+  max-width: clamp(82px, 12vw, 150px);
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.42);
+}
+
+.atmosphereCompactTeam.away span {
+  text-align: right;
 }
 
 .atmosphereCompactHeroInner .teamLogo.lg,
 .atmosphereCompactHeroInner .logoFallback.lg {
-  width: clamp(38px, 7dvh, 58px);
-  height: clamp(38px, 7dvh, 58px);
+  position: relative;
+  z-index: 1;
+  width: clamp(38px, 5.8dvh, 50px);
+  height: clamp(38px, 5.8dvh, 50px);
   padding: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
@@ -3505,24 +3580,29 @@ button:disabled {
 }
 
 .atmosphereCompactScoreline {
-  min-width: clamp(72px, 13vw, 140px);
-  min-height: clamp(34px, 6dvh, 58px);
+  position: relative;
+  z-index: 1;
+  min-width: clamp(74px, 10vw, 116px);
+  min-height: clamp(34px, 5.4dvh, 48px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 clamp(16px, 3vw, 34px);
-  border: 1px solid color-mix(in srgb, var(--home-accent) 20%, color-mix(in srgb, var(--away-accent) 20%, rgba(255, 255, 255, 0.16)));
+  padding: 0 clamp(14px, 2vw, 24px);
+  border: 1px solid color-mix(in srgb, var(--home-accent) 24%, color-mix(in srgb, var(--away-accent) 24%, rgba(255, 255, 255, 0.2)));
   border-radius: 999px;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 68%),
     linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 16%, transparent), rgba(255, 255, 255, 0.06), color-mix(in srgb, var(--away-accent) 16%, transparent));
   color: #f3f8fb;
-  font-size: clamp(18px, 3.6dvh, 34px);
+  font-size: clamp(19px, 3.2dvh, 29px);
   font-weight: 950;
   line-height: 1;
   text-align: center;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 10px 22px rgba(0, 0, 0, 0.24);
   text-shadow: 0 3px 18px rgba(0, 0, 0, 0.42);
 }
 
@@ -10282,6 +10362,21 @@ body.scorexpLightTheme,
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .atmosphereScroll {
+  scrollbar-color: color-mix(in srgb, var(--home-accent) 28%, color-mix(in srgb, var(--away-accent) 18%, rgba(78, 95, 108, 0.34))) transparent;
+}
+
+.scorexpLightTheme .atmosphereScroll::-webkit-scrollbar-track {
+  background:
+    linear-gradient(180deg, transparent, rgba(37, 54, 68, 0.055) 16%, rgba(37, 54, 68, 0.055) 84%, transparent);
+}
+
+.scorexpLightTheme .atmosphereScroll::-webkit-scrollbar-thumb {
+  border-color: rgba(255, 255, 255, 0.78);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--home-accent) 36%, #7890a0), color-mix(in srgb, var(--away-accent) 26%, #8aa0ad));
+}
+
 .scorexpLightTheme .atmosphereTopbar {
   border-color: var(--sx-line);
   background: rgba(255, 255, 255, 0.96);
@@ -10340,11 +10435,15 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereCompactHeroInner {
-  border-color: var(--sx-line);
+  border-color: color-mix(in srgb, var(--home-accent) 18%, color-mix(in srgb, var(--away-accent) 18%, var(--sx-line)));
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 18%, #ffffff), rgba(255, 255, 255, 0.97) 41%, rgba(255, 255, 255, 0.97) 59%, color-mix(in srgb, var(--away-accent) 18%, #ffffff)),
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--home-accent) 20%, transparent), transparent 34%),
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--away-accent) 20%, transparent), transparent 34%),
+    linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 16%, #ffffff), rgba(255, 255, 255, 0.97) 39%, rgba(255, 255, 255, 0.97) 61%, color-mix(in srgb, var(--away-accent) 16%, #ffffff)),
     rgba(255, 255, 255, 0.94);
-  box-shadow: 0 12px 30px rgba(28, 45, 59, 0.12);
+  box-shadow:
+    0 14px 32px rgba(28, 45, 59, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.74) inset;
 }
 
 .scorexpLightTheme .atmosphereCompactScoreline {
@@ -10352,6 +10451,11 @@ body.scorexpLightTheme,
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 70%),
     linear-gradient(90deg, color-mix(in srgb, var(--home-accent) 10%, transparent), rgba(37, 99, 235, 0.05), color-mix(in srgb, var(--away-accent) 10%, transparent));
+}
+
+.scorexpLightTheme .atmosphereCompactTeam span {
+  color: #12212a;
+  text-shadow: none;
 }
 
 .scorexpLightTheme .atmosphereTabs {
@@ -12513,5 +12617,20 @@ body.scorexpLightTheme,
   .atmosphereCompactHero {
     left: 8px;
     right: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .atmosphereCompactTeam span {
+    display: none;
+  }
+
+  .atmosphereCompactHeroInner {
+    grid-template-columns: minmax(42px, 1fr) minmax(74px, auto) minmax(42px, 1fr);
+    padding-inline: 12px;
+  }
+
+  .atmosphereCompactTeam {
+    gap: 0;
   }
 }
