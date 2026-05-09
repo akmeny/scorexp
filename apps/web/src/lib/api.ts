@@ -27,6 +27,7 @@ export interface FetchMatchDetailOptions {
   matchId: string;
   timezone: string;
   etag?: string | null;
+  force?: boolean;
   signal?: AbortSignal;
 }
 
@@ -99,10 +100,13 @@ export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<
   url.searchParams.set("date", options.date);
   url.searchParams.set("timezone", options.timezone);
   url.searchParams.set("view", options.view);
+  const headers: HeadersInit = { "Cache-Control": "no-cache" };
+  if (options.etag) headers["If-None-Match"] = options.etag;
 
   const response = await fetch(url, {
     signal: options.signal,
-    headers: options.etag ? { "If-None-Match": options.etag } : undefined
+    cache: "no-store",
+    headers
   });
 
   if (response.status === 304) {
@@ -127,10 +131,14 @@ export async function fetchScoreboard(options: FetchScoreboardOptions): Promise<
 export async function fetchMatchDetail(options: FetchMatchDetailOptions): Promise<FetchMatchDetailResult> {
   const url = new URL(`/api/v1/football/matches/${encodeURIComponent(options.matchId)}/detail`, apiBase);
   url.searchParams.set("timezone", options.timezone);
+  if (options.force) url.searchParams.set("force", "1");
+  const headers: HeadersInit = { "Cache-Control": "no-cache" };
+  if (options.etag && !options.force) headers["If-None-Match"] = options.etag;
 
   const response = await fetch(url, {
     signal: options.signal,
-    headers: options.etag ? { "If-None-Match": options.etag } : undefined
+    cache: "no-store",
+    headers
   });
 
   if (response.status === 304) {

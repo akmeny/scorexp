@@ -3744,8 +3744,24 @@ button:disabled {
   border-color: color-mix(in srgb, var(--sx-data-home) 22%, var(--sx-data-away));
 }
 
+.pressureEventDot.corner {
+  border-color: color-mix(in srgb, var(--sx-data-away) 36%, rgba(255, 255, 255, 0.14));
+}
+
 .pressureEventDot.corner svg {
   color: #f43f5e;
+}
+
+.pressureEventDot.substitution svg {
+  color: #9ca6ff;
+}
+
+.pressureEventDot.var svg {
+  color: #facc15;
+}
+
+.pressureEventDot.event svg {
+  color: #edf4f6;
 }
 
 .pressureEventDot.yellow .pressureCardIcon,

@@ -16,7 +16,8 @@ const detailParamsSchema = z.object({
 });
 
 const detailQuerySchema = z.object({
-  timezone: z.string().optional()
+  timezone: z.string().optional(),
+  force: z.enum(["1", "true"]).optional()
 });
 
 const highlightsQuerySchema = z.object({
@@ -54,14 +55,15 @@ export async function registerFootballRoutes(app: FastifyInstance, service: Scor
     const params = detailParamsSchema.parse(request.params);
     const parsed = detailQuerySchema.parse(request.query);
     const timezone = parsed.timezone ?? appEnv.defaultTimezone;
+    const force = parsed.force === "1" || parsed.force === "true";
 
-    const detail = await service.getMatchDetail({ matchId: params.id, timezone });
+    const detail = await service.getMatchDetail({ matchId: params.id, timezone, force });
     const etag = `"${detail.checksum}"`;
 
     reply.header("Cache-Control", "no-store");
     reply.header("ETag", etag);
 
-    if (request.headers["if-none-match"] === etag) {
+    if (!force && request.headers["if-none-match"] === etag) {
       return reply.code(304).send();
     }
 

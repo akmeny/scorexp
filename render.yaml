@@ -36,13 +36,13 @@ services:
           name: scorexp-cache
           property: connectionString
       - key: LIVE_REFRESH_SECONDS
-        value: 100
+        value: 30
       - key: UPCOMING_REFRESH_SECONDS
         value: 900
       - key: FINISHED_REFRESH_SECONDS
         value: 86400
       - key: CLIENT_REFRESH_SECONDS
-        value: 100
+        value: 30
       - key: SUPABASE_URL
         value: https://mpysngxgbfiquhwfplag.supabase.co
       - key: SUPABASE_ANON_KEY

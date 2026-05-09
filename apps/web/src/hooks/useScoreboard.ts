@@ -67,9 +67,9 @@ export function useScoreboard(date: string, timezone: string, view: ScoreboardVi
       } finally {
         if (abortRef.current === controller) {
           abortRef.current = null;
+          setLoading(false);
+          setRefreshing(false);
         }
-        setLoading(false);
-        setRefreshing(false);
       }
     },
     [date, timezone, view]

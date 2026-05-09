@@ -141,7 +141,6 @@ export default function App() {
   const [goalPresentations, setGoalPresentations] = useState<GoalPresentationRecord>({});
   const [recentlyFinishedLiveMatches, setRecentlyFinishedLiveMatches] = useState<TimedMatchRecord>({});
   const { data, loading, error, reload } = useScoreboard(date, timezone, "all");
-  const detailState = useMatchDetail(selectedMatch?.providerId ?? null, timezone);
 
   const activeRecentlyFinishedLiveIds = useMemo(() => {
     const now = Date.now();
@@ -183,6 +182,26 @@ export default function App() {
   const displayedMatchById = useMemo(() => {
     return new Map(displayedAllMatches.map((match) => [match.id, match]));
   }, [displayedAllMatches]);
+
+  const selectedDisplayMatch = useMemo(() => {
+    if (!selectedMatch) return null;
+    return displayedMatchById.get(selectedMatch.id) ?? selectedMatch;
+  }, [displayedMatchById, selectedMatch]);
+
+  const selectedDetailRefreshKey = selectedDisplayMatch
+    ? [
+        selectedDisplayMatch.id,
+        selectedDisplayMatch.status.group,
+        selectedDisplayMatch.status.description,
+        selectedDisplayMatch.status.minute ?? "",
+        selectedDisplayMatch.score.home ?? "",
+        selectedDisplayMatch.score.away ?? "",
+        selectedDisplayMatch.redCards.home,
+        selectedDisplayMatch.redCards.away,
+        selectedDisplayMatch.lastUpdatedAt
+      ].join(":")
+    : null;
+  const detailState = useMatchDetail(selectedDisplayMatch?.providerId ?? null, timezone, selectedDetailRefreshKey);
 
   const groups = useMemo(() => {
     return rawGroups.map((group) => ({
@@ -654,9 +673,10 @@ export default function App() {
   };
 
   const openAtmosphere = () => {
-    if (!selectedMatch) return;
+    const activeMatch = selectedDisplayMatch ?? selectedMatch;
+    if (!activeMatch) return;
 
-    const nextRoute: MatchRoute = { kind: "atmosphere", slug: matchRouteSlug(selectedMatch) };
+    const nextRoute: MatchRoute = { kind: "atmosphere", slug: matchRouteSlug(activeMatch) };
     setAtmosphereOpen(true);
     setRoute(nextRoute);
     writeRouteToHistory(nextRoute, "push");
@@ -664,7 +684,8 @@ export default function App() {
   };
 
   const closeAtmosphere = () => {
-    const nextRoute: MatchRoute = selectedMatch ? { kind: "detail", slug: matchRouteSlug(selectedMatch) } : { kind: "list" };
+    const activeMatch = selectedDisplayMatch ?? selectedMatch;
+    const nextRoute: MatchRoute = activeMatch ? { kind: "detail", slug: matchRouteSlug(activeMatch) } : { kind: "list" };
     setAtmosphereOpen(false);
     setRoute(nextRoute);
     writeRouteToHistory(nextRoute, "replace");
@@ -695,8 +716,8 @@ export default function App() {
     });
   };
 
-  const shouldRenderDetailPanel = Boolean(selectedMatch && (route.kind !== "list" || desktopLayout));
-  const shouldRenderDesktopChat = Boolean(selectedMatch && desktopLayout && shouldRenderDetailPanel && route.kind !== "atmosphere");
+  const shouldRenderDetailPanel = Boolean(selectedDisplayMatch && (route.kind !== "list" || desktopLayout));
+  const shouldRenderDesktopChat = Boolean(selectedDisplayMatch && desktopLayout && shouldRenderDetailPanel && route.kind !== "atmosphere");
   const rootClassName = [
     "appRoot",
     route.kind !== "list" ? "routeMatchPage" : "",
@@ -815,7 +836,7 @@ export default function App() {
             {sortByTime ? (
               <SortedMatchList
                 matches={sortedMatches}
-                selectedMatchId={selectedMatch?.id ?? null}
+                selectedMatchId={selectedDisplayMatch?.id ?? null}
                 favoriteIds={favoriteIds}
                 goalHighlights={activeGoalHighlights}
                 onToggleFavorite={toggleFavorite}
@@ -834,7 +855,7 @@ export default function App() {
                     collapsed={!(groupOpenOverrides[group.key] ?? groupDefaultOpen)}
                     pinned={pinned}
                     showMatchCount={view !== "live"}
-                    selectedMatchId={selectedMatch?.id ?? null}
+                    selectedMatchId={selectedDisplayMatch?.id ?? null}
                     favoriteIds={favoriteIds}
                     goalHighlights={activeGoalHighlights}
                     onToggle={toggleGroup}
@@ -848,10 +869,10 @@ export default function App() {
             )}
           </div>
         </section>
-        {shouldRenderDetailPanel && selectedMatch ? (
+        {shouldRenderDetailPanel && selectedDisplayMatch ? (
           <MatchDetailPanel
-            key={selectedMatch.id}
-            match={selectedMatch}
+            key={selectedDisplayMatch.id}
+            match={selectedDisplayMatch}
             detail={detailState.data}
             loading={detailState.loading}
             refreshing={detailState.refreshing}
@@ -861,17 +882,17 @@ export default function App() {
             onOpenAtmosphere={openAtmosphere}
             colorMode={colorMode}
             onToggleColorMode={toggleColorMode}
-            chatSlot={!desktopLayout ? <MatchChatRoom match={selectedMatch} variant="embedded" profile={auth.profile} accessToken={auth.session?.access_token} /> : undefined}
+            chatSlot={!desktopLayout ? <MatchChatRoom match={selectedDisplayMatch} variant="embedded" profile={auth.profile} accessToken={auth.session?.access_token} /> : undefined}
           />
         ) : null}
-        {shouldRenderDesktopChat && selectedMatch ? (
-          <MatchChatRoom key={`chat:${selectedMatch.id}`} match={selectedMatch} profile={auth.profile} accessToken={auth.session?.access_token} />
+        {shouldRenderDesktopChat && selectedDisplayMatch ? (
+          <MatchChatRoom key={`chat:${selectedDisplayMatch.id}`} match={selectedDisplayMatch} profile={auth.profile} accessToken={auth.session?.access_token} />
         ) : null}
       </main>
 
-      {atmosphereOpen && selectedMatch ? (
+      {atmosphereOpen && selectedDisplayMatch ? (
         <MatchAtmosphereOverlay
-          match={selectedMatch}
+          match={selectedDisplayMatch}
           detail={detailState.data}
           loading={detailState.loading}
           refreshing={detailState.refreshing}

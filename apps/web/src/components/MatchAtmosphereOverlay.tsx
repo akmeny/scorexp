@@ -106,7 +106,7 @@ interface InsightRow {
   segments?: InsightSegment[];
 }
 
-type PressureEventKind = "goal" | "penalty" | "corner" | "yellow" | "red";
+type PressureEventKind = "goal" | "penalty" | "corner" | "yellow" | "red" | "substitution" | "var" | "event";
 type ComparisonMetricKind = "attack" | "danger" | "possession";
 type LineMetricKind = "corner" | "yellow" | "red" | "target" | "missed";
 
@@ -1338,7 +1338,6 @@ function buildPressureEvents(events: MatchDetailEvent[], match: NormalizedMatch)
       if (minute === null) return null;
 
       const kind = pressureEventKind(event.type);
-      if (!kind) return null;
       const label = `${minute}' ${eventLabels[event.type] ?? event.type}`;
       return {
         key: `${side}:${minute}:${event.type}:${event.team.id}:${index}`,
@@ -1407,8 +1406,10 @@ function eventPressureWeight(kind: PressureEventKind) {
   if (kind === "penalty") return 30;
   if (kind === "red") return 20;
   if (kind === "corner") return 16;
+  if (kind === "var") return 12;
   if (kind === "yellow") return 7;
-  return 0;
+  if (kind === "substitution") return 4;
+  return 5;
 }
 
 function goalsFromMatchAndEvents(match: NormalizedMatch, events: PressureEventMarker[]): StatisticPair {
@@ -1427,20 +1428,25 @@ function goalsFromMatchAndEvents(match: NormalizedMatch, events: PressureEventMa
   };
 }
 
-function pressureEventKind(type: string): PressureEventKind | null {
-  const normalized = type.toLowerCase();
+function pressureEventKind(type: string): PressureEventKind {
+  const normalized = normalizeStatisticLookup(type);
   if (normalized.includes("red")) return "red";
   if (normalized.includes("yellow")) return "yellow";
-  if (normalized.includes("corner")) return "corner";
-  if (normalized.includes("penalty")) return "penalty";
-  if (normalized.includes("goal")) return "goal";
-  return null;
+  if (normalized.includes("corner") || normalized.includes("korner") || normalized.includes("kose")) return "corner";
+  if (normalized.includes("penalty") || normalized.includes("penalti")) return "penalty";
+  if (normalized.includes("goal") || normalized.includes("gol")) return "goal";
+  if (normalized.includes("var") || normalized.includes("video assistant")) return "var";
+  if (normalized.includes("substitut") || normalized.includes("oyuncu") || normalized.includes("degis")) return "substitution";
+  return "event";
 }
 
 function renderPressureEventIcon(kind: PressureEventKind) {
   if (kind === "yellow" || kind === "red") return <span className={`pressureCardIcon ${kind}`} />;
   if (kind === "goal") return <span className="pressureBallIcon">⚽</span>;
   if (kind === "corner") return <Flag size={8} />;
+  if (kind === "substitution") return <RefreshCw size={8} />;
+  if (kind === "var") return <Sparkles size={8} />;
+  if (kind === "event") return <Activity size={8} />;
   return <Target size={8} />;
 }
 
@@ -2023,20 +2029,30 @@ function hashString(value: string) {
 function eventSide(event: MatchDetailEvent, match: NormalizedMatch) {
   if (event.team.id === match.homeTeam.id) return "home";
   if (event.team.id === match.awayTeam.id) return "away";
+
+  const eventTeamName = normalizeStatisticLookup(event.team.name);
+  if (eventTeamName && eventTeamName === normalizeStatisticLookup(match.homeTeam.name)) return "home";
+  if (eventTeamName && eventTeamName === normalizeStatisticLookup(match.awayTeam.name)) return "away";
+
   return "neutral";
 }
 
 function eventIcon(type: string) {
-  if (type.includes("Goal") || type.includes("Penalty")) return <Target size={14} />;
-  if (type.includes("Card")) return <Shield size={14} />;
+  const normalized = normalizeStatisticLookup(type);
+  if (normalized.includes("corner") || normalized.includes("korner") || normalized.includes("kose")) return <Flag size={14} />;
+  if (normalized.includes("var") || normalized.includes("video assistant")) return <Sparkles size={14} />;
+  if (normalized.includes("substitut") || normalized.includes("oyuncu") || normalized.includes("degis")) return <RefreshCw size={14} />;
+  if (normalized.includes("goal") || normalized.includes("gol") || normalized.includes("penalty") || normalized.includes("penalti")) return <Target size={14} />;
+  if (normalized.includes("card") || normalized.includes("kart")) return <Shield size={14} />;
   return <Activity size={14} />;
 }
 
 function eventClass(type: string) {
-  if (type.includes("Red")) return "red";
-  if (type.includes("Yellow")) return "yellow";
-  if (type.includes("Goal") || type.includes("Penalty")) return "goal";
-  if (type.includes("Substitution")) return "substitution";
+  const normalized = normalizeStatisticLookup(type);
+  if (normalized.includes("red") || normalized.includes("kirmizi")) return "red";
+  if (normalized.includes("yellow") || normalized.includes("sari")) return "yellow";
+  if (normalized.includes("goal") || normalized.includes("gol") || normalized.includes("penalty") || normalized.includes("penalti")) return "goal";
+  if (normalized.includes("substitut") || normalized.includes("oyuncu") || normalized.includes("degis")) return "substitution";
   return "";
 }
 

@@ -10,7 +10,7 @@ interface UseMatchDetailState {
   reload: () => void;
 }
 
-export function useMatchDetail(matchId: string | null, timezone: string): UseMatchDetailState {
+export function useMatchDetail(matchId: string | null, timezone: string, refreshKey: string | null = null): UseMatchDetailState {
   const [data, setData] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -20,7 +20,7 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
   const abortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(
-    async (silent = false) => {
+    async (silent = false, options: { force?: boolean } = {}) => {
       if (!matchId) return;
 
       abortRef.current?.abort();
@@ -35,6 +35,7 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
           matchId,
           timezone,
           etag: etagRef.current,
+          force: options.force,
           signal: controller.signal
         });
 
@@ -59,9 +60,9 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
       } finally {
         if (abortRef.current === controller) {
           abortRef.current = null;
+          setLoading(false);
+          setRefreshing(false);
         }
-        setLoading(false);
-        setRefreshing(false);
       }
     },
     [matchId, timezone]
@@ -90,16 +91,46 @@ export function useMatchDetail(matchId: string | null, timezone: string): UseMat
     const seconds = data.refreshPolicy.clientRefreshSeconds;
     const interval = window.setInterval(() => {
       void load(true);
-    }, Math.max(100, seconds) * 1000);
+    }, Math.max(10, seconds) * 1000);
 
     return () => window.clearInterval(interval);
   }, [data, load, matchId]);
+
+  useEffect(() => {
+    if (!matchId || !refreshKey || !dataRef.current) return;
+    void load(true, { force: true });
+  }, [load, matchId, refreshKey]);
+
+  useEffect(() => {
+    const refreshOnResume = () => {
+      if (document.visibilityState === "visible") {
+        void load(true, { force: true });
+      }
+    };
+    const refreshOnPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted || document.visibilityState === "visible") {
+        void load(true, { force: true });
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshOnResume);
+    window.addEventListener("focus", refreshOnResume);
+    window.addEventListener("online", refreshOnResume);
+    window.addEventListener("pageshow", refreshOnPageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshOnResume);
+      window.removeEventListener("focus", refreshOnResume);
+      window.removeEventListener("online", refreshOnResume);
+      window.removeEventListener("pageshow", refreshOnPageShow);
+    };
+  }, [load]);
 
   return {
     data,
     loading,
     refreshing,
     error,
-    reload: () => void load(true)
+    reload: () => void load(true, { force: true })
   };
 }

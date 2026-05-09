@@ -41,6 +41,7 @@ interface ScoreboardQuery {
 interface MatchDetailQuery {
   matchId: string;
   timezone: string;
+  force?: boolean;
 }
 
 interface HighlightsQuery {
@@ -98,7 +99,7 @@ export class ScoreboardService {
     const key = matchDetailKey(query.matchId, query.timezone);
     const cached = await this.cache.get<MatchDetailCacheEntry>(key);
 
-    if (cached && new Date(cached.expiresAt).getTime() > Date.now()) {
+    if (!query.force && cached && new Date(cached.expiresAt).getTime() > Date.now()) {
       return cached.detail;
     }
 
