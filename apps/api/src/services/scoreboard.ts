@@ -30,6 +30,7 @@ import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
 const HIGHLIGHTS_REFRESH_SECONDS = 60;
+const LIVE_REFRESH_MAX_SECONDS = 30;
 const STALE_CLIENT_RETRY_SECONDS = 10;
 
 interface ScoreboardQuery {
@@ -416,9 +417,10 @@ export class ScoreboardService {
     const hasLiveMatch = matches.some((match) => match.status.group === "live");
     const isPast = isBeforeLocalDate(date, timezone, now);
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
+    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, LIVE_REFRESH_MAX_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
-        ? this.appEnv.liveRefreshSeconds
+        ? liveRefreshSeconds
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -426,16 +428,17 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: reason === "live" ? this.appEnv.liveRefreshSeconds : this.appEnv.clientRefreshSeconds,
+      clientRefreshSeconds: reason === "live" ? liveRefreshSeconds : this.appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
 
   private pickDetailRefreshPolicy(statusGroup: NormalizedMatch["status"]["group"], now: Date): RefreshPolicy {
     const reason = statusGroup === "live" ? "live" : statusGroup === "finished" ? "finished" : "upcoming";
+    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, LIVE_REFRESH_MAX_SECONDS);
     const providerRefreshSeconds =
       reason === "live"
-        ? this.appEnv.liveRefreshSeconds
+        ? liveRefreshSeconds
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
