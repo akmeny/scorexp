@@ -242,6 +242,26 @@ export function MatchAtmosphereOverlay({
   }, [match.id]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const query = window.matchMedia("(max-width: 760px)");
+    const updateChatActiveClass = () => {
+      const active = mobileTab === "chat" && query.matches;
+      document.documentElement.classList.toggle("scorexpAtmosphereChatActive", active);
+      document.body.classList.toggle("scorexpAtmosphereChatActive", active);
+    };
+
+    updateChatActiveClass();
+    query.addEventListener("change", updateChatActiveClass);
+
+    return () => {
+      query.removeEventListener("change", updateChatActiveClass);
+      document.documentElement.classList.remove("scorexpAtmosphereChatActive");
+      document.body.classList.remove("scorexpAtmosphereChatActive");
+    };
+  }, [mobileTab]);
+
+  useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     const overlay = overlayRef.current;
     let animationFrame = 0;
