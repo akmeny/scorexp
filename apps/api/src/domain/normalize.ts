@@ -30,8 +30,6 @@ const LIVE_STATES = new Set([
   "Extra time",
   "Break time",
   "Penalties",
-  "Suspended",
-  "Interrupted",
   "In progress"
 ]);
 

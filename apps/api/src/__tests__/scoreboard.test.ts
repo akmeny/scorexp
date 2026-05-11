@@ -77,6 +77,61 @@ describe("scoreboard service loading strategy", () => {
     expect(snapshot.refreshPolicy.clientRefreshSeconds).toBe(10);
     expect(detailRequests).toBe(0);
   });
+
+  it("keeps suspended matches out of the live feed", async () => {
+    const cache = new MemoryCache();
+    const store = new MemoryStore();
+    const highlightly = {
+      getMatchesByDate: async () => ({
+        matches: [providerMatch({ id: 20, state: "Suspended" })],
+        requestCount: 1,
+        rateLimit: { limit: null, remaining: null }
+      })
+    } as unknown as HighlightlyClient;
+    const service = new ScoreboardService(appEnv, highlightly, cache, store);
+
+    const allSnapshot = await service.getScoreboard({
+      date: "2026-05-05",
+      timezone: "Europe/Istanbul",
+      view: "all"
+    });
+    const liveSnapshot = await service.getScoreboard({
+      date: "2026-05-05",
+      timezone: "Europe/Istanbul",
+      view: "live"
+    });
+
+    expect(allSnapshot.counts.live).toBe(0);
+    expect(allSnapshot.counts.unknown).toBe(1);
+    expect(liveSnapshot.counts.live).toBe(0);
+    expect(liveSnapshot.counts.all).toBe(0);
+  });
+
+  it("drops provider matches that do not belong to the requested local date", async () => {
+    const cache = new MemoryCache();
+    const store = new MemoryStore();
+    const highlightly = {
+      getMatchesByDate: async () => ({
+        matches: [
+          providerMatch({ id: 30, state: "Not started", date: "2026-05-04T20:30:00.000Z" }),
+          providerMatch({ id: 31, state: "Not started", date: "2026-05-05T17:00:00.000Z" })
+        ],
+        requestCount: 1,
+        rateLimit: { limit: null, remaining: null }
+      })
+    } as unknown as HighlightlyClient;
+    const service = new ScoreboardService(appEnv, highlightly, cache, store);
+
+    const snapshot = await service.getScoreboard({
+      date: "2026-05-05",
+      timezone: "Europe/Istanbul",
+      view: "all"
+    });
+
+    const matches = snapshot.leagues.flatMap((league) => league.matches);
+    expect(matches).toHaveLength(1);
+    expect(matches[0].providerId).toBe("31");
+  });
 });
 
 class MemoryCache implements HotCache {
@@ -100,7 +155,7 @@ class MemoryStore implements DurableStore {
 
   constructor(initialSnapshot?: SnapshotCacheEntry) {
     if (initialSnapshot) {
-      this.snapshots.set(`football:v4:${initialSnapshot.snapshot.date}:${initialSnapshot.snapshot.timezone}`, initialSnapshot);
+      this.snapshots.set(`football:v5:${initialSnapshot.snapshot.date}:${initialSnapshot.snapshot.timezone}`, initialSnapshot);
     }
   }
 
@@ -185,10 +240,10 @@ function snapshotEntry(options: { fetchedAt: string; expiresAt: string; matches:
   };
 }
 
-function providerMatch(options: { id: number; state: string }): ProviderMatch {
+function providerMatch(options: { id: number; state: string; date?: string }): ProviderMatch {
   return {
     id: options.id,
-    date: "2026-05-05T17:00:00.000Z",
+    date: options.date ?? "2026-05-05T17:00:00.000Z",
     country: { code: "TR", name: "Turkey", logo: null },
     league: { id: 1, name: "Super Lig", season: 2026, logo: null },
     homeTeam: { id: 1, name: "Home", logo: null },

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchScoreboard } from "../lib/api";
 import type { ScoreboardSnapshot, ScoreboardView } from "../types";
 
-const SCOREBOARD_CACHE_PREFIX = "scorexp:scoreboard";
+const SCOREBOARD_CACHE_PREFIX = "scorexp:scoreboard:v2";
 const SCOREBOARD_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const SCOREBOARD_LIVE_CACHE_MAX_AGE_MS = 30 * 1000;
 
 interface UseScoreboardState {
   data: ScoreboardSnapshot | null;
@@ -145,7 +146,9 @@ function readCachedScoreboard(date: string, timezone: string, view: ScoreboardVi
 
     const parsed = JSON.parse(raw) as { savedAt?: number; snapshot?: ScoreboardSnapshot };
     if (!parsed.snapshot || typeof parsed.savedAt !== "number") return null;
-    if (Date.now() - parsed.savedAt > SCOREBOARD_CACHE_MAX_AGE_MS) return null;
+    const age = Date.now() - parsed.savedAt;
+    if (snapshotHasLiveMatches(parsed.snapshot) && age > SCOREBOARD_LIVE_CACHE_MAX_AGE_MS) return null;
+    if (age > SCOREBOARD_CACHE_MAX_AGE_MS) return null;
     if (parsed.snapshot.date !== date || parsed.snapshot.timezone !== timezone || parsed.snapshot.view !== view) return null;
 
     return parsed.snapshot;
@@ -172,4 +175,8 @@ function writeCachedScoreboard(snapshot: ScoreboardSnapshot): void {
 
 function scoreboardCacheKey(date: string, timezone: string, view: ScoreboardView) {
   return `${SCOREBOARD_CACHE_PREFIX}:${date}:${timezone}:${view}`;
+}
+
+function snapshotHasLiveMatches(snapshot: ScoreboardSnapshot) {
+  return snapshot.counts.live > 0 || snapshot.refreshPolicy.reason === "live";
 }

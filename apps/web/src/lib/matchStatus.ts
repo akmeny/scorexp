@@ -1,16 +1,20 @@
 import type { NormalizedMatch } from "../types";
 
 export function formatMatchStatusLabel(match: NormalizedMatch) {
+  const description = match.status.description.trim().toLowerCase();
+  const pausedLabel = pausedStatusLabel(description);
+  if (pausedLabel) return pausedLabel;
+
   if (match.status.group === "finished") return "Bitti";
   if (match.status.group === "upcoming") return match.localTime;
 
   if (match.status.group === "live") {
-    const description = match.status.description.toLowerCase();
     if (description === "half time") return "Devre";
+    if (description === "break time") return "Ara";
     if (description === "penalties") return "Penalti";
 
     const minute = match.status.minute;
-    if (minute === null) return "Canli";
+    if (minute === null) return description === "extra time" ? "Uzatma" : "Canlı";
     return formatLiveMinute(match, description, minute);
   }
 
@@ -19,8 +23,19 @@ export function formatMatchStatusLabel(match: NormalizedMatch) {
 
 export function shouldShowLiveMinuteTick(match: NormalizedMatch) {
   if (match.status.group !== "live") return false;
-  const description = match.status.description.toLowerCase();
-  return match.status.minute !== null && description !== "half time" && description !== "penalties";
+  const description = match.status.description.trim().toLowerCase();
+  return match.status.minute !== null && description !== "half time" && description !== "break time" && description !== "penalties";
+}
+
+function pausedStatusLabel(description: string) {
+  if (description === "suspended") return "Askıda";
+  if (description === "interrupted") return "Kesildi";
+  if (description === "postponed") return "Ertelendi";
+  if (description === "cancelled") return "İptal";
+  if (description === "abandoned") return "Yarıda";
+  if (description === "awarded") return "Hükmen";
+  if (description === "to be announced") return "Saat belirsiz";
+  return null;
 }
 
 function formatLiveMinute(match: NormalizedMatch, description: string, minute: number) {

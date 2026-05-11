@@ -292,7 +292,7 @@ export class ScoreboardService {
     const fetchedAt = new Date().toISOString();
     const response = await this.highlightly.getMatchesByDate(date, timezone);
     const normalized = response.matches.map((match) => normalizeMatch(match, timezone, fetchedAt));
-    const incoming = normalized;
+    const incoming = keepMatchesForLocalDate(normalized, date, timezone);
     const persistedFinished = await this.store.getFinishedMatches(key);
     const merged = mergePersistedFinished(incoming, persistedFinished);
     const newlyFinished = merged.filter((match) => match.status.group === "finished");
@@ -773,11 +773,11 @@ export class ScoreboardService {
 }
 
 function snapshotKey(date: string, timezone: string) {
-  return `football:v4:${date}:${timezone}`;
+  return `football:v5:${date}:${timezone}`;
 }
 
 function matchDetailKey(matchId: string, timezone: string) {
-  return `football:match-detail:v7:${matchId}:${timezone}`;
+  return `football:match-detail:v8:${matchId}:${timezone}`;
 }
 
 function detailPrefetchAttemptKey(matchId: string, timezone: string) {
@@ -810,6 +810,14 @@ function lineupAttemptKey(matchId: string, bucket: "30m" | "15m") {
 
 function lineupDisabledKey(matchId: string) {
   return `football:lineups:disabled:v1:${matchId}`;
+}
+
+function keepMatchesForLocalDate(matches: NormalizedMatch[], date: string, timezone: string) {
+  return matches.filter((match) => {
+    const parsed = new Date(match.date);
+    if (Number.isNaN(parsed.getTime())) return true;
+    return localDate(timezone, parsed) === date;
+  });
 }
 
 function cachedSupplement<T>(value: T): CachedSupplement<T> {
