@@ -95,15 +95,6 @@ type AixpSparkle = { id: string; x: string; y: string; size: string; delay: stri
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
 type StandingPulseKind = "champions" | "europa" | "conference" | "promotion" | "playoff" | "relegation";
-type KnockoutTieInfo = {
-  stageLabel: string;
-  legLabel: string;
-  heroLabel: string;
-  previousLeg: NormalizedMatch | null;
-  previousScoreLabel: string | null;
-  previousScoreDetail: string | null;
-  aggregateLabel: string | null;
-};
 type StandingZoneRule = {
   champions?: number;
   europa?: number;
@@ -266,7 +257,6 @@ export function MatchAtmosphereOverlay({
   const insightRows = useMemo(() => buildInsightRows(activeMatch, detail, totalStatisticRows, predictionRows), [activeMatch, detail, totalStatisticRows, predictionRows]);
   const h2hMatches = useMemo(() => (detail?.headToHead ?? []).filter((item) => item.id !== activeMatch.id), [activeMatch.id, detail?.headToHead]);
   const h2hSummary = useMemo(() => summarizeResults(h2hMatches, activeMatch.homeTeam, activeMatch.awayTeam), [activeMatch, h2hMatches]);
-  const knockoutTieInfo = useMemo(() => buildKnockoutTieInfo(activeMatch, h2hMatches), [activeMatch, h2hMatches]);
   const h2hChartItems = useMemo<ComparisonChartItem[]>(
     () => [
       { label: activeMatch.homeTeam.name, shortLabel: "Ev", value: h2hSummary.homeWins, suffix: "G", tone: "home" },
@@ -285,7 +275,7 @@ export function MatchAtmosphereOverlay({
   const statusLabel = formatStatus(activeMatch);
   const scorelineLabel = formatScoreline(activeMatch);
   const showStatusPill = activeMatch.status.group !== "upcoming" || statusLabel !== scorelineLabel;
-  const standingTabLabel = knockoutTieInfo ? "Eleme" : "Puan";
+  const standingTabLabel = "Puan";
   const activeMobileTabIndex = Math.max(0, mobileAtmosphereTabs.findIndex((tab) => tab.key === mobileTab));
   const mobileSwipeTrackStyle = {
     transform: `translate3d(${mobileSwipeDragging ? mobileSwipeOffset : 0}px, 0, 0)`
@@ -688,17 +678,13 @@ export function MatchAtmosphereOverlay({
         return (
           <section className={mobileContentPanelClassName} aria-label={standingTabLabel}>
             <section className="atmospherePanel atmosphereStandingFullPanel">
-              <PanelTitle icon={knockoutTieInfo ? <Trophy size={17} /> : <ListOrdered size={17} />} label={knockoutTieInfo ? "Eleme Durumu" : "Tam Puan Tablosu"} />
-              {knockoutTieInfo ? (
-                <KnockoutTiePanel match={activeMatch} tieInfo={knockoutTieInfo} />
-              ) : (
-                <FullStandingTable
-                  standings={detail?.standings ?? null}
-                  homeTeamId={activeMatch.homeTeam.id}
-                  awayTeamId={activeMatch.awayTeam.id}
-                  countryName={activeMatch.country.name}
-                />
-              )}
+              <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
+              <FullStandingTable
+                standings={detail?.standings ?? null}
+                homeTeamId={activeMatch.homeTeam.id}
+                awayTeamId={activeMatch.awayTeam.id}
+                countryName={activeMatch.country.name}
+              />
             </section>
           </section>
         );
@@ -869,7 +855,7 @@ export function MatchAtmosphereOverlay({
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
               <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
-              <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} tieInfo={knockoutTieInfo} />
+              <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
             </section>
 
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
@@ -948,16 +934,12 @@ export function MatchAtmosphereOverlay({
               </section>
 
               <section className="atmospherePanel">
-                <PanelTitle icon={knockoutTieInfo ? <Trophy size={17} /> : <ListOrdered size={17} />} label={knockoutTieInfo ? "Eleme Durumu" : "Puan ve Konum"} />
-                {knockoutTieInfo ? (
-                  <KnockoutTiePanel match={activeMatch} tieInfo={knockoutTieInfo} compact />
-                ) : (
-                  <StandingSnapshot
-                    standings={detail?.standings ?? null}
-                    homeTeamId={activeMatch.homeTeam.id}
-                    awayTeamId={activeMatch.awayTeam.id}
-                  />
-                )}
+                <PanelTitle icon={<ListOrdered size={17} />} label="Puan ve Konum" />
+                <StandingSnapshot
+                  standings={detail?.standings ?? null}
+                  homeTeamId={activeMatch.homeTeam.id}
+                  awayTeamId={activeMatch.awayTeam.id}
+                />
               </section>
             </section>
 
@@ -1148,40 +1130,34 @@ function AtmosphereTeam({
 function HeroPredictionLine({
   rows,
   homeTeam,
-  awayTeam,
-  tieInfo
+  awayTeam
 }: {
   rows: PredictionRow[];
   homeTeam: Team;
   awayTeam: Team;
-  tieInfo?: KnockoutTieInfo | null;
 }) {
-  if (rows.length === 0 && !tieInfo) return null;
+  if (rows.length === 0) return null;
 
   const orderedRows = ["home", "draw", "away"]
     .map((key) => rows.find((row) => row.key === key))
     .filter((row): row is PredictionRow => Boolean(row));
   const leader = [...orderedRows].sort((a, b) => b.number - a.number)[0];
+  if (!leader) return null;
 
   return (
-    <section className={`atmosphereHeroPrediction ${leader?.key ?? "neutral"}`} aria-label="aiXp tahmin ve eleme bilgisi">
-      {tieInfo ? <span className="atmosphereHeroTieNote">({tieInfo.heroLabel})</span> : null}
-      {leader ? (
-        <>
-          <div className="atmosphereHeroPredictionLabels">
-            <span title={homeTeam.name}>{homeTeam.name}</span>
-            <strong title={`${leader.team} ${leader.value}`}>
-              aiXp: {leader.team} {leader.value}
-            </strong>
-            <span title={awayTeam.name}>{awayTeam.name}</span>
-          </div>
-          <div className="atmosphereHeroPredictionRail" aria-hidden="true">
-            {orderedRows.map((row) => (
-              <i className={row.key} style={{ flexGrow: Math.max(row.number, 4) }} key={row.key} />
-            ))}
-          </div>
-        </>
-      ) : null}
+    <section className={`atmosphereHeroPrediction ${leader.key}`} aria-label="aiXp tahmin çizgisi">
+      <div className="atmosphereHeroPredictionLabels">
+        <span title={homeTeam.name}>{homeTeam.name}</span>
+        <strong title={`${leader.team} ${leader.value}`}>
+          aiXp: {leader.team} {leader.value}
+        </strong>
+        <span title={awayTeam.name}>{awayTeam.name}</span>
+      </div>
+      <div className="atmosphereHeroPredictionRail" aria-hidden="true">
+        {orderedRows.map((row) => (
+          <i className={row.key} style={{ flexGrow: Math.max(row.number, 4) }} key={row.key} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -1623,52 +1599,6 @@ function StandingSnapshot({
           <b>{row.points ?? "-"}</b>
         </div>
       ))}
-    </div>
-  );
-}
-
-function KnockoutTiePanel({
-  match,
-  tieInfo,
-  compact = false
-}: {
-  match: NormalizedMatch;
-  tieInfo: KnockoutTieInfo;
-  compact?: boolean;
-}) {
-  return (
-    <div className={`atmosphereKnockoutPanel ${compact ? "compact" : ""}`}>
-      <div className="atmosphereKnockoutSummary">
-        <span>{tieInfo.stageLabel}</span>
-        <strong>{tieInfo.legLabel}</strong>
-        <em>{tieInfo.aggregateLabel ?? "Eşleşme dengesi maç içinde netleşecek"}</em>
-      </div>
-
-      <div className="atmosphereKnockoutTeams">
-        <div>
-          <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
-          <strong title={match.homeTeam.name}>{match.homeTeam.name}</strong>
-        </div>
-        <b>{formatScoreline(match)}</b>
-        <div>
-          <TeamLogo src={match.awayTeam.logo} label={match.awayTeam.name} size="sm" />
-          <strong title={match.awayTeam.name}>{match.awayTeam.name}</strong>
-        </div>
-      </div>
-
-      <div className="atmosphereKnockoutMeta">
-        {tieInfo.previousLeg ? (
-          <>
-            <span>Önceki maç</span>
-            <strong>{tieInfo.previousScoreDetail}</strong>
-          </>
-        ) : (
-          <>
-            <span>Ayak bilgisi</span>
-            <strong>1. ayak görünümü</strong>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -2522,74 +2452,6 @@ function summarizeResults(matches: NormalizedMatch[], homeTeam: Team, awayTeam: 
 
 function findStandingRow(standings: MatchDetail["standings"], teamId: string) {
   return standings?.groups.flatMap((group) => group.rows).find((row) => row.team.id === teamId) ?? null;
-}
-
-function buildKnockoutTieInfo(match: NormalizedMatch, h2hMatches: NormalizedMatch[]): KnockoutTieInfo | null {
-  if (!isKnockoutMatch(match)) return null;
-
-  const previousLeg = findPreviousKnockoutLeg(match, h2hMatches);
-  const previousScoreLabel = previousLeg ? compactKnownScore(previousLeg) : null;
-  const previousScoreDetail = previousLeg ? detailedKnownScore(previousLeg) : null;
-  const stageLabel = formatAtmosphereStageLabel(match.round, match.league.name) ?? "Eleme";
-  const legLabel = previousLeg ? "2. Ayak" : "1. Ayak";
-
-  return {
-    stageLabel,
-    legLabel,
-    heroLabel: previousScoreLabel ? `Önceki skor: ${previousScoreLabel}` : legLabel,
-    previousLeg,
-    previousScoreLabel,
-    previousScoreDetail,
-    aggregateLabel: previousLeg ? aggregateTieLabel(match, previousLeg) : null
-  };
-}
-
-function isKnockoutMatch(match: NormalizedMatch) {
-  const value = normalizeTeamName(`${match.round ?? ""} ${match.league.name}`);
-  return /\b(playoff|playoffs|play-off|play-offs|promotion|relegation|knockout|qualification|qualifying|elimination|eleme|final|semi|quarter|round of|last 16|last 32|son 16|son 32|yari final|ceyrek final)\b/.test(value);
-}
-
-function findPreviousKnockoutLeg(match: NormalizedMatch, h2hMatches: NormalizedMatch[]) {
-  return h2hMatches
-    .filter((item) => item.timestamp < match.timestamp)
-    .filter((item) => item.status.group === "finished")
-    .filter((item) => isKnownScore(item))
-    .filter((item) => isSamePairing(match, item))
-    .filter((item) => item.league.id === match.league.id || normalizeTeamName(item.league.name) === normalizeTeamName(match.league.name))
-    .sort((a, b) => b.timestamp - a.timestamp)[0] ?? null;
-}
-
-function isSamePairing(match: NormalizedMatch, candidate: NormalizedMatch) {
-  const pair = new Set([match.homeTeam.id, match.awayTeam.id]);
-  return pair.has(candidate.homeTeam.id) && pair.has(candidate.awayTeam.id);
-}
-
-function isKnownScore(match: NormalizedMatch) {
-  return typeof match.score.home === "number" && typeof match.score.away === "number";
-}
-
-function compactKnownScore(match: NormalizedMatch) {
-  if (!isKnownScore(match)) return null;
-  return `${match.score.home}-${match.score.away}`;
-}
-
-function detailedKnownScore(match: NormalizedMatch) {
-  const score = compactKnownScore(match);
-  if (!score) return null;
-  return `${match.homeTeam.name} ${score} ${match.awayTeam.name}`;
-}
-
-function aggregateTieLabel(match: NormalizedMatch, previousLeg: NormalizedMatch) {
-  const homeTotal = scoreForTeam(previousLeg, match.homeTeam.id) + scoreForTeam(match, match.homeTeam.id);
-  const awayTotal = scoreForTeam(previousLeg, match.awayTeam.id) + scoreForTeam(match, match.awayTeam.id);
-  return `Toplam: ${match.homeTeam.name} ${homeTotal}-${awayTotal} ${match.awayTeam.name}`;
-}
-
-function scoreForTeam(match: NormalizedMatch, teamId: string) {
-  if (!isKnownScore(match)) return 0;
-  if (match.homeTeam.id === teamId) return match.score.home ?? 0;
-  if (match.awayTeam.id === teamId) return match.score.away ?? 0;
-  return 0;
 }
 
 function buildStandingWindow(standings: MatchDetail["standings"], homeTeamId: string, awayTeamId: string) {

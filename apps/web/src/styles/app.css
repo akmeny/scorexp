@@ -3637,17 +3637,6 @@ button:disabled {
   font-weight: 850;
 }
 
-.atmosphereHeroTieNote {
-  justify-self: center;
-  max-width: min(100%, 360px);
-  color: #d7e0ff;
-  font-size: 12px;
-  font-weight: 950;
-  line-height: 1.15;
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
 .atmosphereHeroPredictionLabels span,
 .atmosphereHeroPredictionLabels strong {
   min-width: 0;
@@ -5115,104 +5104,6 @@ button:disabled {
   color: #edf7fa;
   font-size: 12px;
   font-weight: 950;
-}
-
-.atmosphereKnockoutPanel {
-  min-width: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.atmosphereKnockoutSummary,
-.atmosphereKnockoutMeta {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-  padding: 12px;
-  border: 1px solid #26343a;
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 11%, transparent), color-mix(in srgb, var(--away-accent) 11%, transparent)),
-    #10171a;
-}
-
-.atmosphereKnockoutSummary span,
-.atmosphereKnockoutMeta span {
-  color: #8fa2aa;
-  font-size: 10px;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.atmosphereKnockoutSummary strong {
-  color: #edf7fa;
-  font-size: 22px;
-  font-weight: 950;
-  line-height: 1;
-}
-
-.atmosphereKnockoutSummary em,
-.atmosphereKnockoutMeta strong {
-  min-width: 0;
-  color: #c9d7dd;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 850;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.atmosphereKnockoutTeams {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid #26343a;
-  border-radius: 8px;
-  background: #0f171a;
-}
-
-.atmosphereKnockoutTeams > div {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  align-items: center;
-  gap: 7px;
-}
-
-.atmosphereKnockoutTeams > div:last-child {
-  grid-template-columns: minmax(0, 1fr) 24px;
-}
-
-.atmosphereKnockoutTeams > div:last-child .teamLogo,
-.atmosphereKnockoutTeams > div:last-child .logoFallback {
-  order: 2;
-}
-
-.atmosphereKnockoutTeams strong {
-  overflow: hidden;
-  color: #edf7fa;
-  font-size: 12px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.atmosphereKnockoutTeams > div:last-child strong {
-  text-align: right;
-}
-
-.atmosphereKnockoutTeams b {
-  color: #ff2d69;
-  font-size: 18px;
-  font-weight: 950;
-  white-space: nowrap;
-}
-
-.atmosphereKnockoutPanel.compact .atmosphereKnockoutSummary strong {
-  font-size: 18px;
 }
 
 .standingPulse {
@@ -12600,9 +12491,6 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereFullStandingRow,
-.scorexpLightTheme .atmosphereKnockoutSummary,
-.scorexpLightTheme .atmosphereKnockoutTeams,
-.scorexpLightTheme .atmosphereKnockoutMeta,
 .scorexpLightTheme .standingPulseLegend span,
 .scorexpLightTheme .atmosphereLineupBench > div > span {
   border-color: var(--sx-line);
@@ -12616,29 +12504,16 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .atmosphereMiniRow b,
 .scorexpLightTheme .atmosphereFullStandingRow b,
-.scorexpLightTheme .atmosphereKnockoutSummary strong,
-.scorexpLightTheme .atmosphereKnockoutTeams strong,
-.scorexpLightTheme .atmosphereKnockoutMeta strong,
 .scorexpLightTheme .atmosphereInsightHeader strong,
 .scorexpLightTheme .atmosphereInsightLegend b,
 .scorexpLightTheme .atmosphereHeroPredictionLabels strong {
   color: var(--sx-text);
 }
 
-.scorexpLightTheme .atmosphereKnockoutSummary span,
-.scorexpLightTheme .atmosphereKnockoutSummary em,
-.scorexpLightTheme .atmosphereKnockoutMeta span {
-  color: var(--sx-muted);
-}
-
 .scorexpLightTheme .atmosphereHeroPrediction {
   border-color: color-mix(in srgb, var(--sx-data-home) 10%, color-mix(in srgb, var(--sx-data-away) 10%, var(--sx-line)));
   background: transparent;
   box-shadow: none;
-}
-
-.scorexpLightTheme .atmosphereHeroTieNote {
-  color: #174ea6;
 }
 
 .scorexpLightTheme .atmosphereHeroPredictionLabels,
@@ -14746,10 +14621,6 @@ body.scorexpLightTheme,
     text-align: center;
   }
 
-  .atmosphereHeroTieNote {
-    font-size: 10px;
-  }
-
   .atmosphereHeroPredictionLabels span {
     display: none;
   }
@@ -15705,39 +15576,6 @@ body.scorexpLightTheme,
 
   .atmosphereFullStandingRow b {
     font-size: 10px;
-  }
-
-  .atmosphereKnockoutSummary,
-  .atmosphereKnockoutTeams,
-  .atmosphereKnockoutMeta {
-    padding: 10px;
-  }
-
-  .atmosphereKnockoutSummary strong {
-    font-size: 18px;
-  }
-
-  .atmosphereKnockoutTeams {
-    gap: 7px;
-  }
-
-  .atmosphereKnockoutTeams > div {
-    grid-template-columns: 20px minmax(0, 1fr);
-    gap: 5px;
-  }
-
-  .atmosphereKnockoutTeams > div:last-child {
-    grid-template-columns: minmax(0, 1fr) 20px;
-  }
-
-  .atmosphereKnockoutTeams strong,
-  .atmosphereKnockoutSummary em,
-  .atmosphereKnockoutMeta strong {
-    font-size: 10.5px;
-  }
-
-  .atmosphereKnockoutTeams b {
-    font-size: 15px;
   }
 
   .standingPulseLegend {
