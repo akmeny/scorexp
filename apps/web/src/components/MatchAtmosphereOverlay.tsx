@@ -73,13 +73,6 @@ const statisticPriority = [
   "Red cards"
 ];
 
-const standingPulseLabels: { kind: StandingPulseKind; label: string }[] = [
-  { kind: "champions", label: "Şampiyonlar Ligi" },
-  { kind: "europa", label: "UEFA Avrupa" },
-  { kind: "conference", label: "UEFA Konferans" },
-  { kind: "relegation", label: "Düşme hattı" }
-];
-
 const eventLabels: Record<string, string> = {
   Goal: "Gol",
   "Own Goal": "Kendi kalesine",
@@ -101,7 +94,25 @@ type MobileSwipeDirection = "forward" | "backward";
 type AixpSparkle = { id: string; x: string; y: string; size: string; delay: string; rotate: string };
 type PredictionRow = { key: "home" | "draw" | "away"; label: string; team: string; value: string; number: number };
 type InsightKind = "status" | "form" | "comparison" | "data" | "aixp";
-type StandingPulseKind = "champions" | "europa" | "conference" | "relegation";
+type StandingPulseKind = "champions" | "europa" | "conference" | "promotion" | "playoff" | "relegation";
+type KnockoutTieInfo = {
+  stageLabel: string;
+  legLabel: string;
+  heroLabel: string;
+  previousLeg: NormalizedMatch | null;
+  previousScoreLabel: string | null;
+  previousScoreDetail: string | null;
+  aggregateLabel: string | null;
+};
+type StandingZoneRule = {
+  champions?: number;
+  europa?: number;
+  conference?: number;
+  promotion?: number;
+  playoffFrom?: number;
+  playoffTo?: number;
+  relegation?: number;
+};
 type AtmosphereLineupTeam = NonNullable<MatchDetail["lineups"]>["home"];
 type AtmosphereLineupPlayer = NonNullable<AtmosphereLineupTeam>["initialLineup"][number][number];
 
@@ -255,6 +266,7 @@ export function MatchAtmosphereOverlay({
   const insightRows = useMemo(() => buildInsightRows(activeMatch, detail, totalStatisticRows, predictionRows), [activeMatch, detail, totalStatisticRows, predictionRows]);
   const h2hMatches = useMemo(() => (detail?.headToHead ?? []).filter((item) => item.id !== activeMatch.id), [activeMatch.id, detail?.headToHead]);
   const h2hSummary = useMemo(() => summarizeResults(h2hMatches, activeMatch.homeTeam, activeMatch.awayTeam), [activeMatch, h2hMatches]);
+  const knockoutTieInfo = useMemo(() => buildKnockoutTieInfo(activeMatch, h2hMatches), [activeMatch, h2hMatches]);
   const h2hChartItems = useMemo<ComparisonChartItem[]>(
     () => [
       { label: activeMatch.homeTeam.name, shortLabel: "Ev", value: h2hSummary.homeWins, suffix: "G", tone: "home" },
@@ -269,10 +281,14 @@ export function MatchAtmosphereOverlay({
   const themeToggleLabel = colorMode === "dark" ? "Açık moda geç" : "Koyu moda geç";
   const compactScoreline = formatCompactScoreline(activeMatch);
   const shouldShowLiveAtmosphere = activeMatch.status.group === "live" || activeMatch.status.group === "finished";
-  const leagueRoundLabel = activeMatch.round ? formatLeagueTitleRound(activeMatch.round) : null;
+  const atmosphereStageLabel = formatAtmosphereStageLabel(activeMatch.round, activeMatch.league.name);
+  const statusLabel = formatStatus(activeMatch);
+  const scorelineLabel = formatScoreline(activeMatch);
+  const showStatusPill = activeMatch.status.group !== "upcoming" || statusLabel !== scorelineLabel;
+  const standingTabLabel = knockoutTieInfo ? "Eleme" : "Puan";
   const activeMobileTabIndex = Math.max(0, mobileAtmosphereTabs.findIndex((tab) => tab.key === mobileTab));
   const mobileSwipeTrackStyle = {
-    transform: `translate3d(${mobileSwipeOffset - activeMobileTabIndex * mobileSwipeWidth}px, 0, 0)`
+    transform: `translate3d(${mobileSwipeDragging ? mobileSwipeOffset : 0}px, 0, 0)`
   } as CSSProperties;
   const mobileSwipeTrackClassName = [
     "atmosphereMobileSwipeTrack",
@@ -317,6 +333,7 @@ export function MatchAtmosphereOverlay({
 
     const touch = event.touches[0];
     if (!touch) return;
+
     setMobileSwipeSettling(false);
     setMobileSwipeDirection(null);
     setMobileSwipeOffset(0);
@@ -337,14 +354,14 @@ export function MatchAtmosphereOverlay({
     const absY = Math.abs(deltaY);
 
     if (!start.horizontalLocked) {
-      if (absX < 8) return;
-
-      if (absY > absX * 1.12) {
+      if (absY > 8 && absY > absX * 1.05) {
         mobileSwipeRef.current = null;
         setMobileSwipeDragging(false);
         setMobileSwipeOffset(0);
         return;
       }
+
+      if (absX < 14 || absX < absY * 1.25) return;
 
       start.horizontalLocked = true;
       setMobileSwipeDragging(true);
@@ -378,7 +395,7 @@ export function MatchAtmosphereOverlay({
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
     const threshold = Math.min(76, Math.max(42, mobileSwipeWidth * 0.16));
-    const horizontalSwipe = Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY) * 1.12;
+    const horizontalSwipe = start.horizontalLocked && Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY) * 1.12;
 
     setMobileSwipeDragging(false);
     setMobileSwipeSettling(true);
@@ -459,6 +476,39 @@ export function MatchAtmosphereOverlay({
     }, AIXP_SPARKLE_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateVisualViewportVars = () => {
+      const viewport = window.visualViewport;
+      const visualHeight = viewport?.height ?? window.innerHeight;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const keyboardInset = Math.max(0, window.innerHeight - visualHeight - viewportTop);
+      const visualHeightValue = `${Math.round(visualHeight)}px`;
+      const keyboardInsetValue = `${Math.round(keyboardInset)}px`;
+
+      document.documentElement.style.setProperty("--scorexp-visual-viewport-height", visualHeightValue);
+      document.body.style.setProperty("--scorexp-visual-viewport-height", visualHeightValue);
+      document.documentElement.style.setProperty("--scorexp-keyboard-inset", keyboardInsetValue);
+      document.body.style.setProperty("--scorexp-keyboard-inset", keyboardInsetValue);
+    };
+
+    updateVisualViewportVars();
+    window.visualViewport?.addEventListener("resize", updateVisualViewportVars);
+    window.visualViewport?.addEventListener("scroll", updateVisualViewportVars);
+    window.addEventListener("resize", updateVisualViewportVars);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateVisualViewportVars);
+      window.visualViewport?.removeEventListener("scroll", updateVisualViewportVars);
+      window.removeEventListener("resize", updateVisualViewportVars);
+      document.documentElement.style.removeProperty("--scorexp-visual-viewport-height");
+      document.body.style.removeProperty("--scorexp-visual-viewport-height");
+      document.documentElement.style.removeProperty("--scorexp-keyboard-inset");
+      document.body.style.removeProperty("--scorexp-keyboard-inset");
+    };
   }, []);
 
   useEffect(() => {
@@ -570,14 +620,6 @@ export function MatchAtmosphereOverlay({
     });
   };
 
-  const shouldRenderMobilePanel = (tabKey: MobileAtmosphereTab) => {
-    if (!mobileSwipeDragging && !mobileSwipeSettling && !mobileRenderAllPanels) return tabKey === mobileTab;
-    if (mobileRenderAllPanels) return true;
-
-    const tabIndex = mobileAtmosphereTabs.findIndex((tab) => tab.key === tabKey);
-    return tabIndex >= 0 && Math.abs(tabIndex - activeMobileTabIndex) <= 1;
-  };
-
   const renderMobileTabPanel = (tabKey: MobileAtmosphereTab) => {
     switch (tabKey) {
       case "data":
@@ -644,14 +686,19 @@ export function MatchAtmosphereOverlay({
         );
       case "standings":
         return (
-          <section className={mobileContentPanelClassName} aria-label="Puan">
-            <section className="atmospherePanel">
-              <PanelTitle icon={<ListOrdered size={17} />} label="Tam Puan Tablosu" />
-              <FullStandingTable
-                standings={detail?.standings ?? null}
-                homeTeamId={activeMatch.homeTeam.id}
-                awayTeamId={activeMatch.awayTeam.id}
-              />
+          <section className={mobileContentPanelClassName} aria-label={standingTabLabel}>
+            <section className="atmospherePanel atmosphereStandingFullPanel">
+              <PanelTitle icon={knockoutTieInfo ? <Trophy size={17} /> : <ListOrdered size={17} />} label={knockoutTieInfo ? "Eleme Durumu" : "Tam Puan Tablosu"} />
+              {knockoutTieInfo ? (
+                <KnockoutTiePanel match={activeMatch} tieInfo={knockoutTieInfo} />
+              ) : (
+                <FullStandingTable
+                  standings={detail?.standings ?? null}
+                  homeTeamId={activeMatch.homeTeam.id}
+                  awayTeamId={activeMatch.awayTeam.id}
+                  countryName={activeMatch.country.name}
+                />
+              )}
             </section>
           </section>
         );
@@ -726,11 +773,9 @@ export function MatchAtmosphereOverlay({
             <span>{backLabel}</span>
           </button>
 
-          <div className="atmosphereLeagueTitle" title={[activeMatch.league.name, leagueRoundLabel].filter(Boolean).join(": ")}>
+          <div className="atmosphereLeagueTitle" title={activeMatch.league.name}>
             <AtmosphereLeagueLogo src={activeMatch.league.logo} label={activeMatch.league.name} />
             <strong title={activeMatch.league.name}>{activeMatch.league.name}</strong>
-            {leagueRoundLabel ? <span className="atmosphereLeagueColon">:</span> : null}
-            {leagueRoundLabel ? <em title={leagueRoundLabel}>{leagueRoundLabel}</em> : null}
           </div>
 
           <div className="atmosphereTopActions">
@@ -798,10 +843,6 @@ export function MatchAtmosphereOverlay({
           <main
             className="atmosphereScroll"
             ref={scrollContainerRef}
-            onTouchStart={handleMobileSwipeStart}
-            onTouchMove={handleMobileSwipeMove}
-            onTouchEnd={handleMobileSwipeEnd}
-            onTouchCancel={handleMobileSwipeCancel}
           >
             <div className={`atmosphereCompactHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} aria-hidden={!compactHeroVisible}>
               <div className="atmosphereCompactHeroInner withScore">
@@ -819,28 +860,32 @@ export function MatchAtmosphereOverlay({
 
             <section className={`atmosphereHero ${activeGoalHighlight ? "goalScored" : ""} ${activeGoalHighlight?.phase === "pending" ? "goalPending" : ""} ${activeGoalHighlight?.phase === "confirmed" ? "goalConfirmed" : ""}`} id="atmosphere-overview" ref={heroRef}>
               {activeGoalHighlight ? <span className="atmosphereGoalSweep" aria-hidden="true" /> : null}
+              {atmosphereStageLabel ? <span className="atmosphereStageLabel">{atmosphereStageLabel}</span> : null}
               <AtmosphereTeam team={activeMatch.homeTeam} side="home" standing={homeStanding} form={detail?.form?.home ?? []} accent={homeAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "home")} />
               <div className="atmosphereScoreStage">
-                <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{formatStatus(activeMatch)}</span>
-                <div className="atmosphereScoreline">{formatScoreline(activeMatch)}</div>
+                {showStatusPill ? <span className={`atmosphereStatusPill ${activeMatch.status.group}`}>{statusLabel}</span> : null}
+                <div className="atmosphereScoreline">{scorelineLabel}</div>
                 <strong>Maç Atmosferi</strong>
                 <p>{atmosphereSummary(activeMatch)}</p>
               </div>
               <AtmosphereTeam team={activeMatch.awayTeam} side="away" standing={awayStanding} form={detail?.form?.away ?? []} accent={awayAccent} goalActive={isGoalSide(activeGoalHighlight?.side ?? null, "away")} />
-              <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} />
+              <HeroPredictionLine rows={predictionRows} homeTeam={activeMatch.homeTeam} awayTeam={activeMatch.awayTeam} tieInfo={knockoutTieInfo} />
             </section>
 
             {loading ? <div className="atmosphereNotice atmosphereOverviewOnly">Detay verileri yükleniyor</div> : null}
             {error ? <div className="atmosphereNotice error atmosphereOverviewOnly">{error}</div> : null}
 
-            <MobileAtmosphereTabs activeTab={mobileTab} onChange={handleMobileTabChange} sparkles={aixpSparkles} />
-            <div className="atmosphereMobileSwipeViewport atmosphereOverviewOnly" ref={mobileSwipeViewportRef}>
-              <div className={mobileSwipeTrackClassName} style={mobileSwipeTrackStyle}>
-                {mobileAtmosphereTabs.map((tab) => (
-                  <div className="atmosphereMobileTabPanelSlot" aria-hidden={tab.key !== mobileTab} key={tab.key}>
-                    {shouldRenderMobilePanel(tab.key) ? renderMobileTabPanel(tab.key) : null}
-                  </div>
-                ))}
+            <MobileAtmosphereTabs activeTab={mobileTab} onChange={handleMobileTabChange} sparkles={aixpSparkles} standingsLabel={standingTabLabel} />
+            <div
+              className="atmosphereMobileSwipeViewport atmosphereOverviewOnly"
+              ref={mobileSwipeViewportRef}
+              onTouchStart={handleMobileSwipeStart}
+              onTouchMove={handleMobileSwipeMove}
+              onTouchEnd={handleMobileSwipeEnd}
+              onTouchCancel={handleMobileSwipeCancel}
+            >
+              <div className={`atmosphereMobileActivePanel ${mobileSwipeTrackClassName}`} style={mobileSwipeTrackStyle}>
+                {renderMobileTabPanel(mobileTab)}
               </div>
             </div>
             {shouldShowLiveAtmosphere ? (
@@ -903,12 +948,16 @@ export function MatchAtmosphereOverlay({
               </section>
 
               <section className="atmospherePanel">
-                <PanelTitle icon={<ListOrdered size={17} />} label="Puan ve Konum" />
-                <StandingSnapshot
-                  standings={detail?.standings ?? null}
-                  homeTeamId={activeMatch.homeTeam.id}
-                  awayTeamId={activeMatch.awayTeam.id}
-                />
+                <PanelTitle icon={knockoutTieInfo ? <Trophy size={17} /> : <ListOrdered size={17} />} label={knockoutTieInfo ? "Eleme Durumu" : "Puan ve Konum"} />
+                {knockoutTieInfo ? (
+                  <KnockoutTiePanel match={activeMatch} tieInfo={knockoutTieInfo} compact />
+                ) : (
+                  <StandingSnapshot
+                    standings={detail?.standings ?? null}
+                    homeTeamId={activeMatch.homeTeam.id}
+                    awayTeamId={activeMatch.awayTeam.id}
+                  />
+                )}
               </section>
             </section>
 
@@ -1011,16 +1060,19 @@ function randomBetween(min: number, max: number) {
 function MobileAtmosphereTabs({
   activeTab,
   onChange,
-  sparkles
+  sparkles,
+  standingsLabel = "Puan"
 }: {
   activeTab: MobileAtmosphereTab;
   onChange: (tab: MobileAtmosphereTab) => void;
   sparkles: AixpSparkle[];
+  standingsLabel?: string;
 }) {
   return (
     <div className="atmosphereMobileTabs atmosphereOverviewOnly" role="tablist" aria-label="Atmosfer mobil sekmeleri">
       {mobileAtmosphereTabs.map((tab) => {
         const className = [activeTab === tab.key ? "active" : "", tab.key === "aixp" ? "aixpSparkTab" : ""].filter(Boolean).join(" ");
+        const label = tab.key === "standings" ? standingsLabel : tab.label;
 
         return (
           <button
@@ -1028,12 +1080,12 @@ function MobileAtmosphereTabs({
             type="button"
             role="tab"
             aria-selected={activeTab === tab.key}
-            aria-label={tab.label}
-            title={tab.label}
+            aria-label={label}
+            title={label}
             onClick={() => onChange(tab.key)}
             key={tab.key}
           >
-            <span className="atmosphereMobileTabLabel">{tab.label}</span>
+            <span className="atmosphereMobileTabLabel">{label}</span>
             {tab.key === "aixp" ? (
               <span className="aixpTabSparkles" aria-hidden="true">
                 {sparkles.map((spark) => (
@@ -1093,29 +1145,43 @@ function AtmosphereTeam({
   );
 }
 
-function HeroPredictionLine({ rows, homeTeam, awayTeam }: { rows: PredictionRow[]; homeTeam: Team; awayTeam: Team }) {
-  if (rows.length === 0) return null;
+function HeroPredictionLine({
+  rows,
+  homeTeam,
+  awayTeam,
+  tieInfo
+}: {
+  rows: PredictionRow[];
+  homeTeam: Team;
+  awayTeam: Team;
+  tieInfo?: KnockoutTieInfo | null;
+}) {
+  if (rows.length === 0 && !tieInfo) return null;
 
   const orderedRows = ["home", "draw", "away"]
     .map((key) => rows.find((row) => row.key === key))
     .filter((row): row is PredictionRow => Boolean(row));
   const leader = [...orderedRows].sort((a, b) => b.number - a.number)[0];
-  if (!leader) return null;
 
   return (
-    <section className={`atmosphereHeroPrediction ${leader.key}`} aria-label="aiXp tahmin çizgisi">
-      <div className="atmosphereHeroPredictionLabels">
-        <span title={homeTeam.name}>{homeTeam.name}</span>
-        <strong title={`${leader.team} ${leader.value}`}>
-          aiXp: {leader.team} {leader.value}
-        </strong>
-        <span title={awayTeam.name}>{awayTeam.name}</span>
-      </div>
-      <div className="atmosphereHeroPredictionRail" aria-hidden="true">
-        {orderedRows.map((row) => (
-          <i className={row.key} style={{ flexGrow: Math.max(row.number, 4) }} key={row.key} />
-        ))}
-      </div>
+    <section className={`atmosphereHeroPrediction ${leader?.key ?? "neutral"}`} aria-label="aiXp tahmin ve eleme bilgisi">
+      {tieInfo ? <span className="atmosphereHeroTieNote">({tieInfo.heroLabel})</span> : null}
+      {leader ? (
+        <>
+          <div className="atmosphereHeroPredictionLabels">
+            <span title={homeTeam.name}>{homeTeam.name}</span>
+            <strong title={`${leader.team} ${leader.value}`}>
+              aiXp: {leader.team} {leader.value}
+            </strong>
+            <span title={awayTeam.name}>{awayTeam.name}</span>
+          </div>
+          <div className="atmosphereHeroPredictionRail" aria-hidden="true">
+            {orderedRows.map((row) => (
+              <i className={row.key} style={{ flexGrow: Math.max(row.number, 4) }} key={row.key} />
+            ))}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
@@ -1561,14 +1627,62 @@ function StandingSnapshot({
   );
 }
 
+function KnockoutTiePanel({
+  match,
+  tieInfo,
+  compact = false
+}: {
+  match: NormalizedMatch;
+  tieInfo: KnockoutTieInfo;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`atmosphereKnockoutPanel ${compact ? "compact" : ""}`}>
+      <div className="atmosphereKnockoutSummary">
+        <span>{tieInfo.stageLabel}</span>
+        <strong>{tieInfo.legLabel}</strong>
+        <em>{tieInfo.aggregateLabel ?? "Eşleşme dengesi maç içinde netleşecek"}</em>
+      </div>
+
+      <div className="atmosphereKnockoutTeams">
+        <div>
+          <TeamLogo src={match.homeTeam.logo} label={match.homeTeam.name} size="sm" />
+          <strong title={match.homeTeam.name}>{match.homeTeam.name}</strong>
+        </div>
+        <b>{formatScoreline(match)}</b>
+        <div>
+          <TeamLogo src={match.awayTeam.logo} label={match.awayTeam.name} size="sm" />
+          <strong title={match.awayTeam.name}>{match.awayTeam.name}</strong>
+        </div>
+      </div>
+
+      <div className="atmosphereKnockoutMeta">
+        {tieInfo.previousLeg ? (
+          <>
+            <span>Önceki maç</span>
+            <strong>{tieInfo.previousScoreDetail}</strong>
+          </>
+        ) : (
+          <>
+            <span>Ayak bilgisi</span>
+            <strong>1. ayak görünümü</strong>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FullStandingTable({
   standings,
   homeTeamId,
-  awayTeamId
+  awayTeamId,
+  countryName
 }: {
   standings: MatchDetail["standings"];
   homeTeamId: string;
   awayTeamId: string;
+  countryName: string;
 }) {
   const groups = standings?.groups.filter((group) => group.rows.length > 0) ?? [];
   if (groups.length === 0) return <EmptyAtmosphereState label="Puan verisi bekleniyor" />;
@@ -1597,7 +1711,7 @@ function FullStandingTable({
                 .slice()
                 .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
                 .map((row) => {
-                  const pulse = standingPulseForPosition(row.position, group.rows.length);
+                  const pulse = standingPulseForPosition(row.position, group.rows.length, standings, countryName);
                   const highlighted = row.team.id === homeTeamId || row.team.id === awayTeamId;
 
                   return (
@@ -1624,7 +1738,7 @@ function FullStandingTable({
         </section>
       ))}
       <div className="standingPulseLegend" aria-label="Puan tablosu renk açıklamaları">
-        {standingPulseLabels.map((item) => (
+        {standingPulseLabelsForStandings(standings, countryName).map((item) => (
           <span className={item.kind} key={item.kind}>
             <i aria-hidden="true" />
             {item.label}
@@ -2410,6 +2524,74 @@ function findStandingRow(standings: MatchDetail["standings"], teamId: string) {
   return standings?.groups.flatMap((group) => group.rows).find((row) => row.team.id === teamId) ?? null;
 }
 
+function buildKnockoutTieInfo(match: NormalizedMatch, h2hMatches: NormalizedMatch[]): KnockoutTieInfo | null {
+  if (!isKnockoutMatch(match)) return null;
+
+  const previousLeg = findPreviousKnockoutLeg(match, h2hMatches);
+  const previousScoreLabel = previousLeg ? compactKnownScore(previousLeg) : null;
+  const previousScoreDetail = previousLeg ? detailedKnownScore(previousLeg) : null;
+  const stageLabel = formatAtmosphereStageLabel(match.round, match.league.name) ?? "Eleme";
+  const legLabel = previousLeg ? "2. Ayak" : "1. Ayak";
+
+  return {
+    stageLabel,
+    legLabel,
+    heroLabel: previousScoreLabel ? `Önceki skor: ${previousScoreLabel}` : legLabel,
+    previousLeg,
+    previousScoreLabel,
+    previousScoreDetail,
+    aggregateLabel: previousLeg ? aggregateTieLabel(match, previousLeg) : null
+  };
+}
+
+function isKnockoutMatch(match: NormalizedMatch) {
+  const value = normalizeTeamName(`${match.round ?? ""} ${match.league.name}`);
+  return /\b(playoff|playoffs|play-off|play-offs|promotion|relegation|knockout|qualification|qualifying|elimination|eleme|final|semi|quarter|round of|last 16|last 32|son 16|son 32|yari final|ceyrek final)\b/.test(value);
+}
+
+function findPreviousKnockoutLeg(match: NormalizedMatch, h2hMatches: NormalizedMatch[]) {
+  return h2hMatches
+    .filter((item) => item.timestamp < match.timestamp)
+    .filter((item) => item.status.group === "finished")
+    .filter((item) => isKnownScore(item))
+    .filter((item) => isSamePairing(match, item))
+    .filter((item) => item.league.id === match.league.id || normalizeTeamName(item.league.name) === normalizeTeamName(match.league.name))
+    .sort((a, b) => b.timestamp - a.timestamp)[0] ?? null;
+}
+
+function isSamePairing(match: NormalizedMatch, candidate: NormalizedMatch) {
+  const pair = new Set([match.homeTeam.id, match.awayTeam.id]);
+  return pair.has(candidate.homeTeam.id) && pair.has(candidate.awayTeam.id);
+}
+
+function isKnownScore(match: NormalizedMatch) {
+  return typeof match.score.home === "number" && typeof match.score.away === "number";
+}
+
+function compactKnownScore(match: NormalizedMatch) {
+  if (!isKnownScore(match)) return null;
+  return `${match.score.home}-${match.score.away}`;
+}
+
+function detailedKnownScore(match: NormalizedMatch) {
+  const score = compactKnownScore(match);
+  if (!score) return null;
+  return `${match.homeTeam.name} ${score} ${match.awayTeam.name}`;
+}
+
+function aggregateTieLabel(match: NormalizedMatch, previousLeg: NormalizedMatch) {
+  const homeTotal = scoreForTeam(previousLeg, match.homeTeam.id) + scoreForTeam(match, match.homeTeam.id);
+  const awayTotal = scoreForTeam(previousLeg, match.awayTeam.id) + scoreForTeam(match, match.awayTeam.id);
+  return `Toplam: ${match.homeTeam.name} ${homeTotal}-${awayTotal} ${match.awayTeam.name}`;
+}
+
+function scoreForTeam(match: NormalizedMatch, teamId: string) {
+  if (!isKnownScore(match)) return 0;
+  if (match.homeTeam.id === teamId) return match.score.home ?? 0;
+  if (match.awayTeam.id === teamId) return match.score.away ?? 0;
+  return 0;
+}
+
 function buildStandingWindow(standings: MatchDetail["standings"], homeTeamId: string, awayTeamId: string) {
   const allRows = standings?.groups.flatMap((group) => group.rows) ?? [];
   if (allRows.length === 0) return [];
@@ -2436,17 +2618,162 @@ function buildStandingWindow(standings: MatchDetail["standings"], homeTeamId: st
     .map((index) => orderedRows[index]);
 }
 
-function standingPulseForPosition(position: number | null, rowCount: number): StandingPulseKind | null {
+function standingPulseForPosition(position: number | null, rowCount: number, standings?: MatchDetail["standings"], countryName = ""): StandingPulseKind | null {
   if (!position || rowCount < 4) return null;
 
-  const relegationCount = rowCount >= 18 ? 3 : rowCount >= 12 ? 2 : 1;
-  const championsCount = rowCount >= 18 ? 4 : rowCount >= 12 ? 3 : 2;
-  if (position > rowCount - relegationCount) return "relegation";
-  if (position <= championsCount) return "champions";
-  if (position === championsCount + 1) return "europa";
-  if (position === championsCount + 2) return "conference";
+  const rule = standingZoneRule(standings ?? null, rowCount, countryName);
+  if (rule.relegation && position > rowCount - rule.relegation) return "relegation";
+  if (rule.champions && position <= rule.champions) return "champions";
+  if (rule.promotion && position <= rule.promotion) return "promotion";
+  if (rule.europa && position <= (rule.champions ?? 0) + rule.europa) return "europa";
+  if (rule.conference && position <= (rule.champions ?? 0) + (rule.europa ?? 0) + rule.conference) return "conference";
+  if (rule.playoffFrom && rule.playoffTo && position >= rule.playoffFrom && position <= Math.min(rule.playoffTo, rowCount - (rule.relegation ?? 0))) return "playoff";
 
   return null;
+}
+
+function standingPulseLabelsForStandings(standings: MatchDetail["standings"], countryName = "") {
+  const rowCount = standings?.groups[0]?.rows.length ?? 0;
+  const rule = standingZoneRule(standings, rowCount, countryName);
+  const promotionLabel = standingPromotionLabel(standings, countryName);
+  const continentalLabels = standingContinentalLabels(countryName);
+  const labels: { kind: StandingPulseKind; label: string }[] = [];
+
+  if (rule.champions) labels.push({ kind: "champions", label: continentalLabels.primary });
+  if (rule.promotion) labels.push({ kind: "promotion", label: promotionLabel });
+  if (rule.europa) labels.push({ kind: "europa", label: continentalLabels.secondary });
+  if (rule.conference) labels.push({ kind: "conference", label: continentalLabels.tertiary });
+  if (rule.playoffFrom && rule.playoffTo) labels.push({ kind: "playoff", label: promotionLabel.includes("Yükselme") ? "Yükselme playoff" : "Playoff" });
+  if (rule.relegation) labels.push({ kind: "relegation", label: "Düşme hattı" });
+
+  return labels;
+}
+
+function standingZoneRule(standings: MatchDetail["standings"], rowCount: number, countryName = ""): StandingZoneRule {
+  const league = normalizeTeamName(standings?.league.name ?? "");
+  const country = normalizeTeamName(countryName);
+  const haystack = `${league} ${country}`;
+
+  if (isCupOrFriendlyLeague(haystack)) return {};
+
+  if (isSecondTierLeague(haystack)) {
+    if (country.includes("brazil") || country.includes("brasil") || league.includes("serie b") || league.includes("serie-b")) {
+      return { promotion: 2, playoffFrom: 3, playoffTo: 6, relegation: 4 };
+    }
+
+    if (country.includes("turkey") || country.includes("turkiye")) {
+      return { promotion: 2, playoffFrom: 3, playoffTo: Math.min(7, rowCount - 1), relegation: 4 };
+    }
+
+    if (league.includes("championship")) return { promotion: 2, playoffFrom: 3, playoffTo: 6, relegation: 3 };
+
+    if (country.includes("germany") || country.includes("austria")) return { promotion: 2, playoffFrom: 3, playoffTo: 3, relegation: 2 };
+
+    if (rowCount >= 16) return { promotion: 2, playoffFrom: 3, playoffTo: 6, relegation: 3 };
+    return { promotion: 1, playoffFrom: 2, playoffTo: Math.min(4, rowCount - 1), relegation: 2 };
+  }
+
+  if (country.includes("usa") || country.includes("united states") || country.includes("canada")) {
+    return { playoffFrom: 1, playoffTo: Math.min(9, rowCount) };
+  }
+
+  if (country.includes("mexico")) {
+    return { playoffFrom: 1, playoffTo: Math.min(10, rowCount) };
+  }
+
+  if (country.includes("brazil") || country.includes("brasil")) {
+    if (rowCount >= 18) return { champions: 6, europa: 6, relegation: 4 };
+    return { champions: 4, europa: 2, relegation: 2 };
+  }
+
+  if (country.includes("argentina")) {
+    return rowCount >= 20 ? { champions: 5, europa: 5, relegation: 2 } : { champions: 3, europa: 3, relegation: 1 };
+  }
+
+  if (country.includes("turkey") || country.includes("turkiye")) {
+    return rowCount >= 16 ? { champions: 2, europa: 1, conference: 1, relegation: 4 } : { champions: 1, europa: 1, conference: 1, relegation: 2 };
+  }
+
+  if (country.includes("england") || country.includes("spain") || country.includes("italy") || country.includes("germany")) {
+    return { champions: 4, europa: 1, conference: 1, relegation: 3 };
+  }
+
+  if (country.includes("france")) {
+    return { champions: 3, europa: 1, conference: 1, relegation: 2 };
+  }
+
+  if (country.includes("netherlands") || country.includes("portugal") || country.includes("belgium") || country.includes("scotland")) {
+    return { champions: 2, europa: 1, conference: 1, relegation: 2 };
+  }
+
+  if (isAsianLeague(country)) {
+    return rowCount >= 14 ? { champions: 3, europa: 1, relegation: 2 } : { champions: 2, relegation: 1 };
+  }
+
+  if (isAfricanLeague(country)) {
+    return rowCount >= 14 ? { champions: 2, europa: 1, relegation: 2 } : { champions: 1, relegation: 1 };
+  }
+
+  if (rowCount >= 18) {
+    return { champions: 4, europa: 1, conference: 1, relegation: 3 };
+  }
+
+  if (rowCount >= 14) {
+    return { champions: 2, europa: 1, conference: 1, relegation: 2 };
+  }
+
+  if (rowCount >= 10) {
+    return { champions: 1, europa: 1, relegation: 1 };
+  }
+
+  return { champions: 1, relegation: 1 };
+}
+
+function standingPromotionLabel(standings: MatchDetail["standings"], countryName = "") {
+  const name = `${normalizeTeamName(standings?.league.name ?? "")} ${normalizeTeamName(countryName)}`;
+  if (isSecondTierLeague(name)) return "Yükselme";
+  return "Üst sıra";
+}
+
+function standingContinentalLabels(countryName: string) {
+  const country = normalizeTeamName(countryName);
+  if (country.includes("brazil") || country.includes("brasil") || country.includes("argentina") || country.includes("chile") || country.includes("colombia") || country.includes("uruguay") || country.includes("paraguay") || country.includes("peru") || country.includes("ecuador") || country.includes("bolivia") || country.includes("venezuela")) {
+    return { primary: "Libertadores", secondary: "Sudamericana", tertiary: "Kıta kupası" };
+  }
+
+  if (country.includes("mexico") || country.includes("usa") || country.includes("canada")) {
+    return { primary: "CONCACAF", secondary: "Playoff", tertiary: "Kupa" };
+  }
+
+  if (isAsianLeague(country)) {
+    return { primary: "AFC Şampiyonlar", secondary: "AFC Kupası", tertiary: "Kıta kupası" };
+  }
+
+  if (isAfricanLeague(country)) {
+    return { primary: "CAF Şampiyonlar", secondary: "CAF Konfederasyon", tertiary: "Kıta kupası" };
+  }
+
+  return { primary: "Şampiyonlar Ligi", secondary: "Avrupa Ligi", tertiary: "Konferans / Kupa" };
+}
+
+function isSecondTierLeague(value: string) {
+  return /\b(serie b|serie-b|championship|segunda|primera b|first division b|1st division b|premier league 2|tff 1\.?\s*lig)\b/.test(value)
+    || /\b(liga|ligue|division|bundesliga|league|lig|serie)\s*2\b/.test(value)
+    || /\b2\.?\s*(liga|ligue|division|bundesliga|league|lig)\b/.test(value)
+    || /\bturkey\s+1\.?\s*lig\b/.test(value)
+    || /\b1\.?\s*lig\s+turkey\b/.test(value);
+}
+
+function isCupOrFriendlyLeague(value: string) {
+  return /\b(cup|kupa|cop[aă]|taça|taca|pokal|super cup|friendlies|friendly|playoff|play-off|u19|u20|u21|women)\b/.test(value);
+}
+
+function isAsianLeague(country: string) {
+  return /\b(saudi arabia|qatar|united arab emirates|uae|japan|south korea|korea republic|china|iran|iraq|india|australia|indonesia|thailand|malaysia|vietnam|uzbekistan)\b/.test(country);
+}
+
+function isAfricanLeague(country: string) {
+  return /\b(egypt|morocco|tunisia|algeria|south africa|nigeria|ghana|cameroon|senegal|ivory coast|cote d ivoire|kenya|tanzania)\b/.test(country);
 }
 
 function formatGoalDifference(row: MatchDetailStandingRow) {
@@ -2530,21 +2857,44 @@ function formatLeagueTitleRound(value: string) {
   return formatRound(value);
 }
 
+function formatAtmosphereStageLabel(round: string | null, leagueName: string) {
+  const source = round?.trim();
+  if (source) {
+    const roundWithWeek = source.match(/^(.+?)\s*-\s*\d+$/);
+    const stage = roundWithWeek?.[1]?.trim() || source;
+    return translateRoundStage(stage);
+  }
+
+  if (isFriendlyStage(leagueName)) return "Hazırlık Maçı";
+  return null;
+}
+
 function translateRoundStage(value: string) {
+  if (isFriendlyStage(value)) return "Hazırlık Maçı";
+
   const labels: Record<string, string> = {
     "Regular Season": "Normal Sezon",
     "Relegation Group": "Düşme Grubu",
     "Championship Round": "Şampiyonluk Turu",
-    "Semi-finals": "Yarı final",
-    "Quarter-finals": "Çeyrek final",
+    "Semi-finals": "Yarı Final",
+    "Semi Finals": "Yarı Final",
+    "Semi Final": "Yarı Final",
+    "Quarter-finals": "Çeyrek Final",
+    "Quarter Finals": "Çeyrek Final",
+    "Quarter Final": "Çeyrek Final",
     "Round of 16": "Son 16",
-    "Group Stage": "Grup aşaması",
-    "Preliminary Round": "Ön eleme turu",
-    "Qualification Round": "Eleme turu",
+    "Group Stage": "Grup Aşaması",
+    "Preliminary Round": "Ön Eleme Turu",
+    "Qualification Round": "Eleme Turu",
     Final: "Final"
   };
 
   return labels[value] ?? value;
+}
+
+function isFriendlyStage(value: string) {
+  const normalized = normalizeTeamName(value).replace(/[^a-z0-9]+/g, " ").trim();
+  return /\b(friendlies|friendly|pre season|preseason|club friendly|club friendlies)\b/.test(normalized);
 }
 
 function formatDate(value: string) {

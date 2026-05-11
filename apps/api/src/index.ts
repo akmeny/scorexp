@@ -13,6 +13,7 @@ import { JsonFileStore, type DurableStore } from "./storage/jsonStore.js";
 import { createPushSubscriptionStore } from "./storage/pushSubscriptionStore.js";
 import { createRedisDurableStore, type RedisDurableStore } from "./storage/redisStore.js";
 import { createUserProfileStore } from "./storage/userProfileStore.js";
+import { scoreboardRefreshSeconds } from "./utils/date.js";
 import { startScoreboardPoller } from "./worker/poller.js";
 
 const app = Fastify({
@@ -49,6 +50,7 @@ app.get("/api/health", async () => ({
   service: "scorexp-api",
   cache: env.cacheDriver,
   durableStore: env.durableStore,
+  scoreboardRefreshSeconds: scoreboardRefreshSeconds(env.defaultTimezone),
   time: new Date().toISOString()
 }));
 

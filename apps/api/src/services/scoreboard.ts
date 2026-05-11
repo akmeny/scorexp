@@ -28,7 +28,7 @@ import type {
 import type { HighlightlyClient } from "../provider/highlightly.js";
 import type { HotCache } from "../storage/cache.js";
 import type { DurableStore } from "../storage/jsonStore.js";
-import { addSeconds, isBeforeLocalDate } from "../utils/date.js";
+import { addSeconds, isBeforeLocalDate, localDate, scoreboardRefreshSeconds } from "../utils/date.js";
 
 const CARD_ENRICHMENT_LIMIT = 32;
 const CARD_ENRICHMENT_CONCURRENCY = 4;
@@ -44,6 +44,8 @@ const EMPTY_LIVE_FEED_CUTOFF_MINUTE = 15;
 const EMPTY_LIVE_FEED_DISABLE_SECONDS = 8 * 60 * 60;
 const UPCOMING_LINEUP_PREFETCH_LIMIT = 80;
 const UPCOMING_LINEUP_PREFETCH_CONCURRENCY = 2;
+const MATCH_DETAIL_PREFETCH_SECONDS = 60 * 60;
+const MATCH_DETAIL_PREFETCH_CONCURRENCY = 2;
 const LIVE_CARD_ENRICHMENT_ENABLED = false;
 const STALE_CLIENT_RETRY_SECONDS = 10;
 const PROVIDER_FAILURE_BACKOFF_SECONDS = 60;
@@ -74,9 +76,17 @@ interface CachedSupplement<T> {
   requestCount: number;
 }
 
+interface DetailPrefetchSummary {
+  attempted: number;
+  refreshed: number;
+  skipped: number;
+  failed: number;
+}
+
 export class ScoreboardService {
   private readonly inFlight = new Map<string, Promise<SnapshotCacheEntry>>();
   private readonly detailInFlight = new Map<string, Promise<MatchDetailCacheEntry>>();
+  private readonly detailPrefetchInFlight = new Map<string, Promise<DetailPrefetchSummary>>();
   private readonly cardEnrichmentInFlight = new Map<string, Promise<void>>();
   private readonly providerBackoffUntil = new Map<string, number>();
   private readonly detailBackoffUntil = new Map<string, number>();
@@ -128,16 +138,26 @@ export class ScoreboardService {
     const cached = await this.cache.get<MatchDetailCacheEntry>(key);
     const detailBackoffSeconds = this.remainingBackoffSeconds(this.detailBackoffUntil, key);
 
-    if (cached?.detail.match.status.group === "finished") {
+    if (!query.force && cached?.detail.match.status.group === "finished") {
       return lockDetail(cached.detail, this.appEnv);
     }
 
-    if (cached && (detailBackoffSeconds || new Date(cached.expiresAt).getTime() > Date.now())) {
+    if (!query.force && cached && (detailBackoffSeconds || new Date(cached.expiresAt).getTime() > Date.now())) {
       return cached.detail;
     }
 
-    const fresh = await this.refreshMatchDetail(key, query.matchId, query.timezone);
-    return fresh.detail;
+    if (!query.force && cached) {
+      this.queueMatchDetailRefresh(key, query.matchId, query.timezone);
+      return markDetailRefreshing(cached.detail, detailBackoffSeconds ?? STALE_CLIENT_RETRY_SECONDS);
+    }
+
+    try {
+      const fresh = await this.refreshMatchDetail(key, query.matchId, query.timezone);
+      return fresh.detail;
+    } catch (error) {
+      if (cached) return markDetailRefreshing(cached.detail, detailBackoffSeconds ?? STALE_CLIENT_RETRY_SECONDS);
+      throw error;
+    }
   }
 
   async getHighlights(query: HighlightsQuery): Promise<HighlightsSnapshot> {
@@ -192,6 +212,19 @@ export class ScoreboardService {
     return this.getScoreboard({ date, timezone, view: "all" });
   }
 
+  warmMatchDetailsForSnapshot(snapshot: ScoreboardSnapshot): Promise<DetailPrefetchSummary> {
+    const key = detailPrefetchCycleKey(snapshot.date, snapshot.timezone);
+    const existing = this.detailPrefetchInFlight.get(key);
+    if (existing) return existing;
+
+    const promise = this.prefetchMatchDetails(snapshot).finally(() => {
+      this.detailPrefetchInFlight.delete(key);
+    });
+
+    this.detailPrefetchInFlight.set(key, promise);
+    return promise;
+  }
+
   private async refresh(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {
     const existing = this.inFlight.get(key);
     if (existing) return existing;
@@ -216,14 +249,19 @@ export class ScoreboardService {
     return promise;
   }
 
-  private async refreshMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
+  private async refreshMatchDetail(
+    key: string,
+    matchId: string,
+    timezone: string,
+    options: { forceLineups?: boolean } = {}
+  ): Promise<MatchDetailCacheEntry> {
     const existing = this.detailInFlight.get(key);
     if (existing) return existing;
     if (this.remainingBackoffSeconds(this.detailBackoffUntil, key)) {
       throw new Error(`Provider detail refresh is in backoff for ${key}`);
     }
 
-    const promise = this.fetchAndBuildMatchDetail(key, matchId, timezone)
+    const promise = this.fetchAndBuildMatchDetail(key, matchId, timezone, options)
       .then((entry) => {
         this.detailBackoffUntil.delete(key);
         return entry;
@@ -243,6 +281,11 @@ export class ScoreboardService {
   private queueRefresh(key: string, date: string, timezone: string): void {
     if (this.remainingBackoffSeconds(this.providerBackoffUntil, key)) return;
     void this.refresh(key, date, timezone).catch(() => undefined);
+  }
+
+  private queueMatchDetailRefresh(key: string, matchId: string, timezone: string): void {
+    if (this.remainingBackoffSeconds(this.detailBackoffUntil, key)) return;
+    void this.refreshMatchDetail(key, matchId, timezone).catch(() => undefined);
   }
 
   private async fetchAndBuild(key: string, date: string, timezone: string): Promise<SnapshotCacheEntry> {
@@ -379,7 +422,12 @@ export class ScoreboardService {
     };
   }
 
-  private async fetchAndBuildMatchDetail(key: string, matchId: string, timezone: string): Promise<MatchDetailCacheEntry> {
+  private async fetchAndBuildMatchDetail(
+    key: string,
+    matchId: string,
+    timezone: string,
+    options: { forceLineups?: boolean } = {}
+  ): Promise<MatchDetailCacheEntry> {
     const fetchedAt = new Date().toISOString();
     const response = await this.highlightly.getMatchById(matchId);
 
@@ -390,7 +438,7 @@ export class ScoreboardService {
     const normalizedMatch = normalizeMatch(response.match, timezone, fetchedAt);
     const statusGroup = normalizedMatch.status.group;
     const refreshPolicy = this.pickDetailRefreshPolicy(statusGroup, new Date());
-    const context = await this.getMatchContext(response.match, normalizedMatch, timezone);
+    const context = await this.getMatchContext(response.match, normalizedMatch, timezone, options);
     const hydratedMatch = {
       ...response.match,
       events: preferNonEmptyList(context.events, response.match.events),
@@ -415,7 +463,12 @@ export class ScoreboardService {
     return entry;
   }
 
-  private async getMatchContext(match: ProviderMatch, normalizedMatch: NormalizedMatch, timezone: string) {
+  private async getMatchContext(
+    match: ProviderMatch,
+    normalizedMatch: NormalizedMatch,
+    timezone: string,
+    options: { forceLineups?: boolean } = {}
+  ) {
     const homeTeamId = teamId(match.homeTeam?.id);
     const awayTeamId = teamId(match.awayTeam?.id);
     const leagueId = teamId(match.league?.id);
@@ -452,7 +505,7 @@ export class ScoreboardService {
         : Promise.resolve(cachedSupplement(null)),
       this.getEventsForMatch(normalizedMatch),
       this.getStatisticsForMatch(normalizedMatch),
-      this.shouldFetchLineups(normalizedMatch) ? this.getLineupsForMatch(normalizedMatch) : Promise.resolve(cachedSupplement(null))
+      options.forceLineups || this.shouldFetchLineups(normalizedMatch) ? this.getLineupsForMatch(normalizedMatch) : Promise.resolve(cachedSupplement(null))
     ]);
 
     return {
@@ -489,6 +542,57 @@ export class ScoreboardService {
       return { value: fresh, requestCount: 1 };
     } catch {
       return { value: fallback, requestCount: 0 };
+    }
+  }
+
+  private async prefetchMatchDetails(snapshot: ScoreboardSnapshot): Promise<DetailPrefetchSummary> {
+    const today = localDate(snapshot.timezone);
+    if (snapshot.date !== today) {
+      return { attempted: 0, refreshed: 0, skipped: 0, failed: 0 };
+    }
+
+    const now = Date.now();
+    const matches = snapshot.leagues
+      .flatMap((league) => league.matches)
+      .filter((match) => match.status.group !== "finished")
+      .sort((a, b) => Number(b.isTopTier) - Number(a.isTopTier) || a.timestamp - b.timestamp);
+
+    if (matches.length === 0) {
+      return { attempted: 0, refreshed: 0, skipped: 0, failed: 0 };
+    }
+
+    const results = await mapWithConcurrency(matches, MATCH_DETAIL_PREFETCH_CONCURRENCY, async (match) =>
+      this.prefetchMatchDetail(match, snapshot.timezone, now)
+    );
+
+    return results.reduce<DetailPrefetchSummary>(
+      (summary, result) => ({
+        attempted: summary.attempted + 1,
+        refreshed: summary.refreshed + (result === "refreshed" ? 1 : 0),
+        skipped: summary.skipped + (result === "skipped" ? 1 : 0),
+        failed: summary.failed + (result === "failed" ? 1 : 0)
+      }),
+      { attempted: 0, refreshed: 0, skipped: 0, failed: 0 }
+    );
+  }
+
+  private async prefetchMatchDetail(match: NormalizedMatch, timezone: string, now: number): Promise<"refreshed" | "skipped" | "failed"> {
+    const key = matchDetailKey(match.providerId, timezone);
+    const cached = await this.cache.get<MatchDetailCacheEntry>(key);
+
+    if (cached?.detail.match.status.group === "finished") return "skipped";
+    if (cached && new Date(cached.expiresAt).getTime() > now) return "skipped";
+
+    const attemptKey = detailPrefetchAttemptKey(match.providerId, timezone);
+    const recentAttempt = await this.cache.get<{ attemptedAt: string }>(attemptKey);
+    if (recentAttempt && cached) return "skipped";
+
+    try {
+      await this.refreshMatchDetail(key, match.providerId, timezone, { forceLineups: true });
+      await this.cache.set(attemptKey, { attemptedAt: new Date().toISOString() }, MATCH_DETAIL_PREFETCH_SECONDS);
+      return "refreshed";
+    } catch {
+      return "failed";
     }
   }
 
@@ -612,11 +716,15 @@ export class ScoreboardService {
   private pickRefreshPolicy(matches: NormalizedMatch[], date: string, timezone: string, now: Date): RefreshPolicy {
     const hasLiveMatch = matches.some((match) => match.status.group === "live");
     const isPast = isBeforeLocalDate(date, timezone, now);
+    const isToday = date === localDate(timezone, now);
     const reason = hasLiveMatch ? "live" : isPast ? "finished" : "upcoming";
-    const liveRefreshSeconds = Math.min(this.appEnv.liveRefreshSeconds, SCOREBOARD_LIVE_REFRESH_SECONDS);
+    const scheduledRefreshSeconds = isToday ? scoreboardRefreshSeconds(timezone, now) : null;
+    const liveRefreshSeconds = scheduledRefreshSeconds ?? Math.min(this.appEnv.liveRefreshSeconds, SCOREBOARD_LIVE_REFRESH_SECONDS);
     const providerRefreshSeconds =
-      reason === "live"
+      isToday
         ? liveRefreshSeconds
+        : reason === "live"
+          ? liveRefreshSeconds
         : reason === "finished"
           ? this.appEnv.finishedRefreshSeconds
           : this.appEnv.upcomingRefreshSeconds;
@@ -624,7 +732,7 @@ export class ScoreboardService {
     return {
       reason,
       providerRefreshSeconds,
-      clientRefreshSeconds: reason === "live" ? liveRefreshSeconds : this.appEnv.clientRefreshSeconds,
+      clientRefreshSeconds: isToday || reason === "live" ? liveRefreshSeconds : this.appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: addSeconds(now, providerRefreshSeconds).toISOString()
     };
   }
@@ -670,6 +778,14 @@ function snapshotKey(date: string, timezone: string) {
 
 function matchDetailKey(matchId: string, timezone: string) {
   return `football:match-detail:v7:${matchId}:${timezone}`;
+}
+
+function detailPrefetchAttemptKey(matchId: string, timezone: string) {
+  return `football:match-detail-prefetch:v1:${matchId}:${timezone}`;
+}
+
+function detailPrefetchCycleKey(date: string, timezone: string) {
+  return `football:match-detail-prefetch-cycle:v1:${date}:${timezone}`;
 }
 
 function highlightsKey(date: string, timezone: string, limit: number, offset: number) {
@@ -814,6 +930,21 @@ function lockDetail(detail: MatchDetail, appEnv: AppEnv): MatchDetail {
       providerRefreshSeconds: appEnv.finishedRefreshSeconds,
       clientRefreshSeconds: appEnv.clientRefreshSeconds,
       nextProviderRefreshAt: detail.expiresAt
+    }
+  };
+}
+
+function markDetailRefreshing(detail: MatchDetail, retrySeconds = STALE_CLIENT_RETRY_SECONDS): MatchDetail {
+  const clientRetrySeconds = Math.max(10, Math.min(retrySeconds, STALE_CLIENT_BACKOFF_MAX_SECONDS));
+  const retryAt = addSeconds(new Date(), clientRetrySeconds).toISOString();
+
+  return {
+    ...detail,
+    expiresAt: retryAt,
+    refreshPolicy: {
+      ...detail.refreshPolicy,
+      clientRefreshSeconds: Math.min(detail.refreshPolicy.clientRefreshSeconds, clientRetrySeconds),
+      nextProviderRefreshAt: retryAt
     }
   };
 }

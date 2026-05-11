@@ -3637,6 +3637,17 @@ button:disabled {
   font-weight: 850;
 }
 
+.atmosphereHeroTieNote {
+  justify-self: center;
+  max-width: min(100%, 360px);
+  color: #d7e0ff;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 .atmosphereHeroPredictionLabels span,
 .atmosphereHeroPredictionLabels strong {
   min-width: 0;
@@ -5106,6 +5117,104 @@ button:disabled {
   font-weight: 950;
 }
 
+.atmosphereKnockoutPanel {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.atmosphereKnockoutSummary,
+.atmosphereKnockoutMeta {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--home-accent) 11%, transparent), color-mix(in srgb, var(--away-accent) 11%, transparent)),
+    #10171a;
+}
+
+.atmosphereKnockoutSummary span,
+.atmosphereKnockoutMeta span {
+  color: #8fa2aa;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.atmosphereKnockoutSummary strong {
+  color: #edf7fa;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.atmosphereKnockoutSummary em,
+.atmosphereKnockoutMeta strong {
+  min-width: 0;
+  color: #c9d7dd;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.atmosphereKnockoutTeams {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #26343a;
+  border-radius: 8px;
+  background: #0f171a;
+}
+
+.atmosphereKnockoutTeams > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.atmosphereKnockoutTeams > div:last-child {
+  grid-template-columns: minmax(0, 1fr) 24px;
+}
+
+.atmosphereKnockoutTeams > div:last-child .teamLogo,
+.atmosphereKnockoutTeams > div:last-child .logoFallback {
+  order: 2;
+}
+
+.atmosphereKnockoutTeams strong {
+  overflow: hidden;
+  color: #edf7fa;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphereKnockoutTeams > div:last-child strong {
+  text-align: right;
+}
+
+.atmosphereKnockoutTeams b {
+  color: #ff2d69;
+  font-size: 18px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.atmosphereKnockoutPanel.compact .atmosphereKnockoutSummary strong {
+  font-size: 18px;
+}
+
 .standingPulse {
   width: 9px;
   height: 9px;
@@ -5127,10 +5236,22 @@ button:disabled {
   box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.13), 0 0 18px rgba(34, 197, 94, 0.4);
 }
 
+.standingPulse.promotion,
+.standingPulseLegend .promotion i {
+  background: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.13), 0 0 18px rgba(20, 184, 166, 0.42);
+}
+
 .standingPulse.conference,
 .standingPulseLegend .conference i {
   background: #f59e0b;
   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14), 0 0 18px rgba(245, 158, 11, 0.4);
+}
+
+.standingPulse.playoff,
+.standingPulseLegend .playoff i {
+  background: #a855f7;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.13), 0 0 18px rgba(168, 85, 247, 0.42);
 }
 
 .standingPulse.relegation,
@@ -12479,6 +12600,9 @@ body.scorexpLightTheme,
 }
 
 .scorexpLightTheme .atmosphereFullStandingRow,
+.scorexpLightTheme .atmosphereKnockoutSummary,
+.scorexpLightTheme .atmosphereKnockoutTeams,
+.scorexpLightTheme .atmosphereKnockoutMeta,
 .scorexpLightTheme .standingPulseLegend span,
 .scorexpLightTheme .atmosphereLineupBench > div > span {
   border-color: var(--sx-line);
@@ -12492,16 +12616,29 @@ body.scorexpLightTheme,
 
 .scorexpLightTheme .atmosphereMiniRow b,
 .scorexpLightTheme .atmosphereFullStandingRow b,
+.scorexpLightTheme .atmosphereKnockoutSummary strong,
+.scorexpLightTheme .atmosphereKnockoutTeams strong,
+.scorexpLightTheme .atmosphereKnockoutMeta strong,
 .scorexpLightTheme .atmosphereInsightHeader strong,
 .scorexpLightTheme .atmosphereInsightLegend b,
 .scorexpLightTheme .atmosphereHeroPredictionLabels strong {
   color: var(--sx-text);
 }
 
+.scorexpLightTheme .atmosphereKnockoutSummary span,
+.scorexpLightTheme .atmosphereKnockoutSummary em,
+.scorexpLightTheme .atmosphereKnockoutMeta span {
+  color: var(--sx-muted);
+}
+
 .scorexpLightTheme .atmosphereHeroPrediction {
   border-color: color-mix(in srgb, var(--sx-data-home) 10%, color-mix(in srgb, var(--sx-data-away) 10%, var(--sx-line)));
   background: transparent;
   box-shadow: none;
+}
+
+.scorexpLightTheme .atmosphereHeroTieNote {
+  color: #174ea6;
 }
 
 .scorexpLightTheme .atmosphereHeroPredictionLabels,
@@ -14609,6 +14746,10 @@ body.scorexpLightTheme,
     text-align: center;
   }
 
+  .atmosphereHeroTieNote {
+    font-size: 10px;
+  }
+
   .atmosphereHeroPredictionLabels span {
     display: none;
   }
@@ -14895,5 +15036,767 @@ body.scorexpLightTheme,
 
   .atmosphereCompactTeam {
     gap: 0;
+  }
+}
+
+.atmosphereStageLabel {
+  grid-column: 1 / -1;
+  justify-self: center;
+  align-self: start;
+  max-width: 100%;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(180, 202, 211, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #d8e6ff;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.scorexpLightTheme .atmosphereStageLabel {
+  border-color: rgba(37, 99, 235, 0.16);
+  background: rgba(37, 99, 235, 0.08);
+  color: #174ea6;
+}
+
+@media (max-width: 760px) {
+  .atmosphereTopbar {
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    justify-items: stretch;
+    min-height: 52px;
+    gap: 8px;
+    padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+  }
+
+  .atmosphereTopActions,
+  .atmosphereLeagueColon,
+  .atmosphereLeagueTitle em {
+    display: none !important;
+  }
+
+  .atmosphereBackButton {
+    width: 40px !important;
+    min-height: 38px;
+    display: inline-flex !important;
+    padding: 0 !important;
+    border-color: rgba(118, 138, 148, 0.36);
+    background: rgba(16, 23, 26, 0.88);
+  }
+
+  .atmosphereBackButton span {
+    display: none !important;
+  }
+
+  .atmosphereLeagueTitle {
+    width: 100%;
+    min-width: 0;
+    justify-self: start;
+    justify-content: flex-start !important;
+    gap: 7px;
+    color: #a8bac2;
+    text-align: left;
+  }
+
+  .atmosphereLeagueLogo {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+  }
+
+  .atmosphereLeagueTitle strong {
+    max-width: calc(100vw - 94px) !important;
+    color: #f4fbfd;
+    font-size: 13px;
+    line-height: 1.15;
+    text-align: left;
+  }
+
+  .atmosphereScoreStage {
+    min-height: 112px;
+    gap: 3px;
+    padding: 8px 7px 7px;
+  }
+
+  .atmosphereStageLabel {
+    grid-column: 1 / -1;
+    justify-self: center;
+    align-self: start;
+    min-height: 20px;
+    max-width: min(72vw, 260px);
+    margin: 0 auto -3px;
+    padding: 1px 8px;
+    border: 0;
+    background: transparent;
+    color: #d7e0ff;
+    font-size: 9.6px;
+    line-height: 1.12;
+  }
+
+  .atmosphereStatusPill {
+    min-height: 19px;
+    padding: 0 7px;
+    font-size: 9.4px;
+  }
+
+  .atmosphereScoreline {
+    font-size: clamp(21px, 7.1vw, 27px);
+  }
+
+  .atmosphereScoreStage strong {
+    font-size: 9.8px;
+    line-height: 1.1;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereScroll,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereScroll {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeViewport {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeTrack,
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanelSlot,
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanel {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanelSlot {
+    align-self: flex-start;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 94 !important;
+    width: 100% !important;
+    height: var(--scorexp-visual-viewport-height, 100dvh) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereBody,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereBody {
+    min-height: 0 !important;
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereScroll,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereScroll {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereHero,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHero {
+    flex: 0 0 auto;
+    min-height: 166px;
+    transform: none !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs {
+    flex: 0 0 auto;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    display: grid;
+    margin: 0;
+    overflow: hidden !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeTrack,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeTrack {
+    height: 100%;
+    align-items: stretch;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabPanelSlot,
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileChatPanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabPanelSlot,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileChatPanel {
+    height: 100%;
+    min-height: 0 !important;
+    display: grid;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .matchChatRoom.embedded,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .matchChatRoom.embedded {
+    height: 100% !important;
+    min-height: 0 !important;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .chatTop {
+    display: none;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .chatMessages,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .chatMessages {
+    min-height: 0 !important;
+    height: auto !important;
+    padding-bottom: 12px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .chatComposerWrap,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .chatComposerWrap {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 5 !important;
+    width: 100% !important;
+    padding: 7px 8px max(7px, env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(180, 202, 211, 0.16);
+    background: rgba(12, 18, 21, 0.98);
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(14px);
+  }
+
+  .matchAtmosphereShell {
+    color: #eef7fa;
+  }
+
+  .atmosphereMobileTabs {
+    border-color: rgba(118, 138, 148, 0.42);
+    background: rgba(8, 13, 16, 0.9);
+  }
+
+  .atmosphereMobileTabs button {
+    color: #bdcbd2;
+    font-size: clamp(8.4px, 2.5vw, 11.6px);
+  }
+
+  .atmosphereMobileTabs button.active {
+    color: #ffffff;
+  }
+
+  .atmospherePanel,
+  .atmospherePressureCard,
+  .atmosphereComparePulseCard,
+  .formGoalsGraph {
+    border-color: rgba(101, 121, 130, 0.4);
+  }
+
+  .chatComposer textarea {
+    color: #f4fbfd;
+  }
+
+  .chatComposer textarea::placeholder {
+    color: #91a4ac;
+  }
+
+  .scorexpLightTheme .atmosphereTopbar {
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .scorexpLightTheme .atmosphereBackButton {
+    border-color: #c8d7e0;
+    background: #ffffff;
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .atmosphereLeagueTitle strong {
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .atmosphereStageLabel {
+    color: #1d4ed8;
+  }
+
+  .scorexpLightTheme .atmosphereStatusPill {
+    background: #eaf1ff;
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .atmosphereStatusPill.live {
+    background: #be123c;
+    color: #ffffff;
+  }
+
+  .scorexpLightTheme .atmosphereMobileTabs {
+    border-color: #c8d7e0;
+    background: rgba(255, 255, 255, 0.94);
+  }
+
+  .scorexpLightTheme .atmosphereMobileTabs button {
+    color: #465a68;
+  }
+
+  .scorexpLightTheme .atmosphereMobileTabs button.active {
+    background: #eaf2ff;
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .atmospherePanel,
+  .scorexpLightTheme .atmospherePressureCard,
+  .scorexpLightTheme .atmosphereComparePulseCard,
+  .scorexpLightTheme .formGoalsGraph {
+    border-color: #cbd9e2;
+    background-color: #ffffff;
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .chatMessages {
+    background: #f4f8fb;
+  }
+
+  .scorexpLightTheme .chatMessage p {
+    color: #10202b;
+  }
+
+  .scorexpLightTheme .chatComposerWrap,
+  .scorexpLightTheme .matchAtmosphereShell.mobileChatTabActive .chatComposerWrap {
+    border-color: #cbd9e2;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .scorexpLightTheme .chatComposer textarea {
+    border-color: #c4d3dd;
+    background: #ffffff;
+    color: #10202b;
+  }
+}
+
+@media (max-width: 760px) {
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereOverlay,
+  .matchAtmosphereOverlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: pan-y !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive),
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereTopbar,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereTopbar {
+    position: relative !important;
+    top: auto !important;
+    flex: 0 0 52px;
+    z-index: 6;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereBody,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereBody {
+    min-height: 0 !important;
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereScroll,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereScroll {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 1 1 auto;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom) + 76px)) !important;
+    scroll-behavior: smooth;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeViewport,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeViewport {
+    width: calc(100% - 20px);
+    height: auto !important;
+    min-height: 0 !important;
+    display: block;
+    overflow: hidden !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeTrack,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeTrack {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanelSlot,
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanelSlot,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanel {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive {
+    height: var(--scorexp-visual-viewport-height, 100dvh) !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereTopbar,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereTopbar {
+    flex: 0 0 52px;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereHero,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHero {
+    flex: 0 0 auto;
+    min-height: 164px;
+    max-height: 184px;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport {
+    overflow: hidden !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .matchChatRoom.embedded,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .matchChatRoom.embedded {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .chatComposerWrap,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .chatComposerWrap {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .atmosphereMobileActivePanel.atmosphereMobileSwipeTrack {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    display: block !important;
+    overflow: visible !important;
+    will-change: transform;
+    transition: transform 220ms ease;
+  }
+
+  .atmosphereMobileActivePanel.atmosphereMobileSwipeTrack.dragging {
+    transition: none;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeViewport,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileSwipeViewport {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: block !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
+  }
+
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileActivePanel,
+  .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileActivePanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell:not(.mobileChatTabActive) .atmosphereMobileTabPanel {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileActivePanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileActivePanel {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    overflow: hidden !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileChatPanel,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileChatPanel {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereHero,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHero {
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    margin: 10px !important;
+    padding: 14px 12px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--home-accent) 15%, color-mix(in srgb, var(--away-accent) 15%, rgba(124, 131, 255, 0.24))) !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereScoreStage,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereScoreStage {
+    min-height: 112px !important;
+    max-width: 112px !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereHeroPrediction,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHeroPrediction {
+    width: 100% !important;
+    margin: 2px 0 0 !important;
+    padding: 11px 0 0 !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs {
+    width: calc(100% - 20px) !important;
+    min-height: 40px !important;
+    margin: 10px auto 0 !important;
+    padding: 3px !important;
+    border: 1px solid rgba(118, 138, 148, 0.42) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport,
+  body.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileSwipeViewport {
+    width: calc(100% - 20px) !important;
+    margin: 10px auto 0 !important;
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.mobileChatTabActive .atmosphereHero,
+  body.scorexpLightTheme.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereHero {
+    border-bottom-color: rgba(120, 144, 156, 0.24) !important;
+  }
+
+  .scorexpLightTheme .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs,
+  body.scorexpLightTheme.scorexpRoutePage .routeAtmospherePage .matchAtmosphereShell.mobileChatTabActive .atmosphereMobileTabs {
+    border-color: #c8d7e0 !important;
+    box-shadow: 0 12px 26px rgba(28, 45, 59, 0.1) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .atmosphereMobileTabPanel .atmosphereStandingFullPanel {
+    padding: 10px 6px;
+  }
+
+  .atmosphereFullStandings {
+    gap: 9px;
+  }
+
+  .atmosphereFullStandingGroup {
+    gap: 6px;
+  }
+
+  .atmosphereFullStandingScroll {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden !important;
+    padding-bottom: 0;
+  }
+
+  .atmosphereFullStandingTable {
+    width: 100%;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    gap: 4px;
+  }
+
+  .atmosphereFullStandingHead,
+  .atmosphereFullStandingRow {
+    grid-template-columns:
+      7px
+      18px
+      minmax(76px, 1fr)
+      repeat(4, minmax(16px, 18px))
+      repeat(2, minmax(18px, 21px))
+      minmax(20px, 23px)
+      minmax(22px, 26px) !important;
+    gap: 2px;
+  }
+
+  .atmosphereFullStandingHead {
+    min-height: 22px;
+    padding: 0 4px;
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .atmosphereFullStandingRow {
+    min-height: 34px;
+    padding: 0 4px;
+    border-radius: 6px;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .standingPulse {
+    width: 6px;
+    height: 18px;
+    border-radius: 999px;
+  }
+
+  .fullStandingTeam {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .fullStandingTeam .teamLogo.sm,
+  .fullStandingTeam .logoFallback.sm {
+    width: 14px;
+    height: 14px;
+    padding: 1px;
+  }
+
+  .fullStandingTeam strong {
+    font-size: 9.5px;
+    line-height: 1.05;
+  }
+
+  .atmosphereFullStandingRow b {
+    font-size: 10px;
+  }
+
+  .atmosphereKnockoutSummary,
+  .atmosphereKnockoutTeams,
+  .atmosphereKnockoutMeta {
+    padding: 10px;
+  }
+
+  .atmosphereKnockoutSummary strong {
+    font-size: 18px;
+  }
+
+  .atmosphereKnockoutTeams {
+    gap: 7px;
+  }
+
+  .atmosphereKnockoutTeams > div {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .atmosphereKnockoutTeams > div:last-child {
+    grid-template-columns: minmax(0, 1fr) 20px;
+  }
+
+  .atmosphereKnockoutTeams strong,
+  .atmosphereKnockoutSummary em,
+  .atmosphereKnockoutMeta strong {
+    font-size: 10.5px;
+  }
+
+  .atmosphereKnockoutTeams b {
+    font-size: 15px;
+  }
+
+  .standingPulseLegend {
+    gap: 5px;
+  }
+
+  .standingPulseLegend span {
+    min-height: 23px;
+    gap: 5px;
+    padding: 0 7px;
+    font-size: 9px;
+  }
+
+  .standingPulseLegend i {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+@media (max-width: 380px) {
+  .atmosphereFullStandingHead,
+  .atmosphereFullStandingRow {
+    grid-template-columns:
+      6px
+      16px
+      minmax(66px, 1fr)
+      repeat(4, 15px)
+      repeat(2, 17px)
+      19px
+      22px !important;
+    gap: 1px;
+  }
+
+  .atmosphereFullStandingHead {
+    padding: 0 3px;
+    font-size: 7.4px;
+  }
+
+  .atmosphereFullStandingRow {
+    padding: 0 3px;
+    font-size: 8.4px;
+  }
+
+  .fullStandingTeam {
+    grid-template-columns: 12px minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  .fullStandingTeam .teamLogo.sm,
+  .fullStandingTeam .logoFallback.sm {
+    width: 12px;
+    height: 12px;
+  }
+
+  .fullStandingTeam strong {
+    font-size: 8.8px;
+  }
+
+  .atmosphereFullStandingRow b {
+    font-size: 9.2px;
   }
 }
